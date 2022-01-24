@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
+    userName : {type:String,unique:true,required:true},
+    phoneNumber : {type:String,unique:true,required:true},
     email: { type: String, unique: true, required: true },
     passwordHash: { type: String, required: true },
-    title: { type: String, required: false },
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    referrelId : {type : String,required : false},
     acceptTerms: Boolean,
     role: { type: String, required: true },
     verificationToken: String,
