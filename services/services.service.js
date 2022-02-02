@@ -34,7 +34,7 @@ async function update(id,params) {
     return service;
 }
 
-async function getById(){
+async function getById(id){
     const service = await getService(id);
     return service;
 }

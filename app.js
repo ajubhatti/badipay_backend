@@ -10,6 +10,9 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var accountRouter = require('./accounts/accounts.controller');
 var servicesRouter = require('./services/services.controller');
+var walletRouter = require('./wallet/wallet.controller');
+var bankRouter = require('./banks/banks.controller');
+var bankAccountRouter = require('./bankAccounts/bankAccounts.controller')
 
 var app = express();
 
@@ -41,7 +44,10 @@ app.options('*', cors());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/accounts',accountRouter);
-app.use('/service',servicesRouter)
+app.use('/service', servicesRouter);
+app.use('/wallet', walletRouter);
+app.use('/bank', bankRouter);
+app.use('/bankAccount', bankAccountRouter);
 
 // swagger docs route
 app.use('/api-docs', require('./_helpers/swagger'));
