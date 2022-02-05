@@ -6,12 +6,12 @@ mongoose.connect(process.env.MONGODB_URI || config.connectionString,connectionOp
 mongoose.Promise = global.Promise;
 
 module.exports = {
-    Account : require('../accounts/accounts.model'),
-    RefreshToken : require('../accounts/refresh-token.model'),
-    Services: require('../services/services.model'),
-    Wallet: require('../wallet/wallet.model'),
-    Banks: require('../banks/banks.model'),
-    BankAccounts:require('../bankAccounts/bankAccounts.model'),
+    Account : require('../modules/accounts/accounts.model'),
+    RefreshToken : require('../modules/accounts/refresh-token.model'),
+    Services: require('../modules/services/services.model'),
+    Wallet: require('../modules/wallet/wallet.model'),
+    Banks: require('../modules/banks/banks.model'),
+    BankAccounts:require('../modules/bankAccounts/bankAccounts.model'),
     isValidId
 };
 

@@ -1,4 +1,4 @@
-const db = require('../_helpers/db');
+const db = require('../../_helpers/db');
 
 module.exports = {
     create,
@@ -40,8 +40,28 @@ async function getById(id){
 }
 
 async function getAll() {
-    const banksAccounts = await db.BankAccounts.find();
-    return banksAccounts;
+
+
+   let data =  await db.BankAccounts.aggregate( [
+   {
+     $lookup:
+       {
+         from: "banks",
+         localField: "bankId",
+         foreignField: "_id",
+         as: "bankdetail"
+       }
+  }
+] )
+
+    // var banksAccounts = await db.BankAccounts.find();
+    // for (let i = 0; i < banksAccounts.length; i++) { 
+    //     let bank = await db.Banks.findById(banksAccounts[i].bankId);
+    //     console.log("bnaks ---",bank)
+    //     banksAccounts[i].bankName = bank;
+    // }
+    console.log("bank Accounts --",data)
+    return data;
 }
 
 async function _delete(id) {

@@ -8,11 +8,11 @@ const errorHandler = require('./_middleware/error-handler');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var accountRouter = require('./accounts/accounts.controller');
-var servicesRouter = require('./services/services.controller');
-var walletRouter = require('./wallet/wallet.controller');
-var bankRouter = require('./banks/banks.controller');
-var bankAccountRouter = require('./bankAccounts/bankAccounts.controller')
+var accountRouter = require('./modules/accounts/accounts.controller');
+var servicesRouter = require('./modules//services/services.controller');
+var walletRouter = require('./modules/wallet/wallet.controller');
+var bankRouter = require('./modules/banks/banks.controller');
+var bankAccountRouter = require('./modules/bankAccounts/bankAccounts.controller')
 
 var app = express();
 

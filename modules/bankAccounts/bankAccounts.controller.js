@@ -1,9 +1,9 @@
 const Joi = require("joi");
 const express = require('express');
 const router = express.Router();
-const authorize = require("../_middleware/authorize");
+const authorize = require("../../_middleware/authorize");
 const bankAccountService = require("./bankAccounts.service");
-const validateRequest = require("../_middleware/validate-request");
+const validateRequest = require("../../_middleware/validate-request");
 
 router.get('/', getAll);
 router.get('/:id', authorize(), getById);
@@ -15,12 +15,12 @@ module.exports = router;
 
 function createSchema(req, res, next) {
     const schema = Joi.object({
-        accountNo : Joi.string().unique().required(),
+        accountNo : Joi.string().required(),
         accountName : Joi.string().required(),
         accountDetail: Joi.string(),
         ifscCode: Joi.string().required(),
-        bankId: Joi.number().required(),
-        bankBranch: Joi.string().required()
+        bankId: Joi.string().required(),
+        bankBranch: Joi.string()
     });
     validateRequest(req, next, schema);
 }

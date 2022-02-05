@@ -1,9 +1,9 @@
 const Joi = require("joi");
 const express = require('express');
 const router = express.Router();
-const authorize = require("../_middleware/authorize");
+const authorize = require("../../_middleware/authorize");
 const bankService = require("./banks.service");
-const validateRequest = require("../_middleware/validate-request");
+const validateRequest = require("../../_middleware/validate-request");
 
 router.get('/', getAll);
 router.get('/:id', authorize(), getById);
