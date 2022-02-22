@@ -41,26 +41,33 @@ async function getById(id){
 
 async function getAll() {
 
-
-   let data =  await db.BankAccounts.aggregate( [
-   {
-     $lookup:
-       {
-         from: "banks",
-         localField: "bankId",
-         foreignField: "_id",
-         as: "bankdetail"
-       }
-  }
-] )
-
-    // var banksAccounts = await db.BankAccounts.find();
+    await db.BankAccounts.find({}).then(async res => {
+        return res.map(async bnkAcc => {
+            let bank = await db.Banks.find({ _id: bnkAcc.bankId })
+            bnkAcc.bankName = bank[0].bankName;
+            // console.log("bank Accounts 1--", bnkAcc)
+            return bnkAcc;
+        })
+    });
+    
+    let data = await db.BankAccounts.aggregate( [
+        {
+            $lookup:
+            {
+                from: "banks",
+                localField: "bankId",
+                foreignField: "_id",
+                as: "bankdetail"
+            }
+        }
+    ]);
+    
     // for (let i = 0; i < banksAccounts.length; i++) { 
     //     let bank = await db.Banks.findById(banksAccounts[i].bankId);
     //     console.log("bnaks ---",bank)
     //     banksAccounts[i].bankName = bank;
     // }
-    console.log("bank Accounts --",data)
+    
     return data;
 }
 

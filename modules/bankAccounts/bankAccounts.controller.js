@@ -20,7 +20,7 @@ function createSchema(req, res, next) {
         accountDetail: Joi.string(),
         ifscCode: Joi.string().required(),
         bankId: Joi.string().required(),
-        bankBranch: Joi.string()
+        bankBranch: Joi.string(),
     });
     validateRequest(req, next, schema);
 }
@@ -39,13 +39,14 @@ function getById(req, res, next) {
 
 function updateSchema(req, res, next) {
     const schemaRules = {
-        accountNo : Joi.string().unique().required(),
-        accountName : Joi.string().required(),
+        accountNo: Joi.string().unique().required(),
+        accountName: Joi.string().required(),
         accountDetail: Joi.string(),
         ifscCode: Joi.string().required(),
         bankId: Joi.number().required(),
-        bankBranch: Joi.string().required()
-    };
+        bankBranch: Joi.string().required(),
+        isActive: Joi.boolean()
+    }
     validateRequest(req, next, schemaRules);
 }
 
