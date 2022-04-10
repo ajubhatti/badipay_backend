@@ -3,7 +3,7 @@ const router = express.Router();
 const Joi = require("joi");
 const authorize = require("../../_middleware/authorize");
 const validateRequest = require("../../_middleware/validate-request");
-const walletServices = require("./wallet.service");
+const walletTransaction = require("./walletTransaction.service");
 
 router.post("/getAll", getAll);
 router.post("/", createSchema, create);
@@ -15,7 +15,7 @@ router.post("/updateBalance", updateExistingBalance);
 module.exports = router;
 
 function getAll(req, res, next) {
-  walletServices
+  walletTransaction
     .getAll(req.body)
     .then((wallets) =>
       res.status(200).json({
@@ -56,12 +56,12 @@ function createSchema(req, res, next) {
 }
 
 function create(req, res, next) {
-  walletServices
+  walletTransaction
     .create(req.body)
     .then((wallet) =>
       res.status(200).json({
         type: "success",
-        message: "Wallet created succesfully",
+        message: "Wallet transaction created succesfully",
         data: {
           wallet,
         },
@@ -71,7 +71,7 @@ function create(req, res, next) {
 }
 
 function getById(req, res, next) {
-  walletServices
+  walletTransaction
     .getById(req.params.id)
     .then((wallet) => res.json(wallet))
     .catch(next);
@@ -102,7 +102,7 @@ function updateSchema(req, res, next) {
 }
 
 function updateById(req, res, next) {
-  walletServices
+  walletTransaction
     .update(req.params.id, req.body)
     .then((wallet) =>
       res.status(200).json({
@@ -117,22 +117,22 @@ function updateById(req, res, next) {
 }
 
 function deleteById(req, res, next) {
-  walletServices
+  walletTransaction
     .delete(req.params.id)
     .then((wallet) =>
       res.status(200).json({
         type: "success",
-        message: "wallet deleted successfully",
+        message: "wallet transaction deleted successfully",
       })
     )
     .catch(next);
 }
 
 function updateExistingBalance(req, res, next) {
-  walletServices.updateExistingBalance(req.body).then((wallet) => {
+  walletTransaction.updateExistingBalance(req.body).then((wallet) => {
     res.status(200).json({
       type: "success",
-      resut: wallet,
+      result: wallet,
     });
   });
 }

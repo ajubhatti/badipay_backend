@@ -1,12 +1,10 @@
 const db = require("../../_helpers/db");
 const accountsService = require("../accounts/accounts.service");
 
-const walletTransaction = require("../walletTransaction/walletTransaction.service");
-
 const getAll = async (params) => {
-  //   const walletData = await db.Wallet.find({});
+  //   const walletData = await db.walletTransaction.find({});
 
-  let walletData = await db.Wallet.aggregate([
+  let walletData = await db.walletTransaction.aggregate([
     {
       $lookup: {
         from: "accounts",
@@ -28,7 +26,7 @@ const getAll = async (params) => {
     });
   }
 
-  // let bankData = await db.Wallet.aggregate([
+  // let bankData = await db.walletTransaction.aggregate([
   //   {
   //     $lookup: {
   //       from: "bankaccounts",
@@ -73,11 +71,12 @@ const getById = async (id) => {
 };
 
 const create = async (params) => {
-  if (await db.Wallet.findOne({ slipNo: params.slipNo })) {
+  console.log("create transaction--", params);
+  if (await db.walletTransaction.findOne({ slipNo: params.slipNo })) {
     throw "slip no " + params.slipNo + " already taken.";
   }
 
-  const wallet = new db.Wallet(params);
+  const wallet = new db.walletTransaction(params);
 
   return await wallet.save();
 };
@@ -100,71 +99,55 @@ const update = async (id, params) => {
 };
 
 const updateExistingBalance = async (params) => {
-  const walletData = await getWalletByUserId(params.userId);
+  let accountDetail = await accountsService.getById(params.userId);
 
-  if (walletData) {
-  } else {
-    let payload = {
+  console.log("account detail ---", accountDetail);
+
+  if (accountDetail) {
+    if (params.type == "add") {
+      accountDetail.balance = Number(accountDetail.balance)
+        ? Number(accountDetail.balance) + Number(params.amount)
+        : Number(params.amount);
+    } else {
+      accountDetail.balance = Number(accountDetail.balance)
+        ? Number(accountDetail.balance) - Number(params.amount)
+        : Number(params.amount);
+    }
+    delete accountDetail._id;
+
+    await accountsService.update(params.userId, accountDetail);
+
+    const walletData = await getWalletByUserId(params.userId);
+
+    let userWalletData = walletData[0];
+
+    console.log("userWalletData ----", walletData);
+
+    let requestPayload = {
       userId: params.userId,
-      finalWalletAmount: 0,
+      requestAmount: params.amount,
+      remark: params.remarks,
+      paymentType: "1",
+      bank: userWalletData.bank,
+      referenceNo: userWalletData.referenceNo,
+      depositBank: userWalletData.depositBank,
+      depositBranch: userWalletData.depositBranch,
+      amount: userWalletData.amount,
+      debitAmount: userWalletData.debitAmount,
+      creditAmount: userWalletData.creditAmount,
+      finalWalletAmount: userWalletData.finalWalletAmount,
+      amountType: userWalletData.amountType,
+      approveBy: userWalletData.approveBy,
+      password: params.password,
     };
-    const wallet = new db.Wallet(params);
 
-    await wallet.save();
-  }
-  let userWalletData = walletData[0];
+    const wallet = new db.walletTransaction(requestPayload);
 
-  console.log("user wallet data ---", userWalletData);
-
-  if (params.type == "add") {
-    userWalletData.finalWalletAmount = userWalletData.finalWalletAmount
-      ? userWalletData.finalWalletAmount + params.amount
-      : params.amount;
+    wallet.save();
+    return wallet;
   } else {
-    userWalletData.finalWalletAmount = userWalletData.finalWalletAmount
-      ? userWalletData.finalWalletAmount - params.amount
-      : params.amount;
+    throw "user not found";
   }
-  let walletUpdateData = await update(userWalletData._id, userWalletData);
-
-  walletUpdateData.requestAmount = params.amount;
-  if (params.type == "add") {
-    walletUpdateData.creditAmount = params.amount;
-  } else {
-    walletUpdateData.debitAmount = params.amount;
-  }
-  let requestPayload = {
-    userId: walletUpdateData.userId,
-    requestAmount: walletUpdateData.requestAmount,
-    remark: params.remark,
-    paymentType: walletUpdateData.paymentType,
-    bank: walletUpdateData.bank,
-    referenceNo: walletUpdateData.referenceNo,
-    depositBank: walletUpdateData.depositBank,
-    depositBranch: walletUpdateData.depositBranch,
-    amount: walletUpdateData.amount,
-    debitAmount: walletUpdateData.debitAmount,
-    creditAmount: walletUpdateData.creditAmount,
-    finalWalletAmount: walletUpdateData.finalWalletAmount,
-    amountType: walletUpdateData.amountType,
-    approveBy: walletUpdateData.approveBy,
-    password: params.password,
-    statusOfWallet: walletUpdateData.statusOfWallet,
-    isActive: walletUpdateData.isActive,
-    statusOfWalletRequest: walletUpdateData.statusOfWalletRequest,
-  };
-
-  // walletTransaction.create(walletUpdateData);
-  const wallet = new db.walletTransaction(requestPayload);
-
-  await wallet.save();
-
-  const account = await db.Account.findById(params.userId);
-  console.log("wallet update data ---", account);
-
-  account.balance = walletUpdateData.finalWalletAmount;
-  await account.save();
-  return walletUpdateData;
 };
 
 const _delete = async (id) => {
@@ -174,13 +157,13 @@ const _delete = async (id) => {
 
 const getWallet = async (id) => {
   if (!db.isValidId(id)) throw "wallet not found";
-  const walletData = await db.Wallet.findById(id);
+  const walletData = await db.walletTransaction.findById(id);
   if (!walletData) throw "wallet not found";
   return walletData;
 };
 
 const getWalletByUserId = async (userId) => {
-  const walletData = await db.Wallet.find({ userId: userId });
+  const walletData = await db.walletTransaction.find({ userId: userId });
   if (!walletData) throw "wallet not found";
   return walletData;
 };

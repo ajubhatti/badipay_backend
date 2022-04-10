@@ -176,6 +176,7 @@ async function resetPassword({ token, password }) {
 }
 
 async function getAll(params) {
+  console.log("params ----", params);
   var startDate = new Date(params.startDate);
   var endDate = new Date(params.endDate);
 

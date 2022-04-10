@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const walletSchema = new Schema({
+const walletTransactionSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "Account" },
   requestAmount: { type: Number, required: true, default: 0 },
   slipNo: { type: String },
   remark: { type: String },
 
-  paymentType: { type: String, required: true, default: "1" },
+  paymentType: { type: String, default: "1" },
   bank: { type: Schema.Types.ObjectId, ref: "BankList" },
 
   referenceNo: { type: String },
@@ -43,4 +43,4 @@ const walletSchema = new Schema({
   isActive: { type: Boolean, default: true },
 });
 
-module.exports = mongoose.model("UserWallet", walletSchema);
+module.exports = mongoose.model("WalletTransaction", walletTransactionSchema);
