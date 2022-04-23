@@ -96,7 +96,7 @@ async function getById(id) {
 }
 
 async function getAll() {
-  const banner = await db.Banners.find({ isActive: true });
+  const banner = await db.Banners.find();
   return banner;
 }
 

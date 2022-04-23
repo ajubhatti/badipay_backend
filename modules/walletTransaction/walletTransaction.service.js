@@ -162,7 +162,8 @@ const getWallet = async (id) => {
   return walletData;
 };
 
-const getWalletByUserId = async (userId) => {
+const getTransctionByUserId = async (userId) => {
+  console.log("user id ---", userId);
   const walletData = await db.walletTransaction.find({ userId: userId });
   if (!walletData) throw "wallet not found";
   return walletData;
@@ -175,5 +176,5 @@ module.exports = {
   getById,
   delete: _delete,
   updateExistingBalance,
-  getWalletByUserId,
+  getTransctionByUserId,
 };

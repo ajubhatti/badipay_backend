@@ -8,6 +8,7 @@ const walletTransaction = require("./walletTransaction.service");
 router.post("/getAll", getAll);
 router.post("/", createSchema, create);
 router.get("/:id", getById);
+router.post("/getByUserId", getByUserId);
 router.put("/:id", updateSchema, updateById);
 router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);
@@ -73,6 +74,14 @@ function create(req, res, next) {
 function getById(req, res, next) {
   walletTransaction
     .getById(req.params.id)
+    .then((wallet) => res.json(wallet))
+    .catch(next);
+}
+
+function getByUserId(req, res, next) {
+  console.log("user id ----", req.body);
+  walletTransaction
+    .getTransctionByUserId(req.body.userId)
     .then((wallet) => res.json(wallet))
     .catch(next);
 }
