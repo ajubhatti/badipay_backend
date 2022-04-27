@@ -8,6 +8,10 @@ mongoose.connect(
 );
 mongoose.Promise = global.Promise;
 
+const isValidId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
+
 module.exports = {
   Account: require("../modules/accounts/accounts.model"),
   RefreshToken: require("../modules/accounts/refresh-token.model"),
@@ -21,7 +25,3 @@ module.exports = {
 
   isValidId,
 };
-
-function isValidId(id) {
-  return mongoose.Types.ObjectId.isValid(id);
-}

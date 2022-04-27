@@ -1,5 +1,6 @@
 {
     "connectionString": "mongodb://localhost/node-mongo-signup-verification",
+    "connectionString1" : "mongodb+srv://ajubhatti:gj11nn5099@cluster0.rbuwj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
     "secret": "THIS IS USED TO SIGN AND VERIFY JWT TOKENS, REPLACE IT WITH YOUR OWN SECRET, IT CAN BE ANY STRING",
     "emailFrom": "multaniazaz@gmail.com",
     "smtpOptions": {

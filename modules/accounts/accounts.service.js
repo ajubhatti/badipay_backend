@@ -99,7 +99,7 @@ async function register(params, origin) {
   console.log("user exist ---", userExist);
   if (userExist) {
     // send already registered error in email to prevent account enumeration
-    return await sendAlreadyRegisteredEmail(params.email, origin);
+    // return await sendAlreadyRegisteredEmail(params.email, origin);
   }
 
   // create account object
@@ -117,7 +117,7 @@ async function register(params, origin) {
 
   // send email
   console.log("my account --------------------", account);
-  await sendVerificationEmail(account, origin);
+  // await sendVerificationEmail(account, origin);
 
   return {
     account,
