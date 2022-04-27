@@ -23,15 +23,14 @@ module.exports = {
 };
 
 async function authenticate({ email, password, ipAddress }) {
-  console.log("user email ---", email);
   const account = await db.Account.findOne({ email });
-  console.log("user account ---", account);
+
   if (!account) {
     throw "Account not available";
   }
-  if (!account.isVerified) {
-    throw "Your account not verified please verify your account.verify link sended to your account.";
-  }
+  // if (!account.isVerified) {
+  //   throw "Your account not verified please verify your account.verify link sended to your account.";
+  // }
   if (!bcrypt.compareSync(password, account.passwordHash)) {
     throw "Your email or password not matched";
   }
@@ -45,12 +44,12 @@ async function authenticate({ email, password, ipAddress }) {
 
   account.otp = Math.floor(100000 + Math.random() * 900000);
   account.otpDate = new Date();
-  await sendEmail({
-    to: account.email,
-    subject: "Sign-up Verification API - Verify Email",
-    html: `<h4>Verify Email</h4>
-               <p>Thanks for registering!</p>`,
-  });
+  // await sendEmail({
+  //   to: account.email,
+  //   subject: "Sign-up Verification API - Verify Email",
+  //   html: `<h4>Verify Email</h4>
+  //              <p>Thanks for registering!</p>`,
+  // });
 
   // return basic details and tokens
   return {
@@ -99,7 +98,7 @@ async function register(params, origin) {
   console.log("user exist ---", userExist);
   if (userExist) {
     // send already registered error in email to prevent account enumeration
-    // return await sendAlreadyRegisteredEmail(params.email, origin);
+    return await sendAlreadyRegisteredEmail(params.email, origin);
   }
 
   // create account object
@@ -117,7 +116,7 @@ async function register(params, origin) {
 
   // send email
   console.log("my account --------------------", account);
-  // await sendVerificationEmail(account, origin);
+  await sendVerificationEmail(account, origin);
 
   return {
     account,
@@ -317,31 +316,45 @@ function basicDetails(account) {
     isActive,
     created,
     updated,
+    verificationToken,
   } = account;
-  // return { id, title, firstName, lastName, email, role, created, updated, isVerified,activeStatus };
-  return account;
+  return {
+    id,
+    userName,
+    phoneNumber,
+    email,
+    role,
+    verified,
+    location,
+    balance,
+    isVerified,
+    isActive,
+    created,
+    updated,
+    verificationToken,
+  };
 }
 
 async function sendVerificationEmail(account, origin) {
   let message;
-  // if (origin) {
-  const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
-  message = `<p>Please click the below link to verify your email address:</p>
+  if (origin) {
+    const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
+    message = `<p>Please click the below link to verify your email address:</p>
                    <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
-  // } else {
-  // message = `<p>Please use the below token to verify your email address with the <code>/account/verify-email</code> api route:</p>
-  //    <p><code>${account.verificationToken}</code></p>`;
-  // }
+  } else {
+    message = `<p>Please use the below token to verify your email address with the <code>/account/verify-email</code> api route:</p>
+     <p><code>${account.verificationToken}</code></p>`;
+  }
 
-  console.log("verification mail ---------", verifyUrl);
+  console.log("verification mail ---------", message);
 
-  await sendEmail({
-    to: account.email,
-    subject: "Sign-up Verification API - Verify Email",
-    html: `<h4>Verify Email</h4>
-               <p>Thanks for registering!</p>
-               ${message}`,
-  });
+  // await sendEmail({
+  //   to: account.email,
+  //   subject: "Sign-up Verification API - Verify Email",
+  //   html: `<h4>Verify Email</h4>
+  //              <p>Thanks for registering!</p>
+  //              ${message}`,
+  // });
 }
 
 async function sendAlreadyRegisteredEmail(email, origin) {
@@ -352,13 +365,13 @@ async function sendAlreadyRegisteredEmail(email, origin) {
     message = `<p>If you don't know your password you can reset it via the <code>/account/forgot-password</code> api route.</p>`;
   }
 
-  await sendEmail({
-    to: email,
-    subject: "Sign-up Verification API - Email Already Registered",
-    html: `<h4>Email Already Registered</h4>
-               <p>Your email <strong>${email}</strong> is already registered.</p>
-               ${message}`,
-  });
+  // await sendEmail({
+  //   to: email,
+  //   subject: "Sign-up Verification API - Email Already Registered",
+  //   html: `<h4>Email Already Registered</h4>
+  //              <p>Your email <strong>${email}</strong> is already registered.</p>
+  //              ${message}`,
+  // });
 }
 
 async function sendPasswordResetEmail(account, origin) {

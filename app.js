@@ -53,7 +53,7 @@ app.options("*", cors());
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
-app.use("/accounts", accountRouter);
+app.use("/auth", accountRouter);
 app.use("/service", servicesRouter);
 app.use("/wallet", walletRouter);
 app.use("/walletTransaction", walletTransaction);
