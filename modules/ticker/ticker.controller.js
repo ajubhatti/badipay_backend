@@ -18,14 +18,18 @@ module.exports = router;
 function create(req, res, next) {
   tickerService
     .create(req.body)
-    .then((ticker) => res.json(ticker))
+    .then((ticker) =>
+      res.json({ status: 200, data: ticker, message: "success" })
+    )
     .catch(next);
 }
 
 function getById(req, res, next) {
   tickerService
     .getById(req.params.id)
-    .then((ticker) => (ticker ? res.json(ticker) : res.sendStatus(404)))
+    .then((ticker) =>
+      res.json({ status: 200, data: ticker, message: "success" })
+    )
     .catch(next);
 }
 
@@ -41,20 +45,30 @@ function updateSchema(req, res, next) {
 function update(req, res, next) {
   tickerService
     .update(req.params.id, req.body)
-    .then((ticker) => res.json(ticker))
+    .then((ticker) =>
+      res.json({ status: 200, data: ticker, message: "success" })
+    )
     .catch(next);
 }
 
 function _delete(req, res, next) {
   tickerService
     .delete(req.params.id)
-    .then(() => res.json({ message: "Ticker deleted successfully" }))
+    .then(() =>
+      res.json({
+        status: 200,
+        data: [],
+        message: "Ticker deleted successfully",
+      })
+    )
     .catch(next);
 }
 
 function getAll(req, res, next) {
   tickerService
     .getAll()
-    .then((ticker) => res.json(ticker))
+    .then((ticker) =>
+      res.json({ status: 200, data: ticker, message: "success" })
+    )
     .catch(next);
 }

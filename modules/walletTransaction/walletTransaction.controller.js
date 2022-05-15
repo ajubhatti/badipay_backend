@@ -62,7 +62,7 @@ function create(req, res, next) {
     .then((wallet) =>
       res.status(200).json({
         type: "success",
-        message: "Wallet transaction created succesfully",
+        message: "Wallet created succesfully",
         data: {
           wallet,
         },
@@ -74,14 +74,18 @@ function create(req, res, next) {
 function getById(req, res, next) {
   walletTransaction
     .getById(req.params.id)
-    .then((wallet) => res.json(wallet))
+    .then((wallet) =>
+      res.json({ status: 200, data: wallet, message: "success" })
+    )
     .catch(next);
 }
 
 function getByUserId(req, res, next) {
   walletTransaction
     .getTransctionByUserId(req.body.userId)
-    .then((wallet) => res.json(wallet))
+    .then((wallet) =>
+      res.json({ status: 200, data: wallet, message: "success" })
+    )
     .catch(next);
 }
 
@@ -114,7 +118,7 @@ function updateById(req, res, next) {
     .update(req.params.id, req.body)
     .then((wallet) =>
       res.status(200).json({
-        type: "success",
+        status: 200,
         message: "wallet updated successfully",
         data: {
           wallet,
@@ -129,7 +133,8 @@ function deleteById(req, res, next) {
     .delete(req.params.id)
     .then((wallet) =>
       res.status(200).json({
-        type: "success",
+        data: [],
+        status: 200,
         message: "wallet transaction deleted successfully",
       })
     )
@@ -137,10 +142,14 @@ function deleteById(req, res, next) {
 }
 
 function updateExistingBalance(req, res, next) {
-  walletTransaction.updateExistingBalance(req.body).then((wallet) => {
-    res.status(200).json({
-      type: "success",
-      result: wallet,
-    });
-  });
+  walletTransaction
+    .updateExistingBalance(req.body)
+    .then((wallet) => {
+      res.status(200).json({
+        status: 200,
+        message: "success",
+        data: wallet,
+      });
+    })
+    .catch(next);
 }

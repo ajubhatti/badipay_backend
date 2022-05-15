@@ -73,7 +73,9 @@ function create(req, res, next) {
 function getById(req, res, next) {
   walletServices
     .getById(req.params.id)
-    .then((wallet) => res.json(wallet))
+    .then((wallet) =>
+      res.json({ status: 200, data: wallet, message: "success" })
+    )
     .catch(next);
 }
 
@@ -106,7 +108,7 @@ function updateById(req, res, next) {
     .update(req.params.id, req.body)
     .then((wallet) =>
       res.status(200).json({
-        type: "success",
+        status: 200,
         message: "wallet updated successfully",
         data: {
           wallet,
@@ -121,8 +123,9 @@ function deleteById(req, res, next) {
     .delete(req.params.id)
     .then((wallet) =>
       res.status(200).json({
-        type: "success",
-        message: "wallet deleted successfully",
+        data: [],
+        status: 200,
+        message: "wallet transaction deleted successfully",
       })
     )
     .catch(next);
@@ -131,8 +134,9 @@ function deleteById(req, res, next) {
 function updateExistingBalance(req, res, next) {
   walletServices.updateExistingBalance(req.body).then((wallet) => {
     res.status(200).json({
-      type: "success",
-      resut: wallet,
+      status: 200,
+      message: "success",
+      data: wallet,
     });
   });
 }

@@ -28,7 +28,9 @@ function createSchema(req, res, next) {
 function create(req, res, next) {
   bankAccountService
     .create(req.body)
-    .then((bankAccount) => res.json(bankAccount))
+    .then((bankAccount) =>
+      res.json({ status: 200, data: bankAccount, message: "success" })
+    )
     .catch(next);
 }
 
@@ -36,7 +38,7 @@ function getById(req, res, next) {
   bankAccountService
     .getById(req.params.id)
     .then((bankAccount) =>
-      bankAccount ? res.json(bankAccount) : res.sendStatus(404)
+      res.json({ status: 200, data: bankAccount, message: "success" })
     )
     .catch(next);
 }
@@ -57,20 +59,30 @@ function updateSchema(req, res, next) {
 function update(req, res, next) {
   bankAccountService
     .update(req.params.id, req.body)
-    .then((bankAccount) => res.json(bankAccount))
+    .then((bankAccount) =>
+      res.json({ status: 200, data: bankAccount, message: "sucess" })
+    )
     .catch(next);
 }
 
 function _delete(req, res, next) {
   bankAccountService
     .delete(req.params.id)
-    .then(() => res.json({ message: "Bank account deleted successfully" }))
+    .then(() =>
+      res.json({
+        status: 200,
+        message: "Bank account deleted successfully",
+        message: "success",
+      })
+    )
     .catch(next);
 }
 
 function getAll(req, res, next) {
   bankAccountService
     .getAll()
-    .then((bankAccount) => res.json(bankAccount))
+    .then((bankAccount) =>
+      res.json({ status: 200, data: bankAccount, message: "success" })
+    )
     .catch(next);
 }

@@ -106,7 +106,7 @@ async function uploadBanner(req, res, next) {
   bannersService
     .addImage2(req, res)
     .then((banner) => {
-      res.json(banner);
+      res.json({ status: 200, data: banner, message: "success" });
     })
     .catch(next);
 
@@ -116,14 +116,18 @@ async function uploadBanner(req, res, next) {
 function create(req, res, next) {
   bannersService
     .create(req.body)
-    .then((banner) => res.json(banner))
+    .then((banner) =>
+      res.json({ status: 200, data: banner, message: "success" })
+    )
     .catch(next);
 }
 
 function getById(req, res, next) {
   bannersService
     .getById(req.params.id)
-    .then((banner) => (banner ? res.json(banner) : res.sendStatus(404)))
+    .then((banner) =>
+      res.json({ status: 200, data: banner, message: "success" })
+    )
     .catch(next);
 }
 
@@ -139,21 +143,31 @@ function updateSchema(req, res, next) {
 function update(req, res, next) {
   bannersService
     .update(req.params.id, req.body)
-    .then((banner) => res.json(banner))
+    .then((banner) =>
+      res.json({ status: 200, data: banner, message: "success" })
+    )
     .catch(next);
 }
 
 function _delete(req, res, next) {
   bannersService
     .delete(req.params.id)
-    .then(() => res.json({ message: "Banner deleted successfully" }))
+    .then(() =>
+      res.json({
+        status: 200,
+        data: [],
+        message: "Banner deleted successfully",
+      })
+    )
     .catch(next);
 }
 
 function getAll(req, res, next) {
   bannersService
     .getAll()
-    .then((banner) => res.json(banner))
+    .then((banner) =>
+      res.json({ status: 200, data: banner, message: "success" })
+    )
     .catch(next);
 }
 
@@ -169,19 +183,37 @@ function profileUpload(req, res, next) {
     // req.body contains information of text fields, if there were any
 
     if (req.fileValidationError) {
-      return res.send(req.fileValidationError);
+      return res.send({
+        status: 400,
+        data: [],
+        message: req.fileValidationError,
+      });
     } else if (!req.file) {
-      return res.send("Please select an image to upload");
+      return res.send({
+        status: 400,
+        data: [],
+        message: "Please select an image to upload",
+      });
     } else if (err instanceof multer.MulterError) {
-      return res.send(err);
+      return res.send({
+        status: 400,
+        data: [],
+        message: err,
+      });
     } else if (err) {
-      return res.send(err);
+      return res.send({
+        status: 400,
+        data: [],
+        message: err,
+      });
     }
 
     // Display uploaded image for user validation
-    res.send(
-      `You have uploaded this image: <hr/><img src="${req.file.path}" width="500"><hr /><a href="./">Upload another image</a>`
-    );
+    res.send({
+      status: 200,
+      data: `You have uploaded this image: <hr/><img src="${req.file.path}" width="500"><hr /><a href="./">Upload another image</a>`,
+      message: `You have uploaded this image: <hr/><img src="${req.file.path}" width="500"><hr /><a href="./">Upload another image</a>`,
+    });
   });
 }
 
@@ -196,12 +228,17 @@ router.post("/:folder/:id", upload.single("file"), async (req, res) => {
   try {
     let image = req.files.image;
 
-    if (!image) return res.status(400).send({ message: "Image not provided!" });
+    if (!image)
+      return res
+        .status(400)
+        .send({ status: 400, data: [], message: "Image not provided!" });
 
     const imageUrl = await upload(image, req.params.folder, req.params.id);
 
     if (imageUrl)
-      res.status(201).send({ message: "Image uploaded", url: imageUrl });
+      res
+        .status(201)
+        .send({ status: 201, message: "Image uploaded", data: imageUrl });
   } catch (e) {
     res.status(400).send({
       message: "Error uploading image!",
@@ -215,7 +252,7 @@ router.delete("/:folder/:id", async (req, res) => {
   try {
     fs.unlinkSync(`images/${req.params.folder}/${req.params.id}.png`);
 
-    res.status(201).send({ message: "Image deleted" });
+    res.status(201).send({ status: 200, data: [], message: "Image deleted" });
   } catch (e) {
     res.status(400).send({
       message: "Error deleting image!",

@@ -17,14 +17,14 @@ const createSchema = (req, res, next) => {
 const create = (req, res, next) => {
   bankService
     .create(req.body)
-    .then((banks) => res.json(banks))
+    .then((banks) => res.json({ status: 200, data: banks, message: "success" }))
     .catch(next);
 };
 
 const getById = (req, res, next) => {
   bankService
     .getById(req.params.id)
-    .then((banks) => (banks ? res.json(banks) : res.sendStatus(404)))
+    .then((banks) => res.json({ status: 200, data: banks, message: "success" }))
     .catch(next);
 };
 
@@ -40,21 +40,23 @@ const updateSchema = (req, res, next) => {
 const update = (req, res, next) => {
   bankService
     .update(req.params.id, req.body)
-    .then((banks) => res.json(banks))
+    .then((banks) => res.json({ status: 200, data: banks, message: "success" }))
     .catch(next);
 };
 
 const _delete = (req, res, next) => {
   bankService
     .delete(req.params.id)
-    .then(() => res.json({ message: "Bank deleted successfully" }))
+    .then(() =>
+      res.json({ status: 200, data: [], message: "Bank deleted successfully" })
+    )
     .catch(next);
 };
 
 const getAll = (req, res, next) => {
   bankService
     .getAll()
-    .then((banks) => res.json(banks))
+    .then((banks) => res.json({ status: 200, data: banks, message: "success" }))
     .catch(next);
 };
 
