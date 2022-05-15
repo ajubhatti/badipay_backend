@@ -6,7 +6,7 @@ const validateRequest = require("../../_middleware/validate-request");
 const walletTransaction = require("./walletTransaction.service");
 
 router.post("/getAll", getAll);
-router.post("/", createSchema, create);
+router.post("/", create);
 router.get("/:id", getById);
 router.post("/getByUserId", getByUserId);
 router.put("/:id", updateSchema, updateById);
@@ -79,7 +79,6 @@ function getById(req, res, next) {
 }
 
 function getByUserId(req, res, next) {
-  console.log("user id ----", req.body);
   walletTransaction
     .getTransctionByUserId(req.body.userId)
     .then((wallet) => res.json(wallet))

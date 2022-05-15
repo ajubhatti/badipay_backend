@@ -54,7 +54,6 @@ module.exports = router;
 
 async function uploadBanner(req, res, next) {
   // var img = fs.readFileSync(req.file.path);
-  // console.log("img ---", img);
   // var encode_img = img.toString("base64");
   // var encodimg = Buffer.from(encode_img).toString("utf-8");
   // var final_img = {

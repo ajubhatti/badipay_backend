@@ -37,18 +37,14 @@ async function addImage2(req, res) {
     },
   };
 
-  console.log("banner data----", obj);
-
   const banner = new db.Banners(obj);
   await banner.save();
   return banner;
 }
 
 async function addImage(req, res) {
-  console.log(__dirname, process.cwd());
   const filePath = path.join(__dirname, "/uploads");
   const dirName = process.cwd();
-  console.log("filePath", filePath);
   var obj = {
     fileName: req.body.name,
     description: req.body.desc,

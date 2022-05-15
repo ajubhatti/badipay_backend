@@ -6,7 +6,7 @@ const validateRequest = require("../../_middleware/validate-request");
 const walletServices = require("./wallet.service");
 
 router.post("/getAll", getAll);
-router.post("/", createSchema, create);
+router.post("/", create);
 router.get("/:id", getById);
 router.put("/:id", updateSchema, updateById);
 router.delete("/:id", deleteById);

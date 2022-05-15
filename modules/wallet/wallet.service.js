@@ -39,9 +39,7 @@ const getAll = async (params) => {
   //   },
   // ]);
 
-  // console.log("bank data ====", bankData);
   //   filterData.map(async (wallet) => {
-  //     console.log(wallet.userId);
   //     let user = await accountsService.getById(wallet.userId);
   //     filterData.userdata = user;
   //   });
@@ -61,8 +59,6 @@ const getAll = async (params) => {
   //       }
   //     });
   //   }
-
-  //   console.log(filterData);
 
   return filterData;
 };
@@ -114,8 +110,6 @@ const updateExistingBalance = async (params) => {
   }
   let userWalletData = walletData[0];
 
-  console.log("user wallet data ---", userWalletData);
-
   if (params.type == "add") {
     userWalletData.finalWalletAmount = userWalletData.finalWalletAmount
       ? userWalletData.finalWalletAmount + params.amount
@@ -160,7 +154,6 @@ const updateExistingBalance = async (params) => {
   await wallet.save();
 
   const account = await db.Account.findById(params.userId);
-  console.log("wallet update data ---", account);
 
   account.balance = walletUpdateData.finalWalletAmount;
   await account.save();

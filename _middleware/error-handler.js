@@ -17,7 +17,6 @@ const errorHandler = (err, req, res, next) => {
       return res.status(401).json({
         status: statusCode,
         message: "Unauthorized",
-        status: statusCode,
         data: [],
       });
     default:

@@ -3,6 +3,17 @@
     "connectionString1" : "mongodb+srv://ajubhatti:gj11nn5099@cluster0.rbuwj.mongodb.net/node-mongo-signup-verification?retryWrites=true&w=majority",
     "secret": "THIS IS USED TO SIGN AND VERIFY JWT TOKENS, REPLACE IT WITH YOUR OWN SECRET, IT CAN BE ANY STRING",
     "emailFrom": "multaniazaz@gmail.com",
+    "smtpOptions2":{
+        "host": "smtp.gmail.com",
+        "service": "Gmail",
+        "secureConnection": true,
+        "port": 465,
+        "secure": true,
+        "auth": {
+            "user": "multaniazaz@gmail.com",
+            "pass": "gj11nn50999"
+        }
+    },
     "smtpOptions": {
         "host": "smtp.gmail.com",
         "port": 465,

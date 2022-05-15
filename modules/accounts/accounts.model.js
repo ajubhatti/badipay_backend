@@ -1,13 +1,11 @@
-const { number } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
   userName: { type: String, unique: true, required: true },
   phoneNumber: { type: String, unique: true, required: true },
-  email: { type: String, unique: true, required: true },
+  email: { type: String, trim: true, unique: true, required: true },
   passwordHash: { type: String, required: true },
-  referrelId: { type: String, required: false },
   acceptTerms: { type: Boolean },
   verificationToken: String,
   verified: Date,
@@ -28,8 +26,24 @@ const schema = new Schema({
   otpDate: { type: Date, default: Date.now },
   otpUpdateDate: { type: Date },
   isActive: { type: Boolean, default: true },
-  created: { type: Date, default: Date.now },
-  updated: Date,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: Date,
+  referrelCode: { type: String, required: false },
+  referralId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "referral",
+  },
+
+  walletId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "wallet",
+  },
+  // plan: [
+  //   {
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: "plan",
+  //   },
+  // ],
 });
 
 schema.virtual("isVerified").get(function () {

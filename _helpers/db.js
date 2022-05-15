@@ -22,6 +22,7 @@ module.exports = {
   BankAccounts: require("../modules/bankAccounts/bankAccounts.model"),
   Banners: require("../modules/banners/banners.model"),
   Ticker: require("../modules/ticker/ticker.model"),
+  Referral:require("../modules/referral/referral.model"),
 
   isValidId,
 };

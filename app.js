@@ -16,6 +16,7 @@ var bankRouter = require("./modules/banks/banks.controller");
 var bankAccountRouter = require("./modules/bankAccounts/bankAccounts.controller");
 var bannerRouter = require("./modules/banners/banners.controller");
 var tickerRouter = require("./modules/ticker/ticker.controller");
+var referralRouter = require("./modules/referral/referral.controller");
 
 var app = express();
 
@@ -27,6 +28,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/uploads", express.static("uploads"));
 app.use(bodyParser.json());
+
+
 
 // app.use(function(req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "*");
@@ -61,6 +64,7 @@ app.use("/bank", bankRouter);
 app.use("/bankAccount", bankAccountRouter);
 app.use("/banner", bannerRouter);
 app.use("/ticker", tickerRouter);
+app.use("/referral", referralRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));

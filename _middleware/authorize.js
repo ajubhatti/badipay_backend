@@ -1,9 +1,6 @@
 const jwt = require("express-jwt");
 const { secret } = require("../config.json");
 const db = require("../_helpers/db");
-const role = require("../_helpers/role");
-
-
 
 const authorize = (roles = []) => {
   // roles param can be a single role string (e.g. Role.User or 'User')
@@ -18,8 +15,6 @@ const authorize = (roles = []) => {
 
     // authorize based on user role
     async (req, res, next) => {
-      console.log("req.user.id ---", req.user.id);
-
       const account = await db.Account.findById(req.user.id);
       const refreshTokens = await db.RefreshToken.find({ account: account.id });
 

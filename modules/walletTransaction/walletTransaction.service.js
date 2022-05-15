@@ -37,9 +37,7 @@ const getAll = async (params) => {
   //   },
   // ]);
 
-  // console.log("bank data ====", bankData);
   //   filterData.map(async (wallet) => {
-  //     console.log(wallet.userId);
   //     let user = await accountsService.getById(wallet.userId);
   //     filterData.userdata = user;
   //   });
@@ -60,8 +58,6 @@ const getAll = async (params) => {
   //     });
   //   }
 
-  //   console.log(filterData);
-
   return filterData;
 };
 
@@ -71,7 +67,6 @@ const getById = async (id) => {
 };
 
 const create = async (params) => {
-  console.log("create transaction--", params);
   if (await db.walletTransaction.findOne({ slipNo: params.slipNo })) {
     throw "slip no " + params.slipNo + " already taken.";
   }
@@ -101,8 +96,6 @@ const update = async (id, params) => {
 const updateExistingBalance = async (params) => {
   let accountDetail = await accountsService.getById(params.userId);
 
-  console.log("account detail ---", accountDetail);
-
   if (accountDetail) {
     if (params.type == "add") {
       accountDetail.balance = Number(accountDetail.balance)
@@ -120,8 +113,6 @@ const updateExistingBalance = async (params) => {
     const walletData = await getWalletByUserId(params.userId);
 
     let userWalletData = walletData[0];
-
-    console.log("userWalletData ----", walletData);
 
     let requestPayload = {
       userId: params.userId,
@@ -163,7 +154,6 @@ const getWallet = async (id) => {
 };
 
 const getTransctionByUserId = async (userId) => {
-  console.log("user id ---", userId);
   const walletData = await db.walletTransaction.find({ userId: userId });
   if (!walletData) throw "wallet not found";
   return walletData;
