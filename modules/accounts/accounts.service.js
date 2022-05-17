@@ -12,7 +12,8 @@ const register = async (params, origin) => {
   let userExist = await db.Account.findOne({ email: params.email });
   if (userExist) {
     // send already registered error in email to prevent account enumeration
-    return await sendAlreadyRegisteredEmail(params.email, origin);
+    await sendAlreadyRegisteredEmail(params.email, origin);
+    return { account: userExist, message: "user already exist" };
   }
 
   // create account object
@@ -22,6 +23,8 @@ const register = async (params, origin) => {
   const isFirstAccount = (await db.Account.countDocuments({})) === 0;
   account.role = Role.User;
   account.verificationToken = randomTokenString();
+  account.otp = randomOTPGenerate();
+  account.otpDate = new Date();
 
   // hash password
   account.passwordHash = hash(params.password);
@@ -29,7 +32,8 @@ const register = async (params, origin) => {
   await account.save();
 
   // send email
-  await sendVerificationEmail(account, origin);
+  // await sendVerificationEmail(account, origin);
+  await sendVerificationOTPEmail(account, origin);
 
   return {
     account,
@@ -56,7 +60,7 @@ const authenticate = async ({ email, password, ipAddress }) => {
   // save refresh token
   await refreshToken.save();
 
-  account.otp = Math.floor(100000 + Math.random() * 900000);
+  account.otp = randomOTPGenerate();
   account.otpDate = new Date();
 
   // return basic details and tokens
@@ -112,6 +116,20 @@ const verifyEmail = async ({ token }) => {
   await account.save();
 };
 
+const verifyMobileNo = async ({ otp }) => {
+  const account = await db.Account.findOne({ otp: otp });
+  if (!account) throw "Verification failed";
+  const referalData = await generateReferralCode(account._id);
+
+  account.referralId = referalData._id;
+  account.referrelCode = referalData.referralCode;
+  account.verified = Date.now();
+  account.otp = undefined;
+  account.verificationToken = undefined;
+  account.verificationStatus = true;
+  await account.save();
+};
+
 const forgotPassword = async ({ email }, origin) => {
   const account = await db.Account.findOne({ email });
 
@@ -122,11 +140,14 @@ const forgotPassword = async ({ email }, origin) => {
   account.resetToken = {
     token: randomTokenString(),
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    otp: await randomOTPGenerate(),
   };
   await account.save();
 
   // send email
-  await sendPasswordResetEmail(account, origin);
+  // await sendPasswordResetEmail(account, origin);
+  console.log("account", account);
+  sendPasswordResetPhone(account, origin);
 };
 
 const validateResetToken = async ({ token }) => {
@@ -238,6 +259,13 @@ const _delete = async (id) => {
   await account.remove();
 };
 
+const getuserFromReferralCode = async (code) => {
+  const account = await db.Account.findOne({ referrelCode: code });
+
+  console.log("account", account);
+  return basicDetails(account);
+};
+
 // helper functions
 
 const getAccount = async (id) => {
@@ -278,6 +306,10 @@ const generateRefreshToken = (account, ipAddress) => {
 
 const randomTokenString = () => {
   return crypto.randomBytes(40).toString("hex");
+};
+
+const randomOTPGenerate = () => {
+  return Math.floor(100000 + Math.random() * 900000);
 };
 
 const basicDetails = (account) => {
@@ -333,6 +365,26 @@ const sendVerificationEmail = async (account, origin) => {
   });
 };
 
+const sendVerificationOTPEmail = async (account, origin) => {
+  let message;
+  if (origin) {
+    const verifyUrl = `${origin}/auth/verify-phone-no?token=${account.otp}`;
+    message = `<p>Please click the below link to verify your email address:</p>
+                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
+  } else {
+    message = `<p>Please use the below token to verify your email address with the <code>/auth/verify-email</code> api route:</p>
+     <p><code>${account.otp}</code></p>`;
+  }
+
+  await sendEmail({
+    to: account.email,
+    subject: "Sign-up Verification API - Verify Email",
+    html: `<h4>Verify Email</h4>
+               <p>Thanks for registering!</p>
+               ${message}`,
+  });
+};
+
 const sendAlreadyRegisteredEmail = async (email, origin) => {
   let message;
   if (origin) {
@@ -369,6 +421,26 @@ const sendPasswordResetEmail = async (account, origin) => {
   });
 };
 
+const sendPasswordResetPhone = async (account, origin) => {
+  let message;
+  console.log("account in send", account);
+  if (origin) {
+    const resetUrl = `${origin}/auth/reset-password?token=${account.resetToken.otp}`;
+    message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+                   <p><a href="${resetUrl}">${resetUrl}</a></p>`;
+  } else {
+    message = `<p>Please use the below token to reset your password with the <code>/auth/reset-password</code> api route:</p>
+                   <p><code>${account.resetToken.otp}</code></p>`;
+  }
+
+  await sendEmail({
+    to: account.email,
+    subject: "Sign-up Verification API - Reset Password",
+    html: `<h4>Reset Password Email</h4>
+               ${message}`,
+  });
+};
+
 module.exports = {
   register,
   authenticate,
@@ -376,9 +448,11 @@ module.exports = {
   revokeToken,
 
   verifyEmail,
+  verifyMobileNo,
   forgotPassword,
   validateResetToken,
   resetPassword,
+  getuserFromReferralCode,
 
   getAll,
   getById,

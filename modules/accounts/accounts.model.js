@@ -28,7 +28,7 @@ const schema = new Schema({
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,
-  referrelCode: { type: String, required: false },
+  referralCode: { type: String, required: false },
   referralId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "referral",

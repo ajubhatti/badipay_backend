@@ -5,6 +5,7 @@ const validateRequest = require("../../_middleware/validate-request");
 const authorize = require("../../_middleware/authorize");
 const Role = require("../../_helpers/role");
 const accountService = require("./accounts.service");
+const { getuserFromReferralCode } = require("./accounts.service");
 
 const registerSchema = (req, res, next) => {
   const schema = Joi.object({
@@ -24,9 +25,10 @@ const register = (req, res, next) => {
     .then((account) =>
       res.json({
         status: 200,
-        data: account.account,
-        message:
-          "Registration successful, please check your email for verification instructions",
+        data: account?.account ? account?.account : [],
+        message: account.message
+          ? account.message
+          : "Registration successful, please check your email for verification instructions",
       })
     )
     .catch(next);
@@ -111,6 +113,26 @@ const verifyEmail = (req, res, next) => {
     .catch(next);
 };
 
+const verifyPhoneSchema = (req, res, next) => {
+  const schema = Joi.object({
+    otp: Joi.string().required(),
+  });
+  validateRequest(req, next, schema);
+};
+
+const verifyPhoneNo = (req, res, next) => {
+  accountService
+    .verifyMobileNo(req.body)
+    .then(() =>
+      res.json({
+        status: 200,
+        data: [],
+        message: "Verification successful, you can now login",
+      })
+    )
+    .catch(next);
+};
+
 const forgotPasswordSchema = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),
@@ -166,9 +188,6 @@ const resetPassword = (req, res, next) => {
     )
     .catch(next);
 };
-
-
-
 
 const getAll = (req, res, next) => {
   accountService
@@ -274,6 +293,12 @@ const _delete = (req, res, next) => {
     .catch(next);
 };
 
+const getuserByReferralCode = (req, res, next) => {
+  accountService.getuserFromReferralCode(req.body.code).then((account) => {
+    res.json({ status: 200, data: account, message: "success" });
+  });
+};
+
 // helper functions
 
 const setTokenCookie = (res, token) => {
@@ -291,6 +316,9 @@ router.post("/login", authenticate);
 router.post("/refresh-token", refreshToken);
 router.post("/revoke-token", authorize(), revokeTokenSchema, revokeToken);
 router.post("/verify-email", verifyEmailSchema, verifyEmail);
+
+router.post("/verify-phone-no", verifyPhoneSchema, verifyPhoneNo);
+
 router.post("/forgot-password", forgotPasswordSchema, forgotPassword);
 router.post("/reset-password", resetPasswordSchema, resetPassword);
 router.post("/getAll", getAll);
@@ -304,5 +332,7 @@ router.post(
   validateResetTokenSchema,
   validateResetToken
 );
+
+router.post("/getByReferralCode", getuserByReferralCode);
 
 module.exports = router;
