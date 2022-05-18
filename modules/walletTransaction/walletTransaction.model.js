@@ -6,15 +6,9 @@ const walletTransactionSchema = new Schema({
   requestAmount: { type: Number, required: true, default: 0 },
   slipNo: { type: String },
   remark: { type: String },
+  creditAccount: { type: Schema.Types.ObjectId, ref: "BankList" },
 
   paymentType: { type: String, default: "1" },
-  bank: { type: Schema.Types.ObjectId, ref: "BankList" },
-
-  referenceNo: { type: String },
-  depositBank: { type: Schema.Types.ObjectId, ref: "BankList" },
-  depositBranch: { type: String },
-
-  amount: { type: Number, default: 0 },
 
   debitAmount: { type: Number, default: 0 },
   creditAmount: { type: Number, default: 0 },

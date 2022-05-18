@@ -7,7 +7,7 @@ const validateRequest = require("../../_middleware/validate-request");
 
 router.get("/", getAll);
 router.get("/:id", authorize(), getById);
-router.post("/", createSchema, create);
+router.post("/", create);
 router.put("/:id", authorize(), updateSchema, update);
 router.delete("/:id", authorize(), _delete);
 
