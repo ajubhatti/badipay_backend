@@ -5,15 +5,7 @@ const authorize = require("../../_middleware/authorize");
 const bankAccountService = require("./bankAccounts.service");
 const validateRequest = require("../../_middleware/validate-request");
 
-router.get("/", getAll);
-router.get("/:id", authorize(), getById);
-router.post("/", create);
-router.put("/:id", authorize(), updateSchema, update);
-router.delete("/:id", authorize(), _delete);
-
-module.exports = router;
-
-function createSchema(req, res, next) {
+const createSchema = (req, res, next) => {
   const schema = Joi.object({
     accountNo: Joi.string().required(),
     accountName: Joi.string().required(),
@@ -23,27 +15,27 @@ function createSchema(req, res, next) {
     bankBranch: Joi.string(),
   });
   validateRequest(req, next, schema);
-}
+};
 
-function create(req, res, next) {
+const create = (req, res, next) => {
   bankAccountService
     .create(req.body)
     .then((bankAccount) =>
       res.json({ status: 200, data: bankAccount, message: "success" })
     )
     .catch(next);
-}
+};
 
-function getById(req, res, next) {
+const getById = (req, res, next) => {
   bankAccountService
     .getById(req.params.id)
     .then((bankAccount) =>
       res.json({ status: 200, data: bankAccount, message: "success" })
     )
     .catch(next);
-}
+};
 
-function updateSchema(req, res, next) {
+const updateSchema = (req, res, next) => {
   const schemaRules = {
     accountNo: Joi.string().unique().required(),
     accountName: Joi.string().required(),
@@ -54,18 +46,18 @@ function updateSchema(req, res, next) {
     isActive: Joi.boolean(),
   };
   validateRequest(req, next, schemaRules);
-}
+};
 
-function update(req, res, next) {
+const update = (req, res, next) => {
   bankAccountService
     .update(req.params.id, req.body)
     .then((bankAccount) =>
       res.json({ status: 200, data: bankAccount, message: "sucess" })
     )
     .catch(next);
-}
+};
 
-function _delete(req, res, next) {
+const _delete = (req, res, next) => {
   bankAccountService
     .delete(req.params.id)
     .then(() =>
@@ -76,13 +68,21 @@ function _delete(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function getAll(req, res, next) {
+const getAll = (req, res, next) => {
   bankAccountService
     .getAll()
     .then((bankAccount) =>
       res.json({ status: 200, data: bankAccount, message: "success" })
     )
     .catch(next);
-}
+};
+
+router.get("/", getAll);
+router.get("/:id", authorize(), getById);
+router.post("/", create);
+router.put("/:id", authorize(), updateSchema, update);
+router.delete("/:id", authorize(), _delete);
+
+module.exports = router;

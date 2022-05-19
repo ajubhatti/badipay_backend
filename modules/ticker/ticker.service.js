@@ -1,20 +1,12 @@
 const db = require("../../_helpers/db");
 
-module.exports = {
-  create,
-  update,
-  getById,
-  getAll,
-  delete: _delete,
-};
-
-async function create(params) {
+const create = async (params) => {
   const ticker = new db.Ticker(params);
   await ticker.save();
   return ticker;
-}
+};
 
-async function update(id, params) {
+const update = async (id, params) => {
   const ticker = await getTicker(id);
 
   if (
@@ -30,26 +22,34 @@ async function update(id, params) {
   await ticker.save();
 
   return ticker;
-}
+};
 
-async function getById(id) {
+const getById = async (id) => {
   const ticker = await getTicker(id);
   return ticker;
-}
+};
 
-async function getAll() {
+const getAll = async () => {
   const ticker = await db.Ticker.find();
   return ticker;
-}
+};
 
-async function _delete(id) {
+const _delete = async (id) => {
   const ticker = await getTicker(id);
   await ticker.remove();
-}
+};
 
-async function getTicker(id) {
+const getTicker = async (id) => {
   if (!db.isValidId(id)) throw "ticker not found";
   const ticker = await db.Ticker.findById(id);
   if (!ticker) throw "ticker not found";
   return ticker;
-}
+};
+
+module.exports = {
+  create,
+  update,
+  getById,
+  getAll,
+  delete: _delete,
+};

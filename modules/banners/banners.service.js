@@ -3,28 +3,17 @@ var upload = require("./upload");
 const fs = require("fs");
 var path = require("path");
 
-module.exports = {
-  create,
-  update,
-  getById,
-  getAll,
-  delete: _delete,
-  getImage,
-  addImage,
-  addImage2,
-};
-
-async function getImage(params) {
-  await db.Banners.find({}, { sort: { _id: -1 } }, function (err, photos) {
+const getImage = async (params) => {
+  await db.Banners.find({}, { sort: { _id: -1 } }, (err, photos) => {
     res.render("index", {
       title: "NodeJS file upload tutorial",
       msg: req.query.msg,
       photolist: photos,
     });
   });
-}
+};
 
-async function addImage2(req, res) {
+const addImage2 = async (req, res) => {
   var img = fs.readFileSync(req.file.path);
   var encode_img = img.toString("base64");
   var obj = {
@@ -40,9 +29,9 @@ async function addImage2(req, res) {
   const banner = new db.Banners(obj);
   await banner.save();
   return banner;
-}
+};
 
-async function addImage(req, res) {
+const addImage = async (req, res) => {
   const filePath = path.join(__dirname, "/uploads");
   const dirName = process.cwd();
   var obj = {
@@ -60,15 +49,15 @@ async function addImage(req, res) {
   const banner = new db.Banners(obj);
   await banner.save();
   return banner;
-}
+};
 
-async function create(params) {
+const create = async (params) => {
   const banner = new db.Banners(params);
   await banner.save();
   return banner;
-}
+};
 
-async function update(id, params) {
+const update = async (id, params) => {
   const banner = await getBanner(id);
 
   if (
@@ -84,26 +73,37 @@ async function update(id, params) {
   await banner.save();
 
   return banner;
-}
+};
 
-async function getById(id) {
+const getById = async (id) => {
   const banner = await getBanner(id);
   return banner;
-}
+};
 
-async function getAll() {
+const getAll = async () => {
   const banner = await db.Banners.find();
   return banner;
-}
+};
 
-async function _delete(id) {
+const _delete = async (id) => {
   const banner = await getBanner(id);
   await banner.remove();
-}
+};
 
-async function getBanner(id) {
+const getBanner = async (id) => {
   if (!db.isValidId(id)) throw "Banner not found";
   const banner = await db.Banners.findById(id);
   if (!banner) throw "Banner not found";
   return banner;
-}
+};
+
+module.exports = {
+  create,
+  update,
+  getById,
+  getAll,
+  delete: _delete,
+  getImage,
+  addImage,
+  addImage2,
+};

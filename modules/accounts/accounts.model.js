@@ -46,14 +46,14 @@ const schema = new Schema({
   // ],
 });
 
-schema.virtual("isVerified").get(function () {
+schema.virtual("isVerified").get(() => {
   return !!(this.verified || this.passwordReset);
 });
 
 schema.set("toJSON", {
   virtuals: true,
   versionKey: false,
-  transform: function (doc, ret) {
+  transform: (doc, ret) => {
     // remove these props when object is serialized
     delete ret._id;
     delete ret.passwordHash;

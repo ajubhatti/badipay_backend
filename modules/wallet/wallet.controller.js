@@ -5,16 +5,7 @@ const authorize = require("../../_middleware/authorize");
 const validateRequest = require("../../_middleware/validate-request");
 const walletServices = require("./wallet.service");
 
-router.post("/getAll", getAll);
-router.post("/", create);
-router.get("/:id", getById);
-router.put("/:id", updateSchema, updateById);
-router.delete("/:id", deleteById);
-router.post("/updateBalance", updateExistingBalance);
-
-module.exports = router;
-
-function getAll(req, res, next) {
+const getAll = (req, res, next) => {
   walletServices
     .getAll(req.body)
     .then((wallets) =>
@@ -27,9 +18,9 @@ function getAll(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function createSchema(req, res, next) {
+const createSchema = (req, res, next) => {
   const schema = Joi.object({
     userId: Joi.string().required(),
     requestAmount: Joi.number().required(),
@@ -53,9 +44,9 @@ function createSchema(req, res, next) {
     password: Joi.string(),
   });
   validateRequest(req, next, schema);
-}
+};
 
-function create(req, res, next) {
+const create = (req, res, next) => {
   walletServices
     .create(req.body)
     .then((wallet) =>
@@ -68,18 +59,18 @@ function create(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function getById(req, res, next) {
+const getById = (req, res, next) => {
   walletServices
     .getById(req.params.id)
     .then((wallet) =>
       res.json({ status: 200, data: wallet, message: "success" })
     )
     .catch(next);
-}
+};
 
-function updateSchema(req, res, next) {
+const updateSchema = (req, res, next) => {
   const schema = Joi.object({
     userId: Joi.string().required(),
     requestAmount: Joi.number().required(),
@@ -101,9 +92,9 @@ function updateSchema(req, res, next) {
     password: Joi.string(),
   });
   validateRequest(req, next, schema);
-}
+};
 
-function updateById(req, res, next) {
+const updateById = (req, res, next) => {
   walletServices
     .update(req.params.id, req.body)
     .then((wallet) =>
@@ -116,9 +107,9 @@ function updateById(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function deleteById(req, res, next) {
+const deleteById = (req, res, next) => {
   walletServices
     .delete(req.params.id)
     .then((wallet) =>
@@ -129,9 +120,9 @@ function deleteById(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function updateExistingBalance(req, res, next) {
+const updateExistingBalance = (req, res, next) => {
   walletServices.updateExistingBalance(req.body).then((wallet) => {
     res.status(200).json({
       status: 200,
@@ -139,4 +130,13 @@ function updateExistingBalance(req, res, next) {
       data: wallet,
     });
   });
-}
+};
+
+router.post("/getAll", getAll);
+router.post("/", create);
+router.get("/:id", getById);
+router.put("/:id", updateSchema, updateById);
+router.delete("/:id", deleteById);
+router.post("/updateBalance", updateExistingBalance);
+
+module.exports = router;

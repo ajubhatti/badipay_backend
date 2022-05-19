@@ -13,33 +13,33 @@ router.delete("/:id", authorize(), _delete);
 
 module.exports = router;
 
-function createSchema(req, res, next) {
+const createSchema = (req, res, next) => {
   const schema = Joi.object({
     serviceName: Joi.string().required(),
     serviceDetail: Joi.string(),
   });
   validateRequest(req, next, schema);
-}
+};
 
-function create(req, res, next) {
+const create = (req, res, next) => {
   servicesService
     .create(req.body)
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
     .catch(next);
-}
+};
 
-function getById(req, res, next) {
+const getById = (req, res, next) => {
   servicesService
     .getById(req.params.id)
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
     .catch(next);
-}
+};
 
-function updateSchema(req, res, next) {
+const updateSchema = (req, res, next) => {
   const schemaRules = {
     serviceName: Joi.string().empty(""),
     serviceDetail: Joi.string().empty(""),
@@ -47,18 +47,18 @@ function updateSchema(req, res, next) {
   };
 
   validateRequest(req, next, schemaRules);
-}
+};
 
-function update(req, res, next) {
+const update = (req, res, next) => {
   servicesService
     .update(req.params.id, req.body)
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
     .catch(next);
-}
+};
 
-function _delete(req, res, next) {
+const _delete = (req, res, next) => {
   servicesService
     .delete(req.params.id)
     .then(() =>
@@ -69,13 +69,13 @@ function _delete(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function getAll(req, res, next) {
+const getAll = (req, res, next) => {
   servicesService
     .getAll()
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
     .catch(next);
-}
+};

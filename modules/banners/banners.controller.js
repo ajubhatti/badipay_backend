@@ -11,10 +11,10 @@ const bannersService = require("./banners.service");
 const helpers = require("../../_middleware/imageFilter");
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, "uploads");
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     //   const uniqueSuffix =
     //     Date.now() + "-" + Math.round(Math.random() * 1e9 + file.originalname);
 
@@ -42,17 +42,7 @@ const upload = multer({ storage: storage });
 //   return `${config.DOMAIN}/images/${folder}/${id}`;
 // };
 
-router.get("/", getAll);
-router.get("/:id", getById);
-router.post("/", create);
-router.put("/:id", update);
-router.delete("/:id", _delete);
-router.post("/uploadBanner", upload.single("images"), uploadBanner);
-router.post("/upload-profile-pic", profileUpload);
-
-module.exports = router;
-
-async function uploadBanner(req, res, next) {
+const uploadBanner = (req, res, next) => {
   // var img = fs.readFileSync(req.file.path);
   // var encode_img = img.toString("base64");
   // var encodimg = Buffer.from(encode_img).toString("utf-8");
@@ -73,8 +63,8 @@ async function uploadBanner(req, res, next) {
   // let image = "/uploads/" + req.file.filename;
 
   // var file = __dirname + "/" + req.file.originalname;
-  // fs.readFile(req.file.path, function (err, data) {
-  //   fs.writeFile(file, data, function (err) {
+  // fs.readFile(req.file.path,  (err, data)=> {
+  //   fs.writeFile(file, data,  (err)=> {
   //     if (err) {
   //       console.error(err);
   //       response = {
@@ -111,45 +101,45 @@ async function uploadBanner(req, res, next) {
     .catch(next);
 
   // res.status(200).send({ filePath: req.file.path, message: "uploaded" });
-}
+};
 
-function create(req, res, next) {
+const create = (req, res, next) => {
   bannersService
     .create(req.body)
     .then((banner) =>
       res.json({ status: 200, data: banner, message: "success" })
     )
     .catch(next);
-}
+};
 
-function getById(req, res, next) {
+const getById = (req, res, next) => {
   bannersService
     .getById(req.params.id)
     .then((banner) =>
       res.json({ status: 200, data: banner, message: "success" })
     )
     .catch(next);
-}
+};
 
-function updateSchema(req, res, next) {
+const updateSchema = (req, res, next) => {
   const schemaRules = {
     bankName: Joi.string().required().empty(""),
     bankDetail: Joi.string().empty(""),
     bankBranch: Joi.string().empty(""),
   };
   validateRequest(req, next, schemaRules);
-}
+};
 
-function update(req, res, next) {
+const update = (req, res, next) => {
   bannersService
     .update(req.params.id, req.body)
     .then((banner) =>
       res.json({ status: 200, data: banner, message: "success" })
     )
     .catch(next);
-}
+};
 
-function _delete(req, res, next) {
+const _delete = (req, res, next) => {
   bannersService
     .delete(req.params.id)
     .then(() =>
@@ -160,25 +150,25 @@ function _delete(req, res, next) {
       })
     )
     .catch(next);
-}
+};
 
-function getAll(req, res, next) {
+const getAll = (req, res, next) => {
   bannersService
     .getAll()
     .then((banner) =>
       res.json({ status: 200, data: banner, message: "success" })
     )
     .catch(next);
-}
+};
 
-function profileUpload(req, res, next) {
+const profileUpload = (req, res, next) => {
   // 'profile_pic' is the name of our file input field in the HTML form
   let upload = multer({
     storage: storage,
     fileFilter: helpers.imageFilter,
   }).single("profile_pic");
 
-  upload(req, res, function (err) {
+  upload(req, res, (err) => {
     // req.file contains information of uploaded file
     // req.body contains information of text fields, if there were any
 
@@ -215,7 +205,7 @@ function profileUpload(req, res, next) {
       message: `You have uploaded this image: <hr/><img src="${req.file.path}" width="500"><hr /><a href="./">Upload another image</a>`,
     });
   });
-}
+};
 
 router.get("/:folder/:id", async (req, res) => {
   let filepath = path.join(
@@ -261,3 +251,13 @@ router.delete("/:folder/:id", async (req, res) => {
     });
   }
 });
+
+router.get("/", getAll);
+router.get("/:id", getById);
+router.post("/", create);
+router.put("/:id", update);
+router.delete("/:id", _delete);
+router.post("/uploadBanner", upload.single("images"), uploadBanner);
+router.post("/upload-profile-pic", profileUpload);
+
+module.exports = router;
