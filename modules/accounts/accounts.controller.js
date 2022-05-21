@@ -123,10 +123,10 @@ const verifyPhoneSchema = (req, res, next) => {
 const verifyPhoneNo = (req, res, next) => {
   accountService
     .verifyMobileNo(req.body)
-    .then(() =>
+    .then((data) =>
       res.json({
         status: 200,
-        data: [],
+        data: data,
         message: "Verification successful, you can now login",
       })
     )
@@ -319,8 +319,8 @@ router.post("/verify-email", verifyEmailSchema, verifyEmail);
 
 router.post("/verify-phone-no", verifyPhoneSchema, verifyPhoneNo);
 
-router.post("/forgot-password", forgotPasswordSchema, forgotPassword);
-router.post("/reset-password", resetPasswordSchema, resetPassword);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 router.post("/getAll", getAll);
 router.get("/:id", getById);
 router.post("/getUserById", getUserById);

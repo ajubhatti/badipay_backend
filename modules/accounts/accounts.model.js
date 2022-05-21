@@ -9,6 +9,7 @@ const schema = new Schema({
   acceptTerms: { type: Boolean },
   verificationToken: String,
   verified: Date,
+  isVerified: { type: Boolean, default: false },
   resetToken: {
     token: String,
     expires: Date,
@@ -46,9 +47,9 @@ const schema = new Schema({
   // ],
 });
 
-schema.virtual("isVerified").get(() => {
-  return !!(this.verified || this.passwordReset);
-});
+// schema.virtual("isVerified").get(() => {
+//   return !!(this.verified || this.passwordReset);
+// });
 
 schema.set("toJSON", {
   virtuals: true,

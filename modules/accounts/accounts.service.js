@@ -6,6 +6,7 @@ const sendEmail = require("../../_helpers/send-email");
 const db = require("../../_helpers/db");
 const Role = require("../../_helpers/role");
 const { generateReferralCode } = require("../referral/referral.services");
+const sendSms = require("../../_helpers/send-sms");
 
 const register = async (params, origin) => {
   // validate
@@ -33,10 +34,13 @@ const register = async (params, origin) => {
 
   // send email
   // await sendVerificationEmail(account, origin);
-  await sendVerificationOTPEmail(account, origin);
+  sendSms(randomOTPGenerate());
+  sendVerificationOTPEmail(account, origin);
 
   return {
     account,
+    message:
+      "Registration successful, We have sent you and OTP on your registered phone number.",
   };
 };
 
@@ -46,9 +50,17 @@ const authenticate = async ({ email, password, ipAddress }) => {
   if (!account) {
     throw "Account not available";
   }
-  // if (!account.isVerified) {
-  //   throw "Your account not verified please verify your account.verify link sended to your account.";
-  // }
+  console.log("account ----", account);
+  if (!account.isVerified) {
+    let userOtp = randomOTPGenerate();
+
+    account.otp = userOtp;
+    account.otpDate = new Date();
+    updateUserData(account);
+
+    sendSms(userOtp);
+    throw "Your account not verified please verify your account.verify link sended to your account.";
+  }
   if (!bcrypt.compareSync(password, account.passwordHash)) {
     throw "Your email or password not matched";
   }
@@ -60,8 +72,10 @@ const authenticate = async ({ email, password, ipAddress }) => {
   // save refresh token
   await refreshToken.save();
 
-  account.otp = randomOTPGenerate();
-  account.otpDate = new Date();
+  // account.otp = randomOTPGenerate();
+  // account.otpDate = new Date();
+
+  // sendSms(randomOTPGenerate());
 
   // return basic details and tokens
   return {
@@ -118,6 +132,7 @@ const verifyEmail = async ({ token }) => {
 
 const verifyMobileNo = async ({ otp }) => {
   const account = await db.Account.findOne({ otp: otp });
+  console.log("account", account);
   if (!account) throw "Verification failed";
   const referalData = await generateReferralCode(account._id);
 
@@ -127,25 +142,29 @@ const verifyMobileNo = async ({ otp }) => {
   account.otp = undefined;
   account.verificationToken = undefined;
   account.verificationStatus = true;
+  account.isVerified = true;
   await account.save();
+  return account;
 };
 
-const forgotPassword = async ({ email }, origin) => {
-  const account = await db.Account.findOne({ email });
+const forgotPassword = async ({ phoneNumber }, origin) => {
+  // const account = await db.Account.findOne({ email });
+  const account = await db.Account.findOne({ phoneNumber });
 
   // always return ok response to prevent email enumeration
   if (!account) return;
 
   // create reset token that expires after 24 hours
+  let userOtp = await randomOTPGenerate();
   account.resetToken = {
-    token: randomTokenString(),
+    token: userOtp,
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    otp: await randomOTPGenerate(),
   };
   await account.save();
 
   // send email
   // await sendPasswordResetEmail(account, origin);
+  sendSms(userOtp);
   console.log("account", account);
   sendPasswordResetPhone(account, origin);
 };
@@ -165,12 +184,14 @@ const resetPassword = async ({ token, password }) => {
     "resetToken.expires": { $gt: Date.now() },
   });
 
+  console.log("user account ---", account);
   if (!account) throw "Invalid token";
 
   // update password and remove reset token
   account.passwordHash = hash(password);
   account.passwordReset = Date.now();
   account.resetToken = undefined;
+  account.otp = undefined;
   await account.save();
 };
 
@@ -248,6 +269,15 @@ const update = async (id, params) => {
 
   // copy params to account and save
   Object.assign(account, params);
+  account.updated = Date.now();
+  await account.save();
+
+  return basicDetails(account);
+};
+
+const updateUserData = async (account) => {
+  // copy params to account and save
+  // Object.assign(account, params);
   account.updated = Date.now();
   await account.save();
 
