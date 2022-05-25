@@ -6,17 +6,18 @@ var logger = require("morgan");
 const cors = require("cors");
 const errorHandler = require("./_middleware/error-handler");
 
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
-var accountRouter = require("./modules/accounts/accounts.controller");
-var servicesRouter = require("./modules/services/services.controller");
-var walletRouter = require("./modules/wallet/wallet.controller");
-var walletTransaction = require("./modules/walletTransaction/walletTransaction.controller");
-var bankRouter = require("./modules/banks/banks.controller");
-var bankAccountRouter = require("./modules/bankAccounts/bankAccounts.controller");
-var bannerRouter = require("./modules/banners/banners.controller");
-var tickerRouter = require("./modules/ticker/ticker.controller");
-var referralRouter = require("./modules/referral/referral.controller");
+const indexRouter = require("./routes/index");
+const usersRouter = require("./routes/users");
+const accountRouter = require("./modules/accounts/accounts.controller");
+const servicesRouter = require("./modules/services/services.controller");
+const walletRouter = require("./modules/wallet/wallet.controller");
+const walletTransaction = require("./modules/walletTransaction/walletTransaction.controller");
+const bankRouter = require("./modules/banks/banks.controller");
+const bankAccountRouter = require("./modules/bankAccounts/bankAccounts.controller");
+const bannerRouter = require("./modules/banners/banners.controller");
+const tickerRouter = require("./modules/ticker/ticker.controller");
+const referralRouter = require("./modules/referral/referral.controller");
+const contactUsRouter = require("./modules/contactUs/contactUs.controller");
 
 var app = express();
 
@@ -63,6 +64,7 @@ app.use("/bankAccount", bankAccountRouter);
 app.use("/banner", bannerRouter);
 app.use("/ticker", tickerRouter);
 app.use("/referral", referralRouter);
+app.use("/contactUs", contactUsRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));

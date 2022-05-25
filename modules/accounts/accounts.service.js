@@ -7,6 +7,7 @@ const db = require("../../_helpers/db");
 const Role = require("../../_helpers/role");
 const { generateReferralCode } = require("../referral/referral.services");
 const sendSms = require("../../_helpers/send-sms");
+const otpGenerator = require("otp-generator");
 
 const register = async (params, origin) => {
   // validate
@@ -34,8 +35,10 @@ const register = async (params, origin) => {
 
   // send email
   // await sendVerificationEmail(account, origin);
-  sendSms(randomOTPGenerate());
-  sendVerificationOTPEmail(account, origin);
+  sendSms(account.otp);
+  if (account.email) {
+    sendVerificationOTPEmail(account, origin);
+  }
 
   return {
     account,
@@ -50,15 +53,20 @@ const authenticate = async ({ email, password, ipAddress }) => {
   if (!account) {
     throw "Account not available";
   }
-  console.log("account ----", account);
+
   if (!account.isVerified) {
-    let userOtp = randomOTPGenerate();
+    const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
+    console.log(account.otpDate, aMinuteAgo, account.otpDate <= aMinuteAgo);
+    if (account.otpDate <= aMinuteAgo) {
+      let userOtp = randomOTPGenerate();
+      console.log("account ----", userOtp);
 
-    account.otp = userOtp;
-    account.otpDate = new Date();
-    updateUserData(account);
+      account.otp = userOtp;
+      account.otpDate = new Date();
+      updateUserData(account);
 
-    sendSms(userOtp);
+      sendSms(userOtp);
+    }
     throw "Your account not verified please verify your account.verify link sended to your account.";
   }
   if (!bcrypt.compareSync(password, account.passwordHash)) {
@@ -71,11 +79,6 @@ const authenticate = async ({ email, password, ipAddress }) => {
 
   // save refresh token
   await refreshToken.save();
-
-  // account.otp = randomOTPGenerate();
-  // account.otpDate = new Date();
-
-  // sendSms(randomOTPGenerate());
 
   // return basic details and tokens
   return {
@@ -130,10 +133,12 @@ const verifyEmail = async ({ token }) => {
   await account.save();
 };
 
-const verifyMobileNo = async ({ otp }) => {
-  const account = await db.Account.findOne({ otp: otp });
+const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
+  console.log("mobileNo", mobileNo);
+  const account = await db.Account.findOne({ phoneNumber: mobileNo });
   console.log("account", account);
-  if (!account) throw "Verification failed";
+
+  if (!account || account.otp !== otp) throw "Verification failed";
   const referalData = await generateReferralCode(account._id);
 
   account.referralId = referalData._id;
@@ -144,7 +149,21 @@ const verifyMobileNo = async ({ otp }) => {
   account.verificationStatus = true;
   account.isVerified = true;
   await account.save();
-  return account;
+  // return account;
+
+  // authentication successful so generate jwt and refresh tokens
+  const token = generateJwtToken(account);
+  const refreshToken = generateRefreshToken(account, ipAddress);
+
+  // save refresh token
+  await refreshToken.save();
+
+  // return basic details and tokens
+  return {
+    ...basicDetails(account),
+    token,
+    refreshToken: refreshToken.token,
+  };
 };
 
 const forgotPassword = async ({ phoneNumber }, origin) => {
@@ -340,6 +359,12 @@ const randomTokenString = () => {
 
 const randomOTPGenerate = () => {
   return Math.floor(100000 + Math.random() * 900000);
+  // let newOtp = otpGenerator.generate(6, {
+  //   upperCaseAlphabets: false,
+  //   specialChars: false,
+  // });
+  // console.log("first", newOtp);
+  // return newOtp;
 };
 
 const basicDetails = (account) => {
@@ -471,6 +496,10 @@ const sendPasswordResetPhone = async (account, origin) => {
   });
 };
 
+const getPincode = async (data) => {
+  console.log("data`", data);
+};
+
 module.exports = {
   register,
   authenticate,
@@ -489,4 +518,5 @@ module.exports = {
   create,
   update,
   delete: _delete,
+  getPincode,
 };

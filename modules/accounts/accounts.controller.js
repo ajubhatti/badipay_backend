@@ -121,8 +121,10 @@ const verifyPhoneSchema = (req, res, next) => {
 };
 
 const verifyPhoneNo = (req, res, next) => {
+  const { mobileNo, otp } = req.body;
+  const ipAddress = req.ip;
   accountService
-    .verifyMobileNo(req.body)
+    .verifyMobileNo({ mobileNo, otp, ipAddress })
     .then((data) =>
       res.json({
         status: 200,
@@ -317,7 +319,7 @@ router.post("/refresh-token", refreshToken);
 router.post("/revoke-token", authorize(), revokeTokenSchema, revokeToken);
 router.post("/verify-email", verifyEmailSchema, verifyEmail);
 
-router.post("/verify-phone-no", verifyPhoneSchema, verifyPhoneNo);
+router.post("/verify-phone-no", verifyPhoneNo);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
