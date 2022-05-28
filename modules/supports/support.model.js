@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const supportSchema = new Schema({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, required: false },
   isActive: { type: Boolean, default: true },
   created: { type: Date, default: Date.now },
   updated: Date,
