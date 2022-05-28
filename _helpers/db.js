@@ -24,6 +24,7 @@ module.exports = {
   Ticker: require("../modules/ticker/ticker.model"),
   Referral: require("../modules/referral/referral.model"),
   ContactUs: require("../modules/contactUs/contactUs.model"),
+  Support: require("../modules/supports/support.model"),
 
   isValidId,
 };
