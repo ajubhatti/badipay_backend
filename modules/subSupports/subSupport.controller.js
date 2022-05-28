@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const supportServices = require("./support.services");
+const supportServices = require("./subSupport.services");
 
 const create = (req, res, next) => {
   supportServices
@@ -38,7 +38,7 @@ const _delete = (req, res, next) => {
 
 const getAll = (req, res, next) => {
   supportServices
-    .getAllDetail()
+    .getAll()
     .then((data) => res.json({ status: 200, data: data, message: "success" }))
     .catch(next);
 };

@@ -30,6 +30,35 @@ const getAll = async () => {
   return supportData;
 };
 
+const getAllDetail = async () => {
+  let rtrnData = await db.Support.aggregate([
+    {
+      $lookup: {
+        from: "subsupports",
+        localField: "_id",
+        foreignField: "supportId",
+        as: "subSupportdetail",
+      },
+    },
+    // { $unwind: "$supportdetail" },
+    // {
+    //   $project: {
+    //     _id: 1,
+    //     accountNo: 1,
+    //     accountName: 1,
+    //     accountDetail: 1,
+    //     ifscCode: 1,
+    //     bankId: 1,
+    //     // bankName: "$supportdetail.bankName",
+    //   },
+    // },
+  ]);
+
+  console.log("rtrnData", rtrnData);
+
+  return rtrnData;
+};
+
 const deleteById = async (id) => {
   const banksAccounts = await getSupportById(id);
   await banksAccounts.remove();
@@ -48,4 +77,5 @@ module.exports = {
   getById,
   getAll,
   deleteById,
+  getAllDetail,
 };

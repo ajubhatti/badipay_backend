@@ -25,6 +25,7 @@ module.exports = {
   Referral: require("../modules/referral/referral.model"),
   ContactUs: require("../modules/contactUs/contactUs.model"),
   Support: require("../modules/supports/support.model"),
+  SubSupport: require("../modules/subSupports/subSupport.model"),
 
   isValidId,
 };
