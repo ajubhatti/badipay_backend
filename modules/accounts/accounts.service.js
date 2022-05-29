@@ -35,7 +35,7 @@ const register = async (params, origin) => {
 
   // send email
   // await sendVerificationEmail(account, origin);
-  sendSms(account.otp);
+  sendSms(account.phoneNumber, account.otp);
   if (account.email) {
     sendVerificationOTPEmail(account, origin);
   }
@@ -65,7 +65,7 @@ const authenticate = async ({ email, password, ipAddress }) => {
       account.otpDate = new Date();
       updateUserData(account);
 
-      sendSms(userOtp);
+      sendSms(account.phoneNumber, userOtp);
     }
     throw "Your account not verified please verify your account.verify link sended to your account.";
   }
@@ -183,7 +183,7 @@ const forgotPassword = async ({ phoneNumber }, origin) => {
 
   // send email
   // await sendPasswordResetEmail(account, origin);
-  sendSms(userOtp);
+  sendSms(account.phoneNumber, userOtp);
   console.log("account", account);
   sendPasswordResetPhone(account, origin);
 };

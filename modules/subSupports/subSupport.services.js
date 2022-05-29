@@ -37,7 +37,7 @@ const deleteById = async (id) => {
 
 const getSupportById = async (id) => {
   if (!db.isValidId(id)) throw "support not found";
-  const subSupportData = await db.BankAccounts.findById(id);
+  const subSupportData = await db.SubSupport.findById(id);
   if (!subSupportData) throw "support not found";
   return subSupportData;
 };

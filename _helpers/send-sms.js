@@ -1,11 +1,11 @@
 const axios = require("axios");
 // const request = require('request-promise');
 
-const sendSms = async (otp) => {
+const sendSms = async (mobileNo, otp) => {
   const payload = {
     data: [
       {
-        destination: "9033501636",
+        destination: mobileNo,
         source: "BadiPe",
         type: "TEXT",
         entityId: "1201161207424046279",

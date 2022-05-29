@@ -26,6 +26,10 @@ module.exports = {
   ContactUs: require("../modules/contactUs/contactUs.model"),
   Support: require("../modules/supports/support.model"),
   SubSupport: require("../modules/subSupports/subSupport.model"),
+  Faqs: require("../modules/faqs/faqs.model"),
+  SubFaqs: require("../modules/faqSubFaqs/subFaqs.model"),
+
+  MyBanner: require("../modules/banner/banner.model"),
 
   isValidId,
 };
