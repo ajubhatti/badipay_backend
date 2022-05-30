@@ -38,12 +38,6 @@ const addImage = async (req, res) => {
     fileName: req.body.name,
     description: req.body.desc,
     path: path.join("/uploads/" + req.file.filename),
-    img: {
-      data: fs.readFileSync(
-        path.join(dirName + "/uploads/" + req.file.filename)
-      ),
-      contentType: "image/png",
-    },
   };
 
   const banner = new db.Banners(obj);

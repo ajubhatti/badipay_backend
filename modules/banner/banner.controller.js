@@ -9,92 +9,26 @@ const db = require("../../_helpers/db");
 const bannersService = require("./banner.service");
 // const upload = require("../../_middleware/upload");
 const helpers = require("../../_middleware/imageFilter");
+var path = require("path");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads");
+    cb(null, "public/uploads");
   },
   filename: (req, file, cb) => {
-    //   const uniqueSuffix =
-    //     Date.now() + "-" + Math.round(Math.random() * 1e9 + file.originalname);
-
-    //   cb(null, file.fieldname + "-" + uniqueSuffix);
-    cb(null, Date.now() + file.originalname);
+    // cb(null, Date.now() + file.originalname);
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
   },
 });
 const upload = multer({ storage: storage });
 
-// const upload = async (image, folder, id) => {
-//   let dir = `images`;
-
-//   if (!fs.existsSync(dir)) {
-//     fs.mkdirSync(dir);
-//   }
-
-//   dir = `images/${folder}`;
-
-//   if (!fs.existsSync(dir)) {
-//     fs.mkdirSync(dir);
-//   }
-
-//   await image.mv(`images/${folder}/${id}.png`);
-
-//   return `${config.DOMAIN}/images/${folder}/${id}`;
-// };
-
 const uploadBanner = (req, res, next) => {
-  // var img = fs.readFileSync(req.file.path);
-  // var encode_img = img.toString("base64");
-  // var encodimg = Buffer.from(encode_img).toString("utf-8");
-  // var final_img = {
-  //   contentType: req.file.mimetype,
-  //   image: encodimg,
-  // };
-
-  // if (
-  //   req.file &&
-  //   req.file.mimetype != "image/jpeg" &&
-  //   req.file.mimetype != "image/png"
-  // )
-  //   return res.json({
-  //     status: 1,
-  //     message: "Please Choose JPG or PNG images",
-  //   });
-  // let image = "/uploads/" + req.file.filename;
-
-  // var file = __dirname + "/" + req.file.originalname;
-  // fs.readFile(req.file.path,  (err, data)=> {
-  //   fs.writeFile(file, data,  (err)=> {
-  //     if (err) {
-  //       console.error(err);
-  //       response = {
-  //         message: "Sorry, file couldn't be uploaded.",
-  //         filename: req.file.originalname,
-  //       };
-  //     } else {
-  //       response = {
-  //         message: "File uploaded successfully",
-  //         filename: req.file.originalname,
-  //       };
-  //     }
-  //     res.end(JSON.stringify(response));
-  //   });
-  // });
-
-  // req.file.path;
-  // let body = {
-  //   fileName: req.body.fileName,
-  //   description: req.body.description,
-  //   img: req.file.path,
-  // };
-
-  // bannersService
-  //   .create(body)
-  //   .then((banner) => res.json(banner))
-  //   .catch(next);
-
+  console.log("req.file", req.file);
   bannersService
-    .addImage2(req, res)
+    .addImage(req, res)
     .then((banner) => {
       res.json({ status: 200, data: banner, message: "success" });
     })
@@ -259,5 +193,19 @@ router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/uploadBanner", upload.single("images"), uploadBanner);
 router.post("/upload-profile-pic", profileUpload);
+
+// Single file
+router.post("/upload/single", upload.single("file"), (req, res) => {
+  console.log(req.file);
+  return res.send("Single file");
+});
+
+//Multiple files
+router.post("/upload/multiple", upload.array("file", 10), (req, res) => {
+  console.log(req.files);
+  return res.send("Multiple files");
+});
+
+router.post("/uploadFile", upload.single("myFile"), uploadBanner);
 
 module.exports = router;

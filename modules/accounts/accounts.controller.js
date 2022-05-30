@@ -25,7 +25,7 @@ const register = (req, res, next) => {
     .then((account) =>
       res.json({
         status: 200,
-        data: account?.account ? account?.account : [],
+        data: [],
         message: account.message
           ? account.message
           : "Registration successful, please check your email for verification instructions",
@@ -43,10 +43,10 @@ const authenticateSchema = (req, res, next) => {
 };
 
 const authenticate = (req, res, next) => {
-  const { email, password } = req.body;
+  const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
   accountService
-    .authenticate({ email, password, ipAddress })
+    .authenticate({ mobileNo, password, ipAddress })
     .then(({ refreshToken, ...account }) => {
       setTokenCookie(res, refreshToken);
       res.json({ status: 200, message: "login successfully", data: account });
@@ -312,6 +312,20 @@ const setTokenCookie = (res, token) => {
   res.cookie("refreshToken", token, cookieOptions);
 };
 
+const resendOtp = (req, res, next) => {
+  const { mobileNo } = req.body;
+  accountService
+    .resendOtp({ mobileNo })
+    .then((data) => {
+      res.json({
+        status: 200,
+        message: "otp send successfully",
+        data: data,
+      });
+    })
+    .catch(next);
+};
+
 // routes
 router.post("/register", register);
 router.post("/login", authenticate);
@@ -336,5 +350,7 @@ router.post(
 );
 
 router.post("/getByReferralCode", getuserByReferralCode);
+
+router.post("/resendOtp", resendOtp);
 
 module.exports = router;

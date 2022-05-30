@@ -47,8 +47,8 @@ const register = async (params, origin) => {
   };
 };
 
-const authenticate = async ({ email, password, ipAddress }) => {
-  const account = await db.Account.findOne({ email });
+const authenticate = async ({ mobileNo, password, ipAddress }) => {
+  const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
   if (!account) {
     throw "Account not available";
@@ -59,8 +59,6 @@ const authenticate = async ({ email, password, ipAddress }) => {
     console.log(account.otpDate, aMinuteAgo, account.otpDate <= aMinuteAgo);
     if (account.otpDate <= aMinuteAgo) {
       let userOtp = randomOTPGenerate();
-      console.log("account ----", userOtp);
-
       account.otp = userOtp;
       account.otpDate = new Date();
       updateUserData(account);
@@ -85,6 +83,24 @@ const authenticate = async ({ email, password, ipAddress }) => {
     ...basicDetails(account),
     token,
     refreshToken: refreshToken.token,
+  };
+};
+
+const resendOtp = async ({ mobileNo }) => {
+  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  if (!account) {
+    throw "Account not available";
+  }
+  let userOtp = randomOTPGenerate();
+  account.otp = userOtp;
+  account.otpDate = new Date();
+  updateUserData(account);
+
+  sendSms(account.phoneNumber, userOtp);
+
+  // return basic details and tokens
+  return {
+    otp: userOtp,
   };
 };
 
@@ -519,4 +535,5 @@ module.exports = {
   update,
   delete: _delete,
   getPincode,
+  resendOtp,
 };
