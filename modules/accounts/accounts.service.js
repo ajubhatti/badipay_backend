@@ -154,7 +154,7 @@ const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
   console.log("account", account);
 
-  if (!account || account.otp !== otp) throw "Verification failed";
+  if (!account || account.otp != otp) throw "Verification failed";
   const referalData = await generateReferralCode(account._id);
 
   account.referralId = referalData._id;
@@ -503,6 +503,8 @@ const sendPasswordResetPhone = async (account, origin) => {
     message = `<p>Please use the below token to reset your password with the <code>/auth/reset-password</code> api route:</p>
                    <p><code>${account.resetToken.otp}</code></p>`;
   }
+
+  sendResetPasswordSMS(account.phoneNumber, message);
 
   await sendEmail({
     to: account.email,

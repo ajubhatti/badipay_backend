@@ -143,4 +143,34 @@ const sendChangeEPinSms = async (mobileNo, otp) => {
     });
 };
 
+const sendResetPasswordSMS = async (mobileNo, message) => {
+  const payload = {
+    data: [
+      {
+        destination: mobileNo,
+        source: "BadiPe",
+        type: "TEXT",
+        entityId: "1201161207424046279",
+        tempId: "",
+        content: message,
+      },
+    ],
+  };
+  const headers = {
+    Authorization: "Bearer my-token",
+    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
+  };
+  const response = await axios
+    .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
+      headers,
+    })
+    .then((res) => {
+      console.log(`Status: ${res.status}`);
+      console.log("Body: ", res.data);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
 module.exports = sendSms;
