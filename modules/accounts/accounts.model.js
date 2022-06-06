@@ -15,6 +15,7 @@ const schema = new Schema({
     expires: Date,
   },
   passwordReset: Date,
+  transactionPin: { type: String, required: false },
   // role: { type: String, required: true },
   role: {
     type: String,

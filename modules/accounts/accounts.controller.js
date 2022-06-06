@@ -6,18 +6,8 @@ const authorize = require("../../_middleware/authorize");
 const Role = require("../../_helpers/role");
 const accountService = require("./accounts.service");
 const { getuserFromReferralCode } = require("./accounts.service");
-
-const registerSchema = (req, res, next) => {
-  const schema = Joi.object({
-    userName: Joi.string().required(),
-    phoneNumber: Joi.string().required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().min(6).required(),
-    confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
-    acceptTerms: Joi.boolean().valid(true).required(),
-  });
-  validateRequest(req, next, schema);
-};
+const jwt = require("express-jwt");
+const { secret } = require("../../config.json");
 
 const register = (req, res, next) => {
   accountService
@@ -36,7 +26,7 @@ const register = (req, res, next) => {
 
 const authenticateSchema = (req, res, next) => {
   const schema = Joi.object({
-    email: Joi.string().required(),
+    mobileNo: Joi.string().required(),
     password: Joi.string().required(),
   });
   validateRequest(req, next, schema);
@@ -115,6 +105,7 @@ const verifyEmail = (req, res, next) => {
 
 const verifyPhoneSchema = (req, res, next) => {
   const schema = Joi.object({
+    mobileNo: Joi.string().required(),
     otp: Joi.string().required(),
   });
   validateRequest(req, next, schema);
@@ -201,11 +192,26 @@ const getAll = (req, res, next) => {
 };
 
 const getById = (req, res, next) => {
-  // users can get their own account and admins can get any account
+  if (req.headers && req.headers.authorization) {
+    var authorization = req.headers.authorization.split(" ")[1],
+      decoded;
+    console.log("authorization", authorization);
+    // users can get their own account and admins can get any account
+    const usertoken = req.headers.authorization;
+    const token = usertoken.split(" ");
+    // const decoded1 = jwt.verify(token[1], secret);
+    // console.log(decoded1);
+    try {
+      decoded = jwt.verify(authorization, secret);
+      console.log("decoded.id", decoded.id);
+    } catch (e) {
+      return res.status(401).send("unauthorized");
+    }
+  }
+
   if (req.params.id !== req.user.id && req.user.role !== Role.Admin) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-
   accountService
     .getById(req.params.id)
     .then((account) =>
@@ -328,21 +334,25 @@ const resendOtp = (req, res, next) => {
 
 // routes
 router.post("/register", register);
-router.post("/login", authenticate);
+router.post("/login", authenticateSchema, authenticate);
+
 router.post("/refresh-token", refreshToken);
 router.post("/revoke-token", authorize(), revokeTokenSchema, revokeToken);
-router.post("/verify-email", verifyEmailSchema, verifyEmail);
 
-router.post("/verify-phone-no", verifyPhoneNo);
+router.post("/verify-email", verifyEmailSchema, verifyEmail);
+router.post("/verify-phone-no", verifyPhoneSchema, verifyPhoneNo);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+
 router.post("/getAll", getAll);
 router.get("/:id", getById);
 router.post("/getUserById", getUserById);
 router.post("/", authorize(Role.Admin), createSchema, create);
+
 router.put("/:id", update);
 router.delete("/:id", authorize(), _delete);
+
 router.post(
   "/validate-reset-token",
   validateResetTokenSchema,
@@ -350,7 +360,6 @@ router.post(
 );
 
 router.post("/getByReferralCode", getuserByReferralCode);
-
 router.post("/resendOtp", resendOtp);
 
 module.exports = router;

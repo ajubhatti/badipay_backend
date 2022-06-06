@@ -301,6 +301,9 @@ const update = async (id, params) => {
   if (params.password) {
     params.passwordHash = hash(params.password);
   }
+  if (params.transactionPin) {
+    params.transactionPin = hash(params.transactionPin);
+  }
 
   // copy params to account and save
   Object.assign(account, params);
@@ -398,6 +401,7 @@ const basicDetails = (account) => {
     created,
     updated,
     verificationToken,
+    transactionPin,
   } = account;
   return {
     id,
@@ -413,6 +417,7 @@ const basicDetails = (account) => {
     created,
     updated,
     verificationToken,
+    transactionPin,
   };
 };
 // this function call on user registration for sending user verification link

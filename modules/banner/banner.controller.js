@@ -33,8 +33,6 @@ const uploadBanner = (req, res, next) => {
       res.json({ status: 200, data: banner, message: "success" });
     })
     .catch(next);
-
-  // res.status(200).send({ filePath: req.file.path, message: "uploaded" });
 };
 
 const create = (req, res, next) => {
