@@ -154,6 +154,20 @@ const getWallet = async (id) => {
 };
 
 const getTransctionByUserId = async (userId) => {
+  let walletData1 = await db.walletTransaction.aggregate([
+    {
+      $lookup: {
+        from: "banks",
+        localField: "creditAccount",
+        foreignField: "_id",
+        as: "creditAccountdetail",
+      },
+    },
+    { $unwind: "$creditAccountdetail" },
+  ]);
+
+  console.log("walletData1", walletData1);
+
   const walletData = await db.walletTransaction.find({ userId: userId });
   if (!walletData) throw "wallet not found";
   return walletData;
