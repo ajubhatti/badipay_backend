@@ -30,6 +30,7 @@ module.exports = {
   SubFaqs: require("../modules/faqSubFaqs/subFaqs.model"),
 
   MyBanner: require("../modules/banner/banner.model"),
+  State: require("../modules/state/states.model"),
 
   isValidId,
 };

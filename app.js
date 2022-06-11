@@ -21,7 +21,8 @@ const referralRouter = require("./modules/referral/referral.controller");
 const contactUsRouter = require("./modules/contactUs/contactUs.controller");
 const supportsRouter = require("./modules/supports/support.controller");
 const subSupportRouter = require("./modules/subSupports/subSupport.controller");
-const myBanner = require("./modules/banner/banner.controller");
+const myBannerRouter = require("./modules/banner/banner.controller");
+const stateRouter = require("./modules/state/states.controller");
 
 var app = express();
 
@@ -74,7 +75,8 @@ app.use("/contactUs", contactUsRouter);
 app.use("/support", supportsRouter);
 app.use("/subSupport", subSupportRouter);
 
-app.use("/myBanner", myBanner);
+app.use("/myBanner", myBannerRouter);
+app.use("/state", stateRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));

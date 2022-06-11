@@ -523,6 +523,11 @@ const getPincode = async (data) => {
   console.log("data`", data);
 };
 
+const getUserIsFirstLogin = async (userId) => {
+  const account = await db.Account.findOne({ _id: userId });
+  console.log("account", account);
+};
+
 module.exports = {
   register,
   authenticate,
@@ -543,4 +548,6 @@ module.exports = {
   delete: _delete,
   getPincode,
   resendOtp,
+
+  getUserIsFirstLogin,
 };

@@ -332,6 +332,17 @@ const resendOtp = (req, res, next) => {
     .catch(next);
 };
 
+const getUserIsFirstLogin = (req, res, next) => {
+  const { userId } = req.body;
+  accountService.getUserIsFirstLogin({ userId }).then((data) => {
+    res.json({
+      status: 200,
+      message: "",
+      data: data,
+    });
+  });
+};
+
 // routes
 router.post("/register", register);
 router.post("/login", authenticateSchema, authenticate);
@@ -361,5 +372,6 @@ router.post(
 
 router.post("/getByReferralCode", getuserByReferralCode);
 router.post("/resendOtp", resendOtp);
+router.post("/getUserIsFirstLogin", getUserIsFirstLogin);
 
 module.exports = router;

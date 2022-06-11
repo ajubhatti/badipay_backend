@@ -1,3 +1,4 @@
+const { string } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -14,6 +15,15 @@ const schema = new Schema({
     token: String,
     expires: Date,
   },
+  isFirstLogin: { type: Boolean, default: true },
+  stateId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "state",
+  },
+  city: {
+    type: String,
+  },
+  pincode: { type: Number },
   passwordReset: Date,
   transactionPin: { type: String, required: false },
   // role: { type: String, required: true },

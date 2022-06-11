@@ -166,11 +166,8 @@ const getTransctionByUserId = async (userId) => {
     { $unwind: "$creditAccountdetail" },
   ]);
 
-  console.log("walletData1", walletData1);
-
-  const walletData = await db.walletTransaction.find({ userId: userId });
-  if (!walletData) throw "wallet not found";
-  return walletData;
+  if (!walletData1) throw "wallet not found";
+  return walletData1;
 };
 
 module.exports = {
