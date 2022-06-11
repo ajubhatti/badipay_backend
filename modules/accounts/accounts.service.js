@@ -37,7 +37,7 @@ const register = async (params, origin) => {
   // await sendVerificationEmail(account, origin);
   sendSms(account.phoneNumber, account.otp);
   if (account.email) {
-    sendVerificationOTPEmail(account, origin);
+    // sendVerificationOTPEmail(account, origin);
   }
 
   return {
