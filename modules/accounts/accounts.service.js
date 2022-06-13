@@ -11,25 +11,13 @@ const otpGenerator = require("otp-generator");
 
 const register = async (params, origin) => {
   // validate
-  let userExist = await db.Account.findOne({ email: params.email });
-  if (userExist) {
-    // send already registered error in email to prevent account enumeration
-    await sendAlreadyRegisteredEmail(params.email, origin);
-    return { account: userExist, message: "user already exist" };
-  }
-  if (userExist) {
-    // send already registered error in email to prevent account enumeration
-    await sendAlreadyRegisteredEmail(params.email, origin);
-    return { account: userExist, message: "user already exist" };
-  }
-  let userExistwithPhone = await db.Account.findOne({
-    phoneNumber: params.phoneNumber,
+  let userExist = await db.Account.findOne({
+    $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
   });
-
-  if (userExistwithPhone) {
+  if (userExist) {
     // send already registered error in email to prevent account enumeration
     await sendAlreadyRegisteredEmail(params.email, origin);
-    return { account: userExistwithPhone, message: "user already exist" };
+    return { account: userExist, message: "User already exist" };
   }
 
   // create account object
