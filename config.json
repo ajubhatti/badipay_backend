@@ -3,6 +3,14 @@
     "connectionString1" : "mongodb+srv://ajubhatti:gj11nn5099@cluster0.rbuwj.mongodb.net/node-mongo-signup-verification?retryWrites=true&w=majority",
     "secret": "THIS IS USED TO SIGN AND VERIFY JWT TOKENS, REPLACE IT WITH YOUR OWN SECRET, IT CAN BE ANY STRING",
     "emailFrom": "multaniazaz@gmail.com",
+    "smtpOptions3":{
+        "host": "smtp.ethereal.email",
+        "port": 587,
+        "auth": {
+            "user": "amara.gusikowski20@ethereal.email",
+            "pass": "q6qCBJuhuQDsNemFKg"
+        }
+    },
     "smtpOptions2":{
         "host": "smtp.gmail.com",
         "service": "Gmail",
@@ -23,4 +31,6 @@
             "pass": "gj11nn5099"
         }        
     }
+
 }
+

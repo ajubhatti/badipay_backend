@@ -227,21 +227,25 @@ const validateResetToken = async ({ token }) => {
   if (!account) throw "Invalid token";
 };
 
-const resetPassword = async ({ token, password }) => {
-  const account = await db.Account.findOne({
-    "resetToken.token": token,
-    "resetToken.expires": { $gt: Date.now() },
+const resetPassword = async ({ token, password, phoneNumber }) => {
+  let account = await db.Account.findOne({
+    phoneNumber: phoneNumber,
   });
 
-  console.log("user account ---", account);
-  if (!account) throw "Invalid token";
-
-  // update password and remove reset token
-  account.passwordHash = hash(password);
-  account.passwordReset = Date.now();
-  account.resetToken = undefined;
-  account.otp = undefined;
-  await account.save();
+  if (!account) throw "Invalid user!";
+  if (
+    account.resetToken.token === token &&
+    account.resetToken.expires > Date.now()
+  ) {
+    // update password and remove reset token
+    account.passwordHash = hash(password);
+    account.passwordReset = Date.now();
+    account.resetToken = undefined;
+    account.otp = undefined;
+    await account.save();
+  } else {
+    throw "OTP not valid!";
+  }
 };
 
 const getAll = async (params) => {
@@ -524,13 +528,13 @@ const sendPasswordResetPhone = async (account, origin) => {
   }
   console.log("message", message);
   sendForgotPasswordSms(account.phoneNumber, account.resetToken.token);
-  // sendResetPasswordSMS(account.phoneNumber, message);
-  // await sendEmail({
-  //   to: account.email,
-  //   subject: "Sign-up Verification API - Reset Password",
-  //   html: `<h4>Reset Password Email</h4>
-  //              ${message}`,
-  // });
+
+  await sendEmail({
+    to: account.email,
+    subject: "Sign-up Verification API - Reset Password",
+    html: `<h4>Reset Password Email</h4>
+               ${message}`,
+  });
 };
 
 const getPincode = async (data) => {

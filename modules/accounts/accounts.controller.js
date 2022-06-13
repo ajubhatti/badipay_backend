@@ -140,7 +140,7 @@ const forgotPassword = (req, res, next) => {
       res.json({
         status: 200,
         data: [],
-        message: "Please check your email for password reset instructions",
+        message: "We have send otp to your registered mobile No. or Please check your email for password reset instructions",
       })
     )
     .catch(next);
