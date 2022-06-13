@@ -6,7 +6,7 @@ const sendEmail = require("../../_helpers/send-email");
 const db = require("../../_helpers/db");
 const Role = require("../../_helpers/role");
 const { generateReferralCode } = require("../referral/referral.services");
-const sendSms = require("../../_helpers/send-sms");
+const { sendSms, sendForgotPasswordSms } = require("../../_helpers/send-sms");
 const otpGenerator = require("otp-generator");
 
 const register = async (params, origin) => {
@@ -16,6 +16,20 @@ const register = async (params, origin) => {
     // send already registered error in email to prevent account enumeration
     await sendAlreadyRegisteredEmail(params.email, origin);
     return { account: userExist, message: "user already exist" };
+  }
+  if (userExist) {
+    // send already registered error in email to prevent account enumeration
+    await sendAlreadyRegisteredEmail(params.email, origin);
+    return { account: userExist, message: "user already exist" };
+  }
+  let userExistwithPhone = await db.Account.findOne({
+    phoneNumber: params.phoneNumber,
+  });
+
+  if (userExistwithPhone) {
+    // send already registered error in email to prevent account enumeration
+    await sendAlreadyRegisteredEmail(params.email, origin);
+    return { account: userExistwithPhone, message: "user already exist" };
   }
 
   // create account object
@@ -199,8 +213,8 @@ const forgotPassword = async ({ phoneNumber }, origin) => {
 
   // send email
   // await sendPasswordResetEmail(account, origin);
-  sendSms(account.phoneNumber, userOtp);
-  console.log("account", account);
+  // sendSms(account.phoneNumber, userOtp);
+
   sendPasswordResetPhone(account, origin);
 };
 
@@ -501,31 +515,40 @@ const sendPasswordResetPhone = async (account, origin) => {
   let message;
   console.log("account in send", account);
   if (origin) {
-    const resetUrl = `${origin}/auth/reset-password?token=${account.resetToken.otp}`;
+    const resetUrl = `${origin}/auth/reset-password?token=${account.resetToken.token}`;
     message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
                    <p><a href="${resetUrl}">${resetUrl}</a></p>`;
   } else {
     message = `<p>Please use the below token to reset your password with the <code>/auth/reset-password</code> api route:</p>
-                   <p><code>${account.resetToken.otp}</code></p>`;
+                   <p><code>${account.resetToken.token}</code></p>`;
   }
-
-  sendResetPasswordSMS(account.phoneNumber, message);
-
-  await sendEmail({
-    to: account.email,
-    subject: "Sign-up Verification API - Reset Password",
-    html: `<h4>Reset Password Email</h4>
-               ${message}`,
-  });
+  console.log("message", message);
+  sendForgotPasswordSms(account.phoneNumber, account.resetToken.token);
+  // sendResetPasswordSMS(account.phoneNumber, message);
+  // await sendEmail({
+  //   to: account.email,
+  //   subject: "Sign-up Verification API - Reset Password",
+  //   html: `<h4>Reset Password Email</h4>
+  //              ${message}`,
+  // });
 };
 
 const getPincode = async (data) => {
   console.log("data`", data);
 };
 
-const getUserIsFirstLogin = async (userId) => {
-  const account = await db.Account.findOne({ _id: userId });
-  console.log("account", account);
+const getUserIsFirstLogin = async (id) => {
+  const account = await getAccount(id);
+  let message = "User first time login";
+  let isFirstTime = true;
+  if (account.isFirstLogin) {
+    account.isFirstLogin = false;
+    await account.save();
+  } else {
+    isFirstTime = false;
+    message = "User login";
+  }
+  return { data: isFirstTime, message: message };
 };
 
 module.exports = {

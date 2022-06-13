@@ -90,7 +90,7 @@ const sendForgotPasswordSms = async (mobileNo, otp) => {
         type: "TEXT",
         entityId: "1201161207424046279",
         tempId: "",
-        content: `Your Forgot Password OTP :- ${otp} BADIPAY`,
+        content: `Your Forgot Password OTP :- ${otp}`,
       },
     ],
   };
@@ -173,4 +173,10 @@ const sendResetPasswordSMS = async (mobileNo, message) => {
     });
 };
 
-module.exports = sendSms;
+module.exports = {
+  sendSms,
+  sendRegisterSms,
+  sendForgotPasswordSms,
+  sendChangeEPinSms,
+  sendResetPasswordSMS,
+};
