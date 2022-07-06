@@ -6,6 +6,8 @@ var logger = require("morgan");
 const cors = require("cors");
 require("dotenv").config();
 const errorHandler = require("./_middleware/error-handler");
+const mongoSanitize = require("express-mongo-sanitize");
+const helmet = require("helmet");
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
@@ -28,7 +30,7 @@ var app = express();
 
 app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 // app.use(express.static(__dirname + "/public"));
 app.use(express.static(`${__dirname}/public`));
@@ -36,6 +38,7 @@ app.use(express.static(`${__dirname}/public`));
 app.use("/uploads", express.static("uploads"));
 
 app.use(bodyParser.json());
+app.use(helmet());
 
 // app.use((req, res, next)=> {
 //     res.header("Access-Control-Allow-Origin", "*");
@@ -52,13 +55,15 @@ app.use((req, res, next) => {
 
 var corsOption = {
   origin: "*",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   credentials: true,
   exposedHeaders: ["x-auth-token"],
 };
 // app.use(cors(corsOption));
 app.use(cors({ origin: true }));
 app.options("*", cors());
+
+app.use(mongoSanitize());
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
@@ -87,8 +92,29 @@ app.use(errorHandler);
 // start server
 const port =
   process.env.NODE_ENV === "production" ? process.env.PORT || 80 : 4000;
-app.listen(port, () => {
-  console.log("Server listening on port " + port);
-});
+
+let SERVER_RETRIES = 0;
+
+const listenWithRetries = () => {
+  return app
+    .listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    })
+    .on("error", (err) => {
+      // little trick to retry connection  every 2^n secords. i.e.  2,4,8, 16, 32, 64 ...
+      SERVER_RETRIES++;
+      let retrytime = Math.pow(2, SERVER_RETRIES) * 1000;
+      console.error(
+        `***Server failed to connect on port ${port}` +
+          ". Retrying in " +
+          retrytime / 1000 +
+          " sec.",
+        err.stack
+      );
+      setTimeout(listenWithRetries, retrytime);
+    });
+};
+
+listenWithRetries();
 
 module.exports = app;

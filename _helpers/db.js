@@ -2,10 +2,30 @@ const config = require("../config.json");
 const mongoose = require("mongoose");
 
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
-mongoose.connect(
-  process.env.DB_URL || config.connectionString1,
-  connectionOptions
-);
+
+let DB_RETRIES = 0; // global variable that counts retry attempts
+const connectWithRetry = () => {
+  return mongoose
+    .connect(process.env.DB_URL || config.connectionString1, connectionOptions)
+    .then((m) => {
+      console.log("Mongo DB Connected");
+    })
+    .catch((err) => {
+      // little trick to retry connection  every 2^n secords. i.e.  2,4,8, 16, 32, 64 ...
+      DB_RETRIES++;
+      let retrytime = Math.pow(2, DB_RETRIES) * 1000;
+      console.error(
+        "Mongo DB failed to connect on startup - retrying in " +
+          retrytime / 1000 +
+          " sec.",
+        err.stack
+      );
+      setTimeout(connectWithRetry, retrytime);
+    });
+};
+
+connectWithRetry();
+
 mongoose.Promise = global.Promise;
 
 const isValidId = (id) => {
@@ -31,6 +51,8 @@ module.exports = {
 
   MyBanner: require("../modules/banner/banner.model"),
   State: require("../modules/state/states.model"),
+
+  UserAccount: require("../modules/userAccounts/userAccounts.model"),
 
   isValidId,
 };

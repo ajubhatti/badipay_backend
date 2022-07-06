@@ -72,10 +72,20 @@ const getAll = (req, res, next) => {
     .catch(next);
 };
 
+const getPlan = (req, res, next) => {
+  console.log("gete");
+  servicesService.getPlan().then((service) => {
+    console.log({ service });
+    res.json({ status: 200, data: service, message: "success" });
+  });
+};
+
 router.get("/", getAll);
 router.get("/:id", authorize(), getById);
 router.post("/", createSchema, create);
 router.put("/:id", authorize(), updateSchema, update);
 router.delete("/:id", authorize(), _delete);
+
+router.post("/getPlan", getPlan);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const db = require("../../_helpers/db");
+const axios = require("axios");
 
 const create = async (params) => {
   let serviceExist = await db.Services.findOne({
@@ -54,10 +55,32 @@ const getService = async (id) => {
   return service;
 };
 
+const getPlan = async () => {
+  console.log("first");
+  const headers = {
+    Authorization: "Bearer my-token",
+    "My-Custom-Header": "foobar",
+    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
+  };
+  return await axios
+    .get(
+      "https://www.mplan.in/api/plans.php?apikey=ff7c4e87910a29fc6fa601dd4a8469b6&offer=roffer&tel=9033501636&operator=Jio"
+    )
+    .then((res) => {
+      console.log(`Status: ${res}`);
+      console.log("Body: ", res.data);
+      return res.data;
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
 module.exports = {
   create,
   update,
   getById,
   getAll,
   delete: _delete,
+  getPlan,
 };
