@@ -2,28 +2,27 @@ const db = require("../../_helpers/db");
 const axios = require("axios");
 
 const create = async (params) => {
-  let serviceExist = await db.Services.findOne({
-    serviceName: params.serviceName,
+  let serviceExist = await db.AmbikaSlab.findOne({
+    serviceProvider: params.serviceProvider,
   });
 
   if (serviceExist) {
-    throw `name ${params.serviceName} is already added`;
+    throw `name ${params.serviceProvider} is already added`;
   }
 
-  const service = new db.Services(params);
+  const service = new db.AmbikaSlab(params);
   await service.save();
   return service;
 };
 
 const update = async (id, params) => {
   const service = await getService(id);
-
   if (
-    params.name &&
-    service.serviceName !== params.name &&
-    (await db.Services.findOne({ serviceName: params.name }))
+    params.serviceProvider &&
+    service.serviceProvider !== params.serviceProvider &&
+    (await db.AmbikaSlab.findOne({ serviceProvider: params.serviceProvider }))
   ) {
-    throw `Name ${params.name} is already taken`;
+    throw `Name ${params.serviceProvider} is already taken`;
   }
 
   Object.assign(service, params);
@@ -39,7 +38,7 @@ const getById = async (id) => {
 };
 
 const getAll = async () => {
-  const services = await db.Services.find();
+  const services = await db.AmbikaSlab.find();
   return services;
 };
 
@@ -50,26 +49,9 @@ const _delete = async (id) => {
 
 const getService = async (id) => {
   if (!db.isValidId(id)) throw "Service not found";
-  const service = await db.Services.findById(id);
+  const service = await db.AmbikaSlab.findById(id);
   if (!service) throw "Service not found";
   return service;
-};
-
-const getPlan = async (params) => {
-  console.log("params", params);
-  const { operator, tel, offer, apiKey } = params;
-  return await axios
-    .get(
-      `https://www.mplan.in/api/plans.php?apikey=${apiKey}&offer=${offer}&tel=${tel}&operator=${operator}`
-    )
-    .then((res) => {
-      console.log(`Status: ${res}`);
-      console.log("Body: ", res.data);
-      return res.data;
-    })
-    .catch((err) => {
-      console.error(err);
-    });
 };
 
 const ambikaRecharge = async (params) => {
@@ -111,6 +93,5 @@ module.exports = {
   getById,
   getAll,
   delete: _delete,
-  getPlan,
   ambikaRecharge,
 };

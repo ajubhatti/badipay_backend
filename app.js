@@ -10,7 +10,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const helmet = require("helmet");
 
 const indexRouter = require("./routes/index");
-const usersRouter = require("./routes/users");
+const usersRouter = require("./modules/user/user.controller");
 const accountRouter = require("./modules/accounts/accounts.controller");
 const servicesRouter = require("./modules/services/services.controller");
 const walletRouter = require("./modules/wallet/wallet.controller");
@@ -25,6 +25,7 @@ const supportsRouter = require("./modules/supports/support.controller");
 const subSupportRouter = require("./modules/subSupports/subSupport.controller");
 const myBannerRouter = require("./modules/banner/banner.controller");
 const stateRouter = require("./modules/state/states.controller");
+const ambikaSlabRouter = require("./modules/services/ambikaSlab.controller");
 
 var app = express();
 
@@ -69,6 +70,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/auth", accountRouter);
 app.use("/service", servicesRouter);
+app.use("/ambikaSlab", ambikaSlabRouter);
 app.use("/wallet", walletRouter);
 app.use("/walletTransaction", walletTransaction);
 app.use("/bank", bankRouter);
