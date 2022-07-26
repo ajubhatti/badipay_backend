@@ -54,6 +54,14 @@ const getService = async (id) => {
   return service;
 };
 
+const getListByType = async (params) => {
+  console.log(params);
+  const serviceList = await db.AmbikaSlab.find({
+    serviceProviderType: params.type,
+  });
+  return serviceList;
+};
+
 const ambikaRecharge = async (params) => {
   console.log("params", prams);
   const {
@@ -94,4 +102,5 @@ module.exports = {
   getAll,
   delete: _delete,
   ambikaRecharge,
+  getListByType,
 };

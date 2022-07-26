@@ -80,6 +80,12 @@ const getPlan = (req, res, next) => {
   });
 };
 
+const getProvider = (req, res, next) => {
+  ambikaSlabService.getListByType(req.body).then((service) => {
+    res.json({ status: 200, data: service, message: "success" });
+  });
+};
+
 const ambikaRecharge = (req, res, next) => {
   ambikaSlabService.ambikaRecharge(req.body).then((service) => {
     res.json({ status: 200, data: service, message: "success" });
@@ -88,11 +94,12 @@ const ambikaRecharge = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/:id", authorize(), getById);
-router.post("/", createSchema, create);
+router.post("/create", createSchema, create);
 router.put("/:id", authorize(), updateSchema, update);
 router.delete("/:id", authorize(), _delete);
 
 router.post("/getPlan", getPlan);
+router.post("/getProvider", getProvider);
 router.post("/ambikaRecharge", ambikaRecharge);
 
 module.exports = router;
