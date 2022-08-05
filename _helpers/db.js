@@ -1,16 +1,60 @@
-const config = require('config.json');
-const mongoose = require('mongoose');
+const config = require("../config.json");
+const mongoose = require("mongoose");
 
-const connectionOptions = { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false };
-mongoose.connect(process.env.MONGODB_URI || config.connectionString,connectionOptions);
-mongoose.Promise = global.Promise;
+const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 
-module.exports = {
-    Account:require('accounts/account.model'),
-    RefreshToken : require('accounts/refresh-token.model'),
-    isValidId
+let DB_RETRIES = 0; // global variable that counts retry attempts
+const connectWithRetry = () => {
+  return mongoose
+    .connect(process.env.DB_URL || config.connectionString1, connectionOptions)
+    .then((m) => {
+      console.log("Mongo DB Connected");
+    })
+    .catch((err) => {
+      // little trick to retry connection  every 2^n secords. i.e.  2,4,8, 16, 32, 64 ...
+      DB_RETRIES++;
+      let retrytime = Math.pow(2, DB_RETRIES) * 1000;
+      console.error(
+        "Mongo DB failed to connect on startup - retrying in " +
+          retrytime / 1000 +
+          " sec.",
+        err.stack
+      );
+      setTimeout(connectWithRetry, retrytime);
+    });
 };
 
-function isValidId(id){
-    return mongoose.Types.ObjectId.isValid(id)
-}
+connectWithRetry();
+
+mongoose.Promise = global.Promise;
+
+const isValidId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
+
+module.exports = {
+  Account: require("../modules/accounts/accounts.model"),
+  RefreshToken: require("../modules/accounts/refresh-token.model"),
+  Services: require("../modules/services/services.model"),
+  AmbikaSlab: require("../modules/services/ambikaSlab.model"),
+  Wallet: require("../modules/wallet/wallet.model"),
+  walletTransaction: require("../modules/walletTransaction/walletTransaction.model"),
+  Banks: require("../modules/banks/banks.model"),
+  BankAccounts: require("../modules/bankAccounts/bankAccounts.model"),
+  Banners: require("../modules/banners/banners.model"),
+  Ticker: require("../modules/ticker/ticker.model"),
+  Referral: require("../modules/referral/referral.model"),
+  ContactUs: require("../modules/contactUs/contactUs.model"),
+  Support: require("../modules/supports/support.model"),
+  SubSupport: require("../modules/subSupports/subSupport.model"),
+  Faqs: require("../modules/faqs/faqs.model"),
+  SubFaqs: require("../modules/faqSubFaqs/subFaqs.model"),
+
+  MyBanner: require("../modules/banner/banner.model"),
+  State: require("../modules/state/states.model"),
+
+  User: require("../modules/user/user.model"),
+  UserAccount: require("../modules/userAccounts/userAccounts.model"),
+
+  isValidId,
+};
