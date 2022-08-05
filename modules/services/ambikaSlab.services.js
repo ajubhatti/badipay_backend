@@ -63,27 +63,43 @@ const getListByType = async (params) => {
 };
 
 const ambikaRecharge = async (params) => {
-  console.log("params", prams);
-  const {
-    userID,
-    token,
-    consumerNo,
-    amount,
-    operatorCode,
-    uniqueRefNo,
-    areaPincode,
-    regMobileNumber,
-    longitude,
-    latitude,
-    format,
-    optional1,
-    optional2,
-    optional3,
-    optional4,
-  } = params;
+  console.log("params", params);
+  // const {
+  //   userID,
+  //   token,
+  //   consumerNo,
+  //   amount,
+  //   operatorCode,
+  //   uniqueRefNo,
+  //   areaPincode,
+  //   regMobileNumber,
+  //   longitude,
+  //   latitude,
+  //   format,
+  //   optional1,
+  //   optional2,
+  //   optional3,
+  //   optional4,
+  // } = params;
+
+  let userID = 16900;
+  let token = "759f6d09ef62ec7c86da53e986151519";
+  let consumerNo = "7227062486";
+  let amount = 21;
+  let operatorCode = 116;
+  let uniqueRefNo = 32043443023;
+  let areaPincode = 395002;
+  let regMobileNumber = 9033501636;
+  let longitude = 72.8399;
+  let latitude = 21.1877;
+  let format = 1;
+  let optional1 = "";
+  let optional2 = "";
+  let optional3 = "";
+  let optional4 = "";
   return await axios
     .get(
-      `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${consumerNo}&Amount=${amount}&SPKey=${operatorCode}&APIRequestID=${uniqueRefNo}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${regMobileNumber}&Pincode=${areaPincode}&Format=${format}`
+      `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${consumerNo}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${uniqueRefNo}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${regMobileNumber}&Pincode=${areaPincode}&Format=${format}`
     )
     .then((res) => {
       console.log(`Status: ${res}`);
