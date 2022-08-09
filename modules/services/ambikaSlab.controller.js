@@ -1,6 +1,6 @@
-const Joi = require("joi");
 const express = require("express");
 const router = express.Router();
+const Joi = require("joi");
 const authorize = require("../../_middleware/authorize");
 const ambikaSlabService = require("./ambikaSlab.services");
 const validateRequest = require("../../_middleware/validate-request");
@@ -75,21 +75,30 @@ const getAll = (req, res, next) => {
 };
 
 const getPlan = (req, res, next) => {
-  ambikaSlabService.getPlan(req.body).then((service) => {
-    res.json({ status: 200, data: service, message: "success" });
-  });
+  ambikaSlabService
+    .getPlan(req.body)
+    .then((service) => {
+      res.json({ status: 200, data: service, message: "success" });
+    })
+    .catch(next);
 };
 
 const getProvider = (req, res, next) => {
-  ambikaSlabService.getListByType(req.body).then((service) => {
-    res.json({ status: 200, data: service, message: "success" });
-  });
+  ambikaSlabService
+    .getListByType(req.body)
+    .then((service) => {
+      res.json({ status: 200, data: service, message: "success" });
+    })
+    .catch(next);
 };
 
 const ambikaRecharge = (req, res, next) => {
-  ambikaSlabService.ambikaRecharge(req.body).then((service) => {
-    res.json({ status: 200, data: service, message: "success" });
-  });
+  ambikaSlabService
+    .ambikaRecharge(req.body)
+    .then((service) => {
+      res.json({ status: 200, data: service, message: "success" });
+    })
+    .catch(next);
 };
 
 router.get("/", getAll);

@@ -64,49 +64,51 @@ const getListByType = async (params) => {
 
 const ambikaRecharge = async (params) => {
   console.log("params", params);
-  // const {
-  //   userID,
-  //   token,
-  //   consumerNo,
-  //   amount,
-  //   operatorCode,
-  //   uniqueRefNo,
-  //   areaPincode,
-  //   regMobileNumber,
-  //   longitude,
-  //   latitude,
-  //   format,
-  //   optional1,
-  //   optional2,
-  //   optional3,
-  //   optional4,
-  // } = params;
+  const {
+    amount,
+    operatorCode,
+    areaPincode,
+    regMobileNumber,
+    longitude,
+    latitude,
+    optional1,
+    optional2,
+    optional3,
+    optional4,
+  } = params;
 
-  let userID = 16900;
-  let token = "759f6d09ef62ec7c86da53e986151519";
-  let consumerNo = "7227062486";
-  let amount = 21;
-  let operatorCode = 116;
-  let uniqueRefNo = 32043443023;
-  let areaPincode = 395002;
-  let regMobileNumber = 9033501636;
-  let longitude = 72.8399;
-  let latitude = 21.1877;
-  let format = 1;
-  let optional1 = "";
-  let optional2 = "";
-  let optional3 = "";
-  let optional4 = "";
+  // let userID = 16900;
+  // let token = "759f6d09ef62ec7c86da53e986151519";
+  // let consumerNo = "7227062486";
+  // let amount = 21;
+  // let operatorCode = 116;
+  // let uniqueRefNo = apiCounter;
+  // let areaPincode = 395002;
+  // let regMobileNumber = 9033501636;
+  // let longitude = 72.8399;
+  // let latitude = 21.1877;
+  // let format = 1;
+  // let optional1 = "";
+  // let optional2 = "";
+  // let optional3 = "";
+  // let optional4 = "";
+
+  var timeStamp = Math.round(new Date().getTime() / 1000);
+
+  console.log("params ---", params, timeStamp);
+  let serviceUrl = `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=16900&Token=759f6d09ef62ec7c86da53e986151519&Account=${regMobileNumber}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${timeStamp}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=7227062486&Pincode=${areaPincode}&Format=1`;
+  console.log({ serviceUrl });
+
   return await axios
-    .get(
-      `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${consumerNo}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${uniqueRefNo}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${regMobileNumber}&Pincode=${areaPincode}&Format=${format}`
-    )
+    .get(serviceUrl)
     .then((res) => {
       console.log(`Status: ${res}`);
-      console.log("Body: ", res.data);
-      return res.data;
+      console.log("Body: ", res?.data);
+
+      return res?.data;
     })
     .catch((err) => {
+      console.log({ err });
       console.error(err);
     });
 };
