@@ -27,6 +27,7 @@ const myBannerRouter = require("./modules/banner/banner.controller");
 const stateRouter = require("./modules/state/states.controller");
 const ambikaSlabRouter = require("./modules/services/ambikaSlab.controller");
 const mlanRouter = require("./modules/services/mplan.controller");
+const companyRouter = require("./modules/company/company.controller");
 
 var app = express();
 
@@ -83,7 +84,7 @@ app.use("/contactUs", contactUsRouter);
 app.use("/support", supportsRouter);
 app.use("/subSupport", subSupportRouter);
 app.use("/mlan", mlanRouter);
-
+app.use("/company", companyRouter);
 app.use("/myBanner", myBannerRouter);
 app.use("/state", stateRouter);
 

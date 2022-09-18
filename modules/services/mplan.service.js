@@ -13,19 +13,20 @@ const getMplanPlan = async (params) => {
     url = `https://www.mplan.in/api/plans.php?apikey=${mplanApiKey}&cricle=${params.circle}&operator=${params.operator}`;
   }
   if (type === "dthInfo") {
+    console.log("dth info-------------------");
     url = `https://www.mplan.in/api/Dthinfo.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.operator}`;
   }
   if (type === "dthplans") {
-    url = `https://www.mplan.in/api/dthplans.php?apikey=${mplanApiKey}&operator=${params.oeprator}`;
+    url = `https://www.mplan.in/api/dthplans.php?apikey=${mplanApiKey}&operator=${params.operator}`;
   }
   if (type === "dthRoffer") {
     url = `https://www.mplan.in/api/DthRoffer.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.operator}`;
   }
   if (type === "postpaid") {
-    url = `https://www.mplan.in/api/Bsnl.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.oeprator}&stdcode=${params.stdcode}`;
+    url = `https://www.mplan.in/api/Bsnl.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.operator}&stdcode=${params.stdcode}`;
   }
   if (type === "electricinfo") {
-    url = `https://www.mplan.in/api/electricinfo.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.oeprator}`;
+    url = `https://www.mplan.in/api/electricinfo.php?apikey=${mplanApiKey}&offer=roffer&tel=${params.accountNo}&operator=${params.operator}`;
   }
   if (type === "operatorinfo") {
     url = `http://operatorcheck.mplan.in/api/operatorinfo.php?apikey=${mplanApiKey}&tel=${params.accountNo}`;

@@ -36,6 +36,7 @@ module.exports = {
   Account: require("../modules/accounts/accounts.model"),
   RefreshToken: require("../modules/accounts/refresh-token.model"),
   Services: require("../modules/services/services.model"),
+  Company: require("../modules/company/company.model"),
   AmbikaSlab: require("../modules/services/ambikaSlab.model"),
   Wallet: require("../modules/wallet/wallet.model"),
   walletTransaction: require("../modules/walletTransaction/walletTransaction.model"),

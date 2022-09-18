@@ -25,8 +25,9 @@ const create = (req, res, next) => {
 };
 
 const getById = (req, res, next) => {
+  console.log("req------", req.params);
   ambikaSlabService
-    .getById(req.params.id)
+    .getById(req.params)
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
@@ -67,7 +68,7 @@ const _delete = (req, res, next) => {
 
 const getAll = (req, res, next) => {
   ambikaSlabService
-    .getAll()
+    .getAll(req.query)
     .then((service) =>
       res.json({ status: 200, data: service, message: "success" })
     )
@@ -102,11 +103,10 @@ const ambikaRecharge = (req, res, next) => {
 };
 
 router.get("/", getAll);
-router.get("/:id", authorize(), getById);
+router.get("/:id", getById);
 router.post("/create", createSchema, create);
 router.put("/:id", authorize(), updateSchema, update);
-router.delete("/:id", authorize(), _delete);
-
+router.delete("/:id", _delete);
 router.post("/getPlan", getPlan);
 router.post("/getProvider", getProvider);
 router.post("/ambikaRecharge", ambikaRecharge);
