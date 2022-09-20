@@ -6,10 +6,10 @@ const fetchAllData = async (params) => {
     const pageNumber = parseInt(params.page) || 0;
     const limit = parseInt(params.perPage) || 12;
     const result = {};
-    const totalPosts = await params.dataBase.countDocuments().exec();
+    const totalData = await params.dataBase.countDocuments().exec();
     let startIndex = pageNumber * limit;
     const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
+    result.totalData = totalData;
     if (startIndex > 0) {
       result.previous = {
         pageNumber: pageNumber - 1,
