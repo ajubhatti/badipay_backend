@@ -9,6 +9,8 @@ const create = async (params) => {
     throw `name ${params.companyName} is already added`;
   }
 
+  console.log({ params });
+
   const company = new db.Company(params);
   await company.save();
   return company;
@@ -25,6 +27,8 @@ const update = async (id, params) => {
     throw `Name ${params.name} is already taken`;
   }
 
+  console.log({ params });
+
   Object.assign(company, params);
   company.updated = Date.now();
   await company.save();
@@ -32,7 +36,7 @@ const update = async (id, params) => {
   return company;
 };
 
-const getById = async () => {
+const getById = async (id) => {
   const company = await getCompany(id);
   return company;
 };
@@ -81,6 +85,7 @@ const _delete = async (id) => {
 };
 
 const getCompany = async (id) => {
+  console.log(`getCompany ${id}`);
   if (!db.isValidId(id)) throw "Company not found";
   const company = await db.Company.findById(id);
   if (!company) throw "Company not found";

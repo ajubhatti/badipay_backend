@@ -39,12 +39,12 @@ const update = async (id, params) => {
   return apiService;
 };
 
-const getById = async (params) => {
-  // const service = await getApiService(id);
-  // return service;
-  console.log("getById", params.id);
-  params.dataBase = db.Apis;
-  return await fetchDataById(params);
+const getById = async (id) => {
+  const service = await getApiService(id);
+  return service;
+  // console.log("getById", params.id);
+  // params.dataBase = db.Apis;
+  // return await fetchDataById(params);
 };
 
 const getAll = async (params) => {
@@ -63,6 +63,7 @@ const _delete = async (id) => {
 };
 
 const getApiService = async (id) => {
+  console.log("Getting API Service", id);
   if (!db.isValidId(id)) throw "Service not found";
   const apiService = await db.Apis.findById(id);
   if (!apiService) throw "Service not found";

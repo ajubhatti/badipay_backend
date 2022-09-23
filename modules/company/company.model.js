@@ -12,7 +12,7 @@ const schema = new Schema({
   providerType: { type: Schema.Types.ObjectId, ref: "Services" },
   minAmount: { type: Number, default: 10 },
   maxAmount: { type: Number, default: 500 },
-  referenceApis: { type: Array, default: [] },
+  referenceApis: { type: Array },
   updated: Date,
 });
 
