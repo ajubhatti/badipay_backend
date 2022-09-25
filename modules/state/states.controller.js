@@ -59,9 +59,9 @@ const getAll = (req, res, next) => {
 };
 
 router.get("/", getAll);
-router.get("/:id", authorize(), getById);
-router.post("/", createSchema, create);
-router.put("/:id", authorize(), updateSchema, update);
-router.delete("/:id", authorize(), _delete);
+router.get("/:id", getById);
+router.post("/", create);
+router.put("/:id", updateSchema, update);
+router.delete("/:id", _delete);
 
 module.exports = router;

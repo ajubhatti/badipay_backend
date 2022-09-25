@@ -57,6 +57,7 @@ module.exports = {
   User: require("../modules/user/user.model"),
   UserAccount: require("../modules/userAccounts/userAccounts.model"),
   Apis: require("../modules/services/apis.model"),
+  Recharge: require("../modules/recharge/recharge.model"),
 
   isValidId,
 };

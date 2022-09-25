@@ -29,6 +29,7 @@ const ambikaSlabRouter = require("./modules/services/ambikaSlab.controller");
 const mlanRouter = require("./modules/services/mplan.controller");
 const companyRouter = require("./modules/company/company.controller");
 const apisRouter = require("./modules/services/apis.controller");
+const rechargeRouter = require("./modules/recharge/recharge.controller");
 
 var app = express();
 
@@ -89,6 +90,7 @@ app.use("/company", companyRouter);
 app.use("/myBanner", myBannerRouter);
 app.use("/state", stateRouter);
 app.use("/apis", apisRouter);
+app.use("/rechargeOrBill", rechargeRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));

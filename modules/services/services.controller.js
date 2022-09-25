@@ -90,7 +90,7 @@ const ambikaRecharge = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/:id", getById);
-router.post("/", createSchema, create);
+router.post("/", create);
 router.put("/:id", update);
 router.delete("/:id", authorize(), _delete);
 
