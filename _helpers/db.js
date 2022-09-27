@@ -37,7 +37,7 @@ module.exports = {
   RefreshToken: require("../modules/accounts/refresh-token.model"),
   Services: require("../modules/services/services.model"),
   Company: require("../modules/company/company.model"),
-  AmbikaSlab: require("../modules/services/ambikaSlab.model"),
+  AmbikaSlab: require("../modules/ambika-slab/ambikaSlab.model"),
   Wallet: require("../modules/wallet/wallet.model"),
   walletTransaction: require("../modules/walletTransaction/walletTransaction.model"),
   Banks: require("../modules/banks/banks.model"),
@@ -50,14 +50,11 @@ module.exports = {
   SubSupport: require("../modules/subSupports/subSupport.model"),
   Faqs: require("../modules/faqs/faqs.model"),
   SubFaqs: require("../modules/faqSubFaqs/subFaqs.model"),
-
   MyBanner: require("../modules/banner/banner.model"),
   State: require("../modules/state/states.model"),
-
   User: require("../modules/user/user.model"),
   UserAccount: require("../modules/userAccounts/userAccounts.model"),
-  Apis: require("../modules/services/apis.model"),
+  Apis: require("../modules/apis/apis.model"),
   Recharge: require("../modules/recharge/recharge.model"),
-
   isValidId,
 };

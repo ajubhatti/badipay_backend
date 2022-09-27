@@ -25,10 +25,10 @@ const supportsRouter = require("./modules/supports/support.controller");
 const subSupportRouter = require("./modules/subSupports/subSupport.controller");
 const myBannerRouter = require("./modules/banner/banner.controller");
 const stateRouter = require("./modules/state/states.controller");
-const ambikaSlabRouter = require("./modules/services/ambikaSlab.controller");
+const ambikaSlabRouter = require("./modules/ambika-slab/ambikaSlab.controller");
 const mlanRouter = require("./modules/services/mplan.controller");
 const companyRouter = require("./modules/company/company.controller");
-const apisRouter = require("./modules/services/apis.controller");
+const apisRouter = require("./modules/apis/apis.controller");
 const rechargeRouter = require("./modules/recharge/recharge.controller");
 
 var app = express();

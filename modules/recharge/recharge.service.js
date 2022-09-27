@@ -1,10 +1,188 @@
 const db = require("../../_helpers/db");
+const axios = require("axios");
+
+var priorityCount = 1;
 
 const create = async (params) => {
-  console.log({ params });
-  const rechargeData = new db.Recharge(params);
-  await rechargeData.save();
-  return rechargeData;
+  let operator = await getOperatorById(params);
+  if (operator) {
+    let filteredOperator = await priorityCheck(operator, priorityCount);
+    if (!filteredOperator) {
+      priorityCount++;
+      filteredOperator = await priorityCheck(operator, priorityCount);
+    } else {
+      let payload = {
+        amount: params.amount,
+        operatorCode: filteredOperator?.apiCode,
+        regMobileNumber: params.mobileNo,
+      };
+      let res = await doRecharge(filteredOperator.apiName, payload);
+      if (res && res.errorcode != 200) {
+        priorityCount++;
+        await recursiveFunction(params, operator);
+      }
+      const rechargeData = new db.Recharge(params);
+      await rechargeData.save();
+      return rechargeData;
+    }
+  }
+};
+
+const create2 = async (params) => {
+  let operator = await getOperatorById(params);
+
+  if (operator) {
+    let priority = 1;
+    let finalRechargeData = await recursiveFunction(params, operator, priority);
+    console.log("finalrechargeData -------", finalRechargeData);
+    params.responseData = finalRechargeData;
+
+    const rechargeData = new db.Recharge(params);
+    await rechargeData.save();
+    return rechargeData;
+  }
+};
+
+const recursiveFunction = async (params, operator, apiPriority) => {
+  console.log("recursive function-------", apiPriority);
+
+  let filteredOperator = await priorityCheck(operator, apiPriority);
+  if (!filteredOperator) {
+    apiPriority++;
+    filteredOperator = await priorityCheck(operator, apiPriority);
+  } else {
+    console.log(
+      "recursive call-reference api ---",
+      apiPriority,
+      filteredOperator
+    );
+
+    let payload = {
+      amount: params.amount,
+      operatorCode: filteredOperator?.apiCode,
+      regMobileNumber: params.mobileNo,
+    };
+
+    let rechargeData = await doRecharge(filteredOperator.apiName, payload);
+    console.log("-----------------------------------------------");
+    console.log("recharge data", rechargeData);
+    if (
+      (rechargeData && rechargeData?.TRNSTATUS == 0) ||
+      rechargeData?.STATUSCODE == 0 ||
+      rechargeData?.errorcode == 200
+    ) {
+      return rechargeData;
+    } else {
+      recursiveFunction(params, operator, priority++);
+    }
+  }
+};
+
+const priorityCheck = async (operator, priority) => {
+  console.log("priority check", priority);
+  return operator.referenceApis.find(
+    (x) => x.priority && x.priority == priority && x.isActive
+  );
+};
+
+const doRecharge = async (apiName, payload) => {
+  console.log("apiName ----", apiName);
+  if (apiName == "RechargeWale") {
+    let rechargeWaleRes = await RecharegeWaleRecharge(payload);
+    console.log({ rechargeWaleRes });
+
+    if (rechargeWaleRes.errorcode != 200) {
+      return rechargeWaleRes;
+    } else {
+      return rechargeWaleRes;
+    }
+  }
+
+  if (apiName == "Ambika") {
+    let ambikaRes = await ambikaRecharge(payload);
+    console.log({ ambikaRes });
+
+    if (ambikaRes.errorcode != 200) {
+      return ambikaRes;
+    } else {
+      return ambikaRes;
+    }
+  }
+};
+
+const ambikaRecharge = async (params) => {
+  const { amount, operatorCode, regMobileNumber } = params;
+
+  let longitude = 72.8399872;
+  let latitude = 21.1910656;
+  let areaPincode = 395002;
+  let optional1 = "";
+  let optional2 = "";
+  let optional3 = "";
+  let optional4 = "";
+  let AMBIKA_TOKEN = "759f6d09ef62ec7c86da53e986151519";
+  let AMBIKA_USERID = 16900;
+  let AMBIKA_CUSTOMERNO = 7227062486;
+
+  let token = process.env.AMBIKA_TOKEN || AMBIKA_TOKEN;
+  let userID = process.env.AMBIKA_USERID || AMBIKA_USERID;
+  let cutomerNo = process.env.AMBIKA_CUSTOMERNO || AMBIKA_CUSTOMERNO;
+  var timeStamp = Math.round(new Date().getTime() / 1000);
+
+  let serviceUrl = `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${regMobileNumber}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${timeStamp}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${cutomerNo}&Pincode=${areaPincode}&Format=1`;
+  console.log({ serviceUrl });
+
+  return await axios
+    .get(serviceUrl)
+    .then((res) => {
+      // console.log(`Status: ${res}`);
+      // console.log("Body: ", res?.data);
+      // if (res?.data?.errorcode) {
+      //   RecharegeWaleRecharge(params);
+      // }
+      return res?.data;
+    })
+    .catch((err) => {
+      console.log({ err });
+      console.error(err);
+      return err;
+    });
+};
+
+const RecharegeWaleRecharge = async (params) => {
+  const { amount, operatorCode, regMobileNumber } = params;
+
+  var timeStamp = Math.round(new Date().getTime() / 1000);
+
+  let mobileNo = 8200717122;
+  let apiKey = "QfnXHtK9ehMwULqzwY9PimddkEGksbLKBpr";
+  let refNo = timeStamp;
+  let reqType = "RECH";
+  let serviceCode = operatorCode;
+  let customerNo = regMobileNumber;
+  let refMobileNo = "";
+  let amounts = amount;
+  let stv = 0;
+
+  let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
+
+  console.log("recharge url -----", serviceUrl);
+  return await axios
+    .get(serviceUrl)
+    .then((res) => {
+      console.log(`recharge wale Status: ${res}`);
+      console.log("recharge walre Body: ", res?.data);
+
+      return res?.data;
+    })
+    .catch((err) => {
+      console.log({ err });
+      console.error(err);
+    });
+};
+
+const getOperatorById = async (params) => {
+  return await db.Company.findOne({ _id: params.operator });
 };
 
 const update = async (id, params) => {
@@ -41,6 +219,7 @@ const getState = async (id) => {
 
 module.exports = {
   create,
+  create2,
   update,
   getById,
   getAll,

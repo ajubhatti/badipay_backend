@@ -95,19 +95,6 @@ const ambikaRecharge = async (params) => {
   let token = process.env.AMBIKA_TOKEN || AMBIKA_TOKEN;
   let userID = process.env.AMBIKA_USERID || AMBIKA_USERID;
   let cutomerNo = process.env.AMBIKA_CUSTOMERNO || AMBIKA_CUSTOMERNO;
-
-  // let userID = 16900;
-  // let token = "759f6d09ef62ec7c86da53e986151519";
-  // let consumerNo = "7227062486";
-  // let amount = 21;
-  // let operatorCode = 116;
-  // let uniqueRefNo = apiCounter;
-  // let areaPincode = 395002;
-  // let regMobileNumber = 9033501636;
-  // let longitude = 72.8399;
-  // let latitude = 21.1877;
-  // let format = 1;
-
   var timeStamp = Math.round(new Date().getTime() / 1000);
 
   console.log("params ---", params);

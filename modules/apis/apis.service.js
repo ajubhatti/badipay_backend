@@ -1,6 +1,5 @@
 const db = require("../../_helpers/db");
 const axios = require("axios");
-const { AMBIKA_TOKEN, AMBIKA_USERID } = require("../../_helpers/constant");
 const {
   fetchGetAllData,
   fetchAllData,
