@@ -7,7 +7,7 @@ const schema = new Schema({
   operator: { type: String },
   state: { type: String },
   amount: { type: Number },
-  rechargeBy: { type: String, required: false },
+  rechargeBy: { type: Object },
   status: { type: String, default: true, default: "pending" },
   created: { type: Date, default: Date.now },
   responseData: { type: Object },

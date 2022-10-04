@@ -29,53 +29,79 @@ const create = async (params) => {
 };
 
 const create2 = async (params) => {
-  let operator = await getOperatorById(params);
+  try {
+    let operator = await getOperatorById(params);
+    console.log("params----", params, operator);
+    if (operator) {
+      let priority = 1;
+      let finalRechargeData = await recursiveFunction(
+        params,
+        operator,
+        priority
+      );
+      console.log("finalrechargeData -------", finalRechargeData);
 
-  if (operator) {
-    let priority = 1;
-    let finalRechargeData = await recursiveFunction(params, operator, priority);
-    console.log("finalrechargeData -------", finalRechargeData);
-    params.responseData = finalRechargeData;
+      if (
+        (finalRechargeData && finalRechargeData?.TRNSTATUS == 0) ||
+        finalRechargeData?.STATUSCODE == 0 ||
+        finalRechargeData?.errorcode == 200
+      ) {
+        params.status = "success";
+      }
 
-    const rechargeData = new db.Recharge(params);
-    await rechargeData.save();
-    return rechargeData;
+      params.customerNo = params?.mobileNo;
+      params.responseData = finalRechargeData;
+      params.rechargeBy = finalRechargeData?.rechargeBy;
+
+      console.log("finalrechargeData -------", params);
+
+      const rechargeData = new db.Recharge(params);
+      await rechargeData.save();
+      return rechargeData;
+    }
+  } catch (err) {
+    return err;
   }
 };
 
 const recursiveFunction = async (params, operator, apiPriority) => {
-  console.log("recursive function-------", apiPriority);
-
-  let filteredOperator = await priorityCheck(operator, apiPriority);
-  if (!filteredOperator) {
-    apiPriority++;
-    filteredOperator = await priorityCheck(operator, apiPriority);
-  } else {
-    console.log(
-      "recursive call-reference api ---",
-      apiPriority,
-      filteredOperator
-    );
-
-    let payload = {
-      amount: params.amount,
-      operatorCode: filteredOperator?.apiCode,
-      regMobileNumber: params.mobileNo,
-    };
-
-    let rechargeData = await doRecharge(filteredOperator.apiName, payload);
-    console.log("-----------------------------------------------");
-    console.log("recharge data", rechargeData);
-    if (
-      (rechargeData && rechargeData?.TRNSTATUS == 0) ||
-      rechargeData?.STATUSCODE == 0 ||
-      rechargeData?.errorcode == 200
-    ) {
-      return rechargeData;
+  try {
+    console.log("recursive function-------", apiPriority);
+    let filteredOperator = await priorityCheck(operator, apiPriority);
+    if (!filteredOperator) {
+      apiPriority++;
+      filteredOperator = await priorityCheck(operator, apiPriority);
     } else {
-      recursiveFunction(params, operator, priority++);
+      let payload = {
+        amount: params.amount,
+        operatorCode: filteredOperator?.apiCode,
+        regMobileNumber: params.mobileNo,
+      };
+
+      let rechargeData = await doRecharge(filteredOperator.apiName, payload);
+      rechargeData.rechargeBy = operator;
+      console.log("-----------------------------------------------");
+      console.log("recharge data", rechargeData);
+      if (
+        (rechargeData && rechargeData?.TRNSTATUS == 0) ||
+        rechargeData?.STATUSCODE == 0 ||
+        rechargeData?.errorcode == 200
+      ) {
+        console.log("rechargeData ----68----" + JSON.stringify(rechargeData));
+        return rechargeData;
+      } else {
+        console.log(
+          "recursiveFunction",
+          params,
+          typeof apiPriority,
+          apiPriority++
+        );
+        let result = await recursiveFunction(params, operator, apiPriority++);
+        // result.rechargeBy = operator;
+        return result;
+      }
     }
-  }
+  } catch (err) {}
 };
 
 const priorityCheck = async (operator, priority) => {
@@ -135,11 +161,6 @@ const ambikaRecharge = async (params) => {
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      // console.log(`Status: ${res}`);
-      // console.log("Body: ", res?.data);
-      // if (res?.data?.errorcode) {
-      //   RecharegeWaleRecharge(params);
-      // }
       return res?.data;
     })
     .catch((err) => {
@@ -165,14 +186,11 @@ const RecharegeWaleRecharge = async (params) => {
   let stv = 0;
 
   let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
+  console.log({ serviceUrl });
 
-  console.log("recharge url -----", serviceUrl);
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      console.log(`recharge wale Status: ${res}`);
-      console.log("recharge walre Body: ", res?.data);
-
       return res?.data;
     })
     .catch((err) => {

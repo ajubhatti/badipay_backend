@@ -32,10 +32,10 @@ const authenticateSchema = (req, res, next) => {
   validateRequest(req, next, schema);
 };
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
-  accountService
+  await accountService
     .authenticate({ mobileNo, password, ipAddress })
     .then(({ refreshToken, ...account }) => {
       setTokenCookie(res, refreshToken);
@@ -140,7 +140,8 @@ const forgotPassword = (req, res, next) => {
       res.json({
         status: 200,
         data: [],
-        message: "We have send otp to your registered mobile No. or Please check your email for password reset instructions",
+        message:
+          "We have send otp to your registered mobile No. or Please check your email for password reset instructions",
       })
     )
     .catch(next);
