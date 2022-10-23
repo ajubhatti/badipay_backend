@@ -30,7 +30,7 @@ const update = async (id, params) => {
   return banks;
 };
 
-const getById = async (id) => {
+const getBankById = async (id) => {
   const banks = await getBanks(id);
   return banks;
 };
@@ -55,7 +55,7 @@ const getBanks = async (id) => {
 module.exports = {
   create,
   update,
-  getById,
+  getBankById,
   getAll,
   delete: _delete,
 };

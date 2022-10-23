@@ -8,10 +8,12 @@ const walletTransactionSchema = new Schema({
   remark: { type: String },
   creditAccount: { type: Schema.Types.ObjectId, ref: "BankList" },
 
+  transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
+
   paymentType: { type: String, default: "1" },
 
-  debitAmount: { type: Number, default: 0 },
-  creditAmount: { type: Number, default: 0 },
+  // debitAmount: { type: Number, default: 0 },
+  // creditAmount: { type: Number, default: 0 },
 
   amountType: {
     type: String,
@@ -24,17 +26,15 @@ const walletTransactionSchema = new Schema({
   approveBy: { type: Schema.Types.ObjectId, ref: "Account" },
   approveDate: { type: Date, default: Date.now() },
   password: { type: String },
+  isActive: { type: Boolean, default: true },
 
   statusOfWalletRequest: {
     type: String,
     enum: ["pending", "cancel", "approve"],
     default: "pending",
   },
-
   created: { type: Date, default: Date.now },
   updated: Date,
-
-  isActive: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("WalletTransaction", walletTransactionSchema);

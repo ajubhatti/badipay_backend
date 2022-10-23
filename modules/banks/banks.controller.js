@@ -23,7 +23,7 @@ const create = (req, res, next) => {
 
 const getById = (req, res, next) => {
   bankService
-    .getById(req.params.id)
+    .getBankById(req.params.id)
     .then((banks) => res.json({ status: 200, data: banks, message: "success" }))
     .catch(next);
 };

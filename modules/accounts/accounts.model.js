@@ -11,52 +11,32 @@ const schema = new Schema({
   verificationToken: String,
   verified: Date,
   isVerified: { type: Boolean, default: false },
-  resetToken: {
-    token: String,
-    expires: Date,
-  },
+  resetToken: { token: String, expires: Date },
   isFirstLogin: { type: Boolean, default: true },
-  stateId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "state",
-  },
-
-  city: {
-    type: String,
-  },
+  stateId: { type: mongoose.Schema.Types.ObjectId, ref: "state" },
+  city: { type: String },
   pincode: { type: Number },
   passwordReset: Date,
+
   transactionPin: { type: String, required: false },
-  // role: { type: String, required: true },
-  role: {
-    type: String,
-    enum: ["user", "moderator", "admin"],
-    default: "user",
-  },
+  hasTransactionPin: { type: Boolean, required: false },
+
   location: { type: String, default: "" },
-  balance: { type: Number, default: 0 },
   otp: { type: Number },
   otpDate: { type: Date, default: Date.now },
   otpUpdateDate: { type: Date },
   isActive: { type: Boolean, default: true },
+
+  referralCode: { type: String, required: false },
+  referralId: { type: mongoose.Schema.Types.ObjectId, ref: "referral" },
+
+  walletBalance: { type: Number, default: 0 },
+  walletId: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
+  // role: { type: String, required: true },
+  role: { type: String, enum: ["user", "moderator", "admin"], default: "user" },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,
-  referralCode: { type: String, required: false },
-  referralId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "referral",
-  },
-
-  walletId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "wallet",
-  },
-  // plan: [
-  //   {
-  //     type: mongoose.Schema.Types.ObjectId,
-  //     ref: "plan",
-  //   },
-  // ],
 });
 
 // schema.virtual("isVerified").get(() => {

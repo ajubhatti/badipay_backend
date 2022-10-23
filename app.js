@@ -30,6 +30,7 @@ const mlanRouter = require("./modules/services/mplan.controller");
 const companyRouter = require("./modules/company/company.controller");
 const apisRouter = require("./modules/apis/apis.controller");
 const rechargeRouter = require("./modules/recharge/recharge.controller");
+const transaction = require("./modules/transactions/transaction.controller");
 
 var app = express();
 
@@ -77,6 +78,7 @@ app.use("/service", servicesRouter);
 app.use("/ambikaSlab", ambikaSlabRouter);
 app.use("/wallet", walletRouter);
 app.use("/walletTransaction", walletTransaction);
+app.use("/transaction", transaction);
 app.use("/bank", bankRouter);
 app.use("/bankAccount", bankAccountRouter);
 app.use("/banner", bannerRouter);

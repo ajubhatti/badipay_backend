@@ -48,7 +48,7 @@ const createSchema = (req, res, next) => {
 
 const create = (req, res, next) => {
   walletTransaction
-    .create(req.body)
+    .create2(req.body)
     .then((wallet) =>
       res.status(200).json({
         type: "success",
@@ -135,11 +135,16 @@ const updateExistingBalance = (req, res, next) => {
   walletTransaction
     .updateExistingBalance(req.body)
     .then((wallet) => {
-      res.status(200).json({
-        status: 200,
-        message: "success",
-        data: wallet,
-      });
+      res.status(200).json({ status: 200, message: "success", data: wallet });
+    })
+    .catch(next);
+};
+
+const changeWalletStatus = (req, res, next) => {
+  walletTransaction
+    .updateWalletStatus(req.body)
+    .then((wallet) => {
+      res.status(200).json({ status: 200, message: "success", data: wallet });
     })
     .catch(next);
 };
@@ -148,8 +153,9 @@ router.post("/getAll", getAll);
 router.post("/", create);
 router.get("/:id", getById);
 router.post("/getByUserId", getByUserId);
-router.put("/:id", updateSchema, updateById);
+router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);
+router.post("/updateWalletStatus", changeWalletStatus);
 
 module.exports = router;

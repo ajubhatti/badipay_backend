@@ -14,9 +14,10 @@ const register = async (params, origin) => {
   let userExist = await db.Account.findOne({
     $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
   });
+  console.log({ userExist });
   if (userExist) {
     // send already registered error in email to prevent account enumeration
-    await sendAlreadyRegisteredEmail(params.email, origin);
+    // await sendAlreadyRegisteredEmail(params.email, origin);
     return { account: userExist, message: "User already exist" };
   }
 
@@ -268,8 +269,10 @@ const getAll = async (params) => {
   return filterData.map((x) => basicDetails(x));
 };
 
-const getById = async (id) => {
-  const account = await getAccount(id);
+const getUserById = async (id) => {
+  console.log({ id });
+  const account = await db.Account.findOne({ _id: id });
+  console.log({ account });
   return basicDetails(account);
 };
 
@@ -312,11 +315,47 @@ const update = async (id, params) => {
   }
 
   // copy params to account and save
-  Object.assign(account, params);
   account.updated = Date.now();
+  Object.assign(account, params);
   await account.save();
 
   return basicDetails(account);
+};
+
+const transactionPinUpdate = async (id, params) => {
+  try {
+    const account = await db.Account.findOne({ _id: id });
+
+    if (!account) {
+      throw "Account not available";
+    }
+    if (!bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
+      throw "Your pin not matched";
+    }
+    params.transactionPin = hash(params.transactionPin);
+    account.updated = Date.now();
+    Object.assign(account, params);
+    await account.save();
+  } catch (err) {
+    return err;
+  }
+};
+
+const passwordUpdate = async (id, params) => {
+  try {
+    const account = await db.Account.findOne({ _id: id });
+    if (!account) {
+      throw "Account not available";
+    }
+    if (!bcrypt.compareSync(params.password, account.passwordHash)) {
+      throw "Your password not matched";
+    }
+    Object.assign(account, params);
+    account.updated = Date.now();
+    await account.save();
+  } catch (err) {
+    return err;
+  }
 };
 
 const updateUserData = async (account) => {
@@ -408,6 +447,7 @@ const basicDetails = (account) => {
     updated,
     verificationToken,
     transactionPin,
+    walletBalance,
   } = account;
   return {
     id,
@@ -424,6 +464,7 @@ const basicDetails = (account) => {
     updated,
     verificationToken,
     transactionPin,
+    walletBalance,
   };
 };
 // this function call on user registration for sending user verification link
@@ -557,7 +598,7 @@ module.exports = {
   getuserFromReferralCode,
 
   getAll,
-  getById,
+  getUserById,
   create,
   update,
   delete: _delete,
@@ -565,4 +606,7 @@ module.exports = {
   resendOtp,
 
   getUserIsFirstLogin,
+
+  transactionPinUpdate,
+  passwordUpdate,
 };

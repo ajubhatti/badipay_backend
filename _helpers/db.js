@@ -39,7 +39,7 @@ module.exports = {
   Company: require("../modules/company/company.model"),
   AmbikaSlab: require("../modules/ambika-slab/ambikaSlab.model"),
   Wallet: require("../modules/wallet/wallet.model"),
-  walletTransaction: require("../modules/walletTransaction/walletTransaction.model"),
+  WalletTransaction: require("../modules/walletTransaction/walletTransaction.model"),
   Banks: require("../modules/banks/banks.model"),
   BankAccounts: require("../modules/bankAccounts/bankAccounts.model"),
   Banners: require("../modules/banners/banners.model"),
@@ -56,5 +56,6 @@ module.exports = {
   UserAccount: require("../modules/userAccounts/userAccounts.model"),
   Apis: require("../modules/apis/apis.model"),
   Recharge: require("../modules/recharge/recharge.model"),
+  Transactions: require("../modules/transactions/transaction.model"),
   isValidId,
 };

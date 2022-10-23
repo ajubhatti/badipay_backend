@@ -28,7 +28,7 @@ const create = (req, res, next) => {
 
 const getById = (req, res, next) => {
   bankAccountService
-    .getById(req.params.id)
+    .getBankAccountById(req.params.id)
     .then((bankAccount) =>
       res.json({ status: 200, data: bankAccount, message: "success" })
     )
@@ -80,9 +80,9 @@ const getAll = (req, res, next) => {
 };
 
 router.get("/", getAll);
-router.get("/:id", authorize(), getById);
+router.get("/:id", getById);
 router.post("/", create);
-router.put("/:id", authorize(), updateSchema, update);
-router.delete("/:id", authorize(), _delete);
+router.put("/:id", update);
+router.delete("/:id", _delete);
 
 module.exports = router;

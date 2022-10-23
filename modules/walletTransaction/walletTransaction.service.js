@@ -1,10 +1,12 @@
 const db = require("../../_helpers/db");
 const accountsService = require("../accounts/accounts.service");
+const { getTrasactionById } = require("../transactions/transaction.service");
+const transaction = require("../transactions/transaction.service");
 
 const getAll = async (params) => {
-  //   const walletData = await db.walletTransaction.find({});
+  //   const walletData = await db.WalletTransaction.find({});
 
-  let walletData = await db.walletTransaction.aggregate([
+  let walletData = await db.WalletTransaction.aggregate([
     {
       $lookup: {
         from: "accounts",
@@ -13,6 +15,7 @@ const getAll = async (params) => {
         as: "userdetail",
       },
     },
+    { $sort: { created: -1 } },
   ]);
 
   var startDate = new Date(params.startDate);
@@ -26,7 +29,7 @@ const getAll = async (params) => {
     });
   }
 
-  // let bankData = await db.walletTransaction.aggregate([
+  // let bankData = await db.WalletTransaction.aggregate([
   //   {
   //     $lookup: {
   //       from: "bankaccounts",
@@ -67,19 +70,66 @@ const getById = async (id) => {
 };
 
 const create = async (params) => {
-  if (await db.walletTransaction.findOne({ slipNo: params.slipNo })) {
+  if (await db.WalletTransaction.findOne({ slipNo: params.slipNo })) {
     throw "slip no " + params.slipNo + " already taken.";
   }
+  const wallet = new db.WalletTransaction(params);
+  let walletRes = await wallet.save();
+  console.log({ walletRes });
+  if (walletRes) {
+    let payload = {
+      userId: params.userId,
+      amount: params.requestAmount,
+      slipNo: params.slipNo,
+      remark: params.remark,
+      type: "credit",
+      status: "pending",
+      // description: walletRes,
+    };
+    let trnscRes = await transaction.create(payload);
+    console.log("trnscRes", trnscRes);
+    return wallet;
+  }
+};
 
-  const wallet = new db.walletTransaction(params);
+const create2 = async (params) => {
+  try {
+    if (await db.Transactions.findOne({ slipNo: params.slipNo })) {
+      throw "slip no " + params.slipNo + " already taken.";
+    }
+    let payload = {
+      userId: params.userId,
+      amount: params.requestAmount || "",
+      slipNo: params.slipNo || "",
+      remark: params.remark || "",
+      type: "credit",
+      status: "pending",
+      description: params.description || {},
+    };
 
-  return await wallet.save();
+    let trnscRes = await transaction.create(payload);
+    console.log({ trnscRes });
+    let temp = JSON.stringify(params);
+    let paramsResult = JSON.parse(temp);
+    if (trnscRes) {
+      paramsResult.transactionId = trnscRes?._id;
+    }
+    console.log({ paramsResult });
+    const wallet = new db.WalletTransaction(paramsResult);
+
+    let walletRes = await wallet.save();
+    console.log({ walletRes });
+    if (walletRes) {
+      return walletRes;
+    }
+  } catch (err) {
+    console.log("err---", err);
+    return err;
+  }
 };
 
 const update = async (id, params) => {
   const wallet = await getWallet(id);
-
-  // validate (if slip no. was changed)
   if (
     params.slipNo &&
     wallet.slipNo !== params.slipNo &&
@@ -132,7 +182,7 @@ const updateExistingBalance = async (params) => {
       password: params.password,
     };
 
-    const wallet = new db.walletTransaction(requestPayload);
+    const wallet = new db.WalletTransaction(requestPayload);
 
     wallet.save();
     return wallet;
@@ -148,34 +198,63 @@ const _delete = async (id) => {
 
 const getWallet = async (id) => {
   if (!db.isValidId(id)) throw "wallet not found";
-  const walletData = await db.walletTransaction.findById(id);
+  const walletData = await db.WalletTransaction.findById(id);
   if (!walletData) throw "wallet not found";
   return walletData;
 };
 
 const getTransctionByUserId = async (userId) => {
-  let walletData1 = await db.walletTransaction.aggregate([
-    {
-      $lookup: {
-        from: "banks",
-        localField: "creditAccount",
-        foreignField: "_id",
-        as: "creditAccountdetail",
-      },
-    },
-    { $unwind: "$creditAccountdetail" },
-  ]);
+  try {
+    let walletData1 = await db.WalletTransaction.find({ userId });
 
-  if (!walletData1) throw "wallet not found";
-  return walletData1;
+    if (!walletData1) throw "wallet data not found";
+    return walletData1;
+  } catch (err) {
+    console.log(err);
+    return err;
+  }
+};
+
+const updateWalletStatus = async (params) => {
+  try {
+    const wallet = await getWallet(params.id);
+    console.log({ wallet });
+    delete params.id;
+    params.finalWalletAmount = wallet?.requestAmount;
+
+    console.log({ params });
+    Object.assign(wallet, params);
+    let walletRes = await wallet.save();
+    console.log({ walletRes });
+    if (walletRes) {
+      walletRes.transactionId;
+      let transactionData = await getTrasactionById(walletRes?.transactionId);
+      let payload = { status: params.statusOfWalletRequest };
+      Object.assign(transactionData, payload);
+      let transactionRes = await transactionData.save();
+      console.log({ transactionRes });
+      var account = await db.Account.findById({ _id: wallet?.userId });
+
+      console.log({ account });
+      let walletCount = account.walletBalance + params.requestAmount;
+      console.log({ walletCount });
+      // let userPayload = { walletBalance  : };
+      // Object.assign(account, params);
+    }
+  } catch (err) {
+    console.log(err);
+    return err;
+  }
 };
 
 module.exports = {
   create,
+  create2,
   update,
   getAll,
   getById,
   delete: _delete,
   updateExistingBalance,
   getTransctionByUserId,
+  updateWalletStatus,
 };

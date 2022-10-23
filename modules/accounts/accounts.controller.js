@@ -214,7 +214,7 @@ const getById = (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
   accountService
-    .getById(req.params.id)
+    .getUserById(req.params.id)
     .then((account) =>
       res.json({ status: 200, data: account, message: "success" })
     )
@@ -223,7 +223,7 @@ const getById = (req, res, next) => {
 
 const getUserById = (req, res, next) => {
   accountService
-    .getById(req.body.id)
+    .getUserById(req.body.id)
     .then((account) =>
       res.json({ status: 200, data: account, message: "success" })
     )
@@ -344,6 +344,24 @@ const getUserIsFirstLogin = (req, res, next) => {
   });
 };
 
+const changePassword = (req, res, next) => {
+  accountService
+    .passwordUpdate(req.body)
+    .then((account) =>
+      res.json({ status: 200, data: account, message: "success" })
+    )
+    .catch(next);
+};
+
+const changeTransactionPin = (req, res, next) => {
+  accountService
+    .transactionPinUpdate(req.body)
+    .then((account) =>
+      res.json({ status: 200, data: account, message: "success" })
+    )
+    .catch(next);
+};
+
 // routes
 router.post("/register", register);
 router.post("/login", authenticateSchema, authenticate);
@@ -374,5 +392,7 @@ router.post(
 router.post("/getByReferralCode", getuserByReferralCode);
 router.post("/resendOtp", resendOtp);
 router.get("/getUserIsFirstLogin/:id", getUserIsFirstLogin);
+router.post("/changePassword", changePassword);
+router.post("/changeTransactionPin", changeTransactionPin);
 
 module.exports = router;
