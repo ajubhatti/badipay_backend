@@ -44,6 +44,18 @@ const authenticate = async (req, res, next) => {
     .catch(next);
 };
 
+const adminLogin = async (req, res) => {
+  const { mobileNo, password } = req.body;
+  const ipAddress = req.ip;
+  await accountService
+    .authenticateAdmin({ mobileNo, password, ipAddress })
+    .then(({ refreshToken, ...account }) => {
+      setTokenCookie(res, refreshToken);
+      res.json({ status: 200, message: "login successfully", data: account });
+    })
+    .catch(next);
+};
+
 const refreshToken = (req, res, next) => {
   const token = req.cookies.refreshToken;
   const ipAddress = req.ip;
@@ -362,6 +374,25 @@ const changeTransactionPin = (req, res, next) => {
     .catch(next);
 };
 
+const me = (req, res, next) => {
+  if (req.headers && req.headers.authorization) {
+    var authorization = req.headers.authorization.split(" ")[1],
+      decoded;
+    try {
+      decoded = jwt.verify(authorization, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).send("unauthorized!!!!");
+    }
+    var userId = decoded.id;
+    // Fetch the user by id
+    db.User.findOne({ _id: userId }).then(function (user) {
+      // Do something with the user
+      return res.send(200);
+    });
+  }
+  return res.status(400).json({ error: "System Error: User not found 73" });
+};
+
 // routes
 router.post("/register", register);
 router.post("/login", authenticateSchema, authenticate);
@@ -394,5 +425,7 @@ router.post("/resendOtp", resendOtp);
 router.get("/getUserIsFirstLogin/:id", getUserIsFirstLogin);
 router.post("/changePassword", changePassword);
 router.post("/changeTransactionPin", changeTransactionPin);
+
+router.post("/adminLogin", adminLogin);
 
 module.exports = router;

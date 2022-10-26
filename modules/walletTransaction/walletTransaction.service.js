@@ -15,6 +15,7 @@ const getAll = async (params) => {
         as: "userdetail",
       },
     },
+    { $unwind: "$userdetail" },
     { $sort: { created: -1 } },
   ]);
 
@@ -217,29 +218,50 @@ const getTransctionByUserId = async (userId) => {
 
 const updateWalletStatus = async (params) => {
   try {
+    console.log({ params });
+    // if (params.password) {
+    //   const account = await db.Account.findOne({ _id: userId });
+    //   if (!bcrypt.compareSync(password, account.passwordHash)) {
+    //     throw "Your email or password not matched";
+    //   }
+    // }
     const wallet = await getWallet(params.id);
     console.log({ wallet });
     delete params.id;
+    delete params.userId;
     params.finalWalletAmount = wallet?.requestAmount;
 
     console.log({ params });
+
     Object.assign(wallet, params);
     let walletRes = await wallet.save();
+
     console.log({ walletRes });
+
     if (walletRes) {
       walletRes.transactionId;
       let transactionData = await getTrasactionById(walletRes?.transactionId);
       let payload = { status: params.statusOfWalletRequest };
       Object.assign(transactionData, payload);
       let transactionRes = await transactionData.save();
+
       console.log({ transactionRes });
+
       var account = await db.Account.findById({ _id: wallet?.userId });
 
       console.log({ account });
-      let walletCount = account.walletBalance + params.requestAmount;
+
+      let walletCount = account.walletBalance + wallet?.requestAmount;
+
       console.log({ walletCount });
-      // let userPayload = { walletBalance  : };
-      // Object.assign(account, params);
+
+      // here update user wallet balance
+
+      let userPayload = { walletBalance: walletCount };
+      Object.assign(account, userPayload);
+      let accRes = await account.save();
+      console.log({ accRes });
+      return walletRes;
     }
   } catch (err) {
     console.log(err);

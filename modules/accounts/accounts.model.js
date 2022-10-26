@@ -32,6 +32,8 @@ const schema = new Schema({
 
   walletBalance: { type: Number, default: 0 },
   walletId: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
+  pendingBalane: { type: Number, default: 0 },
+  rewardedBalance: { type: Number, default: 0 },
   // role: { type: String, required: true },
   role: { type: String, enum: ["user", "moderator", "admin"], default: "user" },
 

@@ -89,6 +89,33 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
   };
 };
 
+const 
+authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
+  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+
+  if (!account) {
+    throw "Account not available";
+  }
+
+  if (!bcrypt.compareSync(password, account.passwordHash)) {
+    throw "Your email or password not matched";
+  }
+
+  // authentication successful so generate jwt and refresh tokens
+  const token = generateJwtToken(account);
+  const refreshToken = generateRefreshToken(account, ipAddress);
+
+  // save refresh token
+  await refreshToken.save();
+
+  // return basic details and tokens
+  return {
+    ...basicDetails(account),
+    token,
+    refreshToken: refreshToken.token,
+  };
+};
+
 const resendOtp = async ({ mobileNo }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
   if (!account) {
@@ -609,4 +636,5 @@ module.exports = {
 
   transactionPinUpdate,
   passwordUpdate,
+  authenticateAdmin,
 };

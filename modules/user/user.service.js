@@ -38,7 +38,7 @@ const me = (req, res) => {
   return res.status(400).json({ error: "System Error: User not found 73" });
 };
 
-const userFromJwtFull = (req) => {
+const userFromJwtFull = (req, res) => {
   if (!(req.auth && req.auth._id)) {
     return res.json({
       status: false,

@@ -33,6 +33,7 @@ const walletTransactionSchema = new Schema({
     enum: ["pending", "cancel", "approve"],
     default: "pending",
   },
+  reason: { type: String },
   created: { type: Date, default: Date.now },
   updated: Date,
 });
