@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const transactionSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "Account" },
+  transactionId: { type: String },
   amount: { type: Number, required: true, default: 0 },
   slipNo: { type: String },
   remark: { type: String },

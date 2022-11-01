@@ -34,6 +34,7 @@
     "shortid": "^2.2.16",
     "speakeasy": "^2.0.0",
     "swagger-ui-express": "^4.3.0",
+    "uid": "^2.0.1",
     "uuid": "^8.3.2",
     "yamljs": "^0.3.0"
   },

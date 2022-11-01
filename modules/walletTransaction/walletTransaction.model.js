@@ -24,13 +24,14 @@ const walletTransactionSchema = new Schema({
   finalWalletAmount: { type: Number, default: 0 },
 
   approveBy: { type: Schema.Types.ObjectId, ref: "Account" },
-  approveDate: { type: Date, default: Date.now() },
+  approveDate: { type: Date },
+  statusChangeDate: { type: Date },
   password: { type: String },
   isActive: { type: Boolean, default: true },
 
   statusOfWalletRequest: {
     type: String,
-    enum: ["pending", "cancel", "approve"],
+    enum: ["pending", "reject", "approve"],
     default: "pending",
   },
   reason: { type: String },

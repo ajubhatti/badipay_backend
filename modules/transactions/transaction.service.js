@@ -1,4 +1,5 @@
 const db = require("../../_helpers/db");
+const { uid } = require("uid");
 const { getUserById } = require("../accounts/accounts.service");
 const accountsService = require("../accounts/accounts.service");
 const { getBankAccountById } = require("../bankAccounts/bankAccounts.service");
@@ -74,6 +75,7 @@ const getTrasactionById = async (id) => {
 };
 
 const create = async (params) => {
+  params.transactionId = uid(16);
   const transaction = new db.Transactions(params);
   return await transaction.save();
 };

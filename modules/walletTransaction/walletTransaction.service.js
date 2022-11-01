@@ -1,11 +1,10 @@
 const db = require("../../_helpers/db");
 const accountsService = require("../accounts/accounts.service");
+const { getBankAccountById } = require("../bankAccounts/bankAccounts.service");
 const { getTrasactionById } = require("../transactions/transaction.service");
 const transaction = require("../transactions/transaction.service");
 
 const getAll = async (params) => {
-  //   const walletData = await db.WalletTransaction.find({});
-
   let walletData = await db.WalletTransaction.aggregate([
     {
       $lookup: {
@@ -19,10 +18,21 @@ const getAll = async (params) => {
     { $sort: { created: -1 } },
   ]);
 
+  let temp = JSON.stringify(walletData);
+  let paramsResult = JSON.parse(temp);
+
+  let finalResult = paramsResult.map(async (x) => {
+    let res = await getBankAccountById(x.creditAccount);
+    x.bankData = res || {};
+    return x;
+  });
+
+  console.log({ finalResult });
+
   var startDate = new Date(params.startDate);
   var endDate = new Date(params.endDate);
 
-  let filterData = walletData;
+  let filterData = finalResult;
   if (params.startDate && params.endDate) {
     filterData = filterData.filter((user) => {
       let date = new Date(user.created);
@@ -233,6 +243,8 @@ const updateWalletStatus = async (params) => {
 
     console.log({ params });
 
+    params.statusChangeDate = new Date();
+
     Object.assign(wallet, params);
     let walletRes = await wallet.save();
 
@@ -247,20 +259,21 @@ const updateWalletStatus = async (params) => {
 
       console.log({ transactionRes });
 
-      var account = await db.Account.findById({ _id: wallet?.userId });
+      if (params.statusOfWalletRequest === "approve") {
+        var account = await db.Account.findById({ _id: wallet?.userId });
+        console.log({ account });
 
-      console.log({ account });
+        let walletCount = account.walletBalance + wallet?.requestAmount;
+        console.log({ walletCount });
 
-      let walletCount = account.walletBalance + wallet?.requestAmount;
+        // here update user wallet balance
 
-      console.log({ walletCount });
+        let userPayload = { walletBalance: walletCount };
+        Object.assign(account, userPayload);
+        let accRes = await account.save();
+        console.log({ accRes });
+      }
 
-      // here update user wallet balance
-
-      let userPayload = { walletBalance: walletCount };
-      Object.assign(account, userPayload);
-      let accRes = await account.save();
-      console.log({ accRes });
       return walletRes;
     }
   } catch (err) {
