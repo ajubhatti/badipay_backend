@@ -57,5 +57,6 @@ module.exports = {
   Apis: require("../modules/apis/apis.model"),
   Recharge: require("../modules/recharge/recharge.model"),
   Transactions: require("../modules/transactions/transaction.model"),
+  PaymentMode: require("../modules/paymentMode/paymentModes.model"),
   isValidId,
 };

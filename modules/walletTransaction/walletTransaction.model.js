@@ -10,7 +10,7 @@ const walletTransactionSchema = new Schema({
 
   transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
 
-  paymentType: { type: String, default: "1" },
+  paymentType: { type: String, default: "636503acf2c7df71df257a03" },
 
   // debitAmount: { type: Number, default: 0 },
   // creditAmount: { type: Number, default: 0 },
@@ -22,7 +22,8 @@ const walletTransactionSchema = new Schema({
   },
 
   finalWalletAmount: { type: Number, default: 0 },
-
+  approveAmount: { type: Number, default: 0 },
+  debitAmount: { type: Number, default: 0 },
   approveBy: { type: Schema.Types.ObjectId, ref: "Account" },
   approveDate: { type: Date },
   statusChangeDate: { type: Date },

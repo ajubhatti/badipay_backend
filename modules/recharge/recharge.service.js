@@ -13,7 +13,7 @@ const create = async (params) => {
     } else {
       let payload = {
         amount: params.amount,
-        operatorCode: filteredOperator?.apiCode,
+        operatorCode: filteredOperator.apiCode,
         regMobileNumber: params.mobileNo,
       };
       let res = await doRecharge(filteredOperator.apiName, payload);
@@ -42,16 +42,16 @@ const create2 = async (params) => {
       console.log("finalrechargeData -------", finalRechargeData);
 
       if (
-        (finalRechargeData && finalRechargeData?.TRNSTATUS == 0) ||
-        finalRechargeData?.STATUSCODE == 0 ||
-        finalRechargeData?.errorcode == 200
+        (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
+        finalRechargeData.STATUSCODE == 0 ||
+        finalRechargeData.errorcode == 200
       ) {
         params.status = "success";
       }
 
-      params.customerNo = params?.mobileNo;
+      params.customerNo = params.mobileNo;
       params.responseData = finalRechargeData;
-      params.rechargeBy = finalRechargeData?.rechargeBy;
+      params.rechargeBy = finalRechargeData.rechargeBy;
 
       console.log("finalrechargeData -------", params);
 
@@ -74,7 +74,7 @@ const recursiveFunction = async (params, operator, apiPriority) => {
     } else {
       let payload = {
         amount: params.amount,
-        operatorCode: filteredOperator?.apiCode,
+        operatorCode: filteredOperator.apiCode,
         regMobileNumber: params.mobileNo,
       };
 
@@ -83,9 +83,9 @@ const recursiveFunction = async (params, operator, apiPriority) => {
       console.log("-----------------------------------------------");
       console.log("recharge data", rechargeData);
       if (
-        (rechargeData && rechargeData?.TRNSTATUS == 0) ||
-        rechargeData?.STATUSCODE == 0 ||
-        rechargeData?.errorcode == 200
+        (rechargeData && rechargeData.TRNSTATUS == 0) ||
+        rechargeData.STATUSCODE == 0 ||
+        rechargeData.errorcode == 200
       ) {
         console.log("rechargeData ----68----" + JSON.stringify(rechargeData));
         return rechargeData;
@@ -161,7 +161,7 @@ const ambikaRecharge = async (params) => {
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      return res?.data;
+      return res.data;
     })
     .catch((err) => {
       console.log({ err });
@@ -191,7 +191,7 @@ const RecharegeWaleRecharge = async (params) => {
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      return res?.data;
+      return res.data;
     })
     .catch((err) => {
       console.log({ err });

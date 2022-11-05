@@ -1,5 +1,5 @@
+const shortid = require("shortid");
 const db = require("../../_helpers/db");
-const { uid } = require("uid");
 const { getUserById } = require("../accounts/accounts.service");
 const accountsService = require("../accounts/accounts.service");
 const { getBankAccountById } = require("../bankAccounts/bankAccounts.service");
@@ -75,9 +75,16 @@ const getTrasactionById = async (id) => {
 };
 
 const create = async (params) => {
-  params.transactionId = uid(16);
+  params.transactionId = await referalcodeGenerator();
   const transaction = new db.Transactions(params);
   return await transaction.save();
+};
+
+const referalcodeGenerator = async () => {
+  shortid.characters(
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$@"
+  );
+  return await shortid.generate();
 };
 
 const update = async (id, params) => {

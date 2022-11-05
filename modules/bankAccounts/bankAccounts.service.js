@@ -29,7 +29,6 @@ const update = async (id, params) => {
   Object.assign(banksAccounts, params);
   banksAccounts.updated = Date.now();
   await banksAccounts.save();
-
   return banksAccounts;
 };
 

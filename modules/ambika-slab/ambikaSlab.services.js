@@ -105,11 +105,11 @@ const ambikaRecharge = async (params) => {
     .get(serviceUrl)
     .then((res) => {
       console.log(`Status: ${res}`);
-      console.log("Body: ", res?.data);
-      if (res?.data?.errorcode) {
+      console.log("Body: ", res.data);
+      if (res.data.errorcode) {
         RecharegeWaleRecharge(params);
       }
-      return res?.data;
+      return res.data;
     })
     .catch((err) => {
       console.log({ err });
@@ -139,9 +139,9 @@ const RecharegeWaleRecharge = async (params) => {
     .get(serviceUrl)
     .then((res) => {
       console.log(`recharge wale Status: ${res}`);
-      console.log("recharge walre Body: ", res?.data);
+      console.log("recharge walre Body: ", res.data);
 
-      return res?.data;
+      return res.data;
     })
     .catch((err) => {
       console.log({ err });

@@ -122,7 +122,7 @@ const readUser = (req, res) => {
 };
 
 const updateUser = (req, res) => {
-  console.log(">>>> in updateUser req.body=", req?.body);
+  // console.log(">>>> in updateUser req.body=", req?.body);
   db.User.findOneAndUpdate(
     { _id: req.prodile._id },
     { $set: req.body },

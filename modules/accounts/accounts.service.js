@@ -89,8 +89,7 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
   };
 };
 
-const 
-authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
+const authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
   if (!account) {

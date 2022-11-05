@@ -14,7 +14,7 @@ const usersRouter = require("./modules/user/user.controller");
 const accountRouter = require("./modules/accounts/accounts.controller");
 const servicesRouter = require("./modules/services/services.controller");
 const walletRouter = require("./modules/wallet/wallet.controller");
-const walletTransaction = require("./modules/walletTransaction/walletTransaction.controller");
+const walletTransactionRouter = require("./modules/walletTransaction/walletTransaction.controller");
 const bankRouter = require("./modules/banks/banks.controller");
 const bankAccountRouter = require("./modules/bankAccounts/bankAccounts.controller");
 const bannerRouter = require("./modules/banners/banners.controller");
@@ -30,7 +30,8 @@ const mlanRouter = require("./modules/services/mplan.controller");
 const companyRouter = require("./modules/company/company.controller");
 const apisRouter = require("./modules/apis/apis.controller");
 const rechargeRouter = require("./modules/recharge/recharge.controller");
-const transaction = require("./modules/transactions/transaction.controller");
+const transactionRouter = require("./modules/transactions/transaction.controller");
+const paymentModeRouter = require("./modules/paymentMode/paymentModes.controller");
 
 var app = express();
 
@@ -77,8 +78,8 @@ app.use("/auth", accountRouter);
 app.use("/service", servicesRouter);
 app.use("/ambikaSlab", ambikaSlabRouter);
 app.use("/wallet", walletRouter);
-app.use("/walletTransaction", walletTransaction);
-app.use("/transaction", transaction);
+app.use("/walletTransaction", walletTransactionRouter);
+app.use("/transaction", transactionRouter);
 app.use("/bank", bankRouter);
 app.use("/bankAccount", bankAccountRouter);
 app.use("/banner", bannerRouter);
@@ -93,6 +94,7 @@ app.use("/myBanner", myBannerRouter);
 app.use("/state", stateRouter);
 app.use("/apis", apisRouter);
 app.use("/rechargeOrBill", rechargeRouter);
+app.use("/paymentMode", paymentModeRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));
