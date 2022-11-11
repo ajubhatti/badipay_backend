@@ -113,7 +113,10 @@ const create = async (params) => {
 const create2 = async (params) => {
   try {
     if (await db.Transactions.findOne({ slipNo: params.slipNo })) {
-      throw "slip no " + params.slipNo + " already taken.";
+      return "slip no " + params.slipNo + " already taken.";
+    }
+    if (!params.userId) {
+      return "userId is required";
     }
     let payload = {
       userId: params.userId,

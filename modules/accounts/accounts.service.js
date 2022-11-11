@@ -6,7 +6,11 @@ const sendEmail = require("../../_helpers/send-email");
 const db = require("../../_helpers/db");
 const Role = require("../../_helpers/role");
 const { generateReferralCode } = require("../referral/referral.services");
-const { sendSms, sendForgotPasswordSms } = require("../../_helpers/send-sms");
+const {
+  sendSms,
+  sendForgotPasswordSms,
+  sendRegisterSms,
+} = require("../../_helpers/send-sms");
 const otpGenerator = require("otp-generator");
 
 const register = async (params, origin) => {
@@ -38,7 +42,7 @@ const register = async (params, origin) => {
 
   // send email
   // await sendVerificationEmail(account, origin);
-  sendSms(account.phoneNumber, account.otp);
+  sendRegisterSms(account.phoneNumber, account.otp);
   if (account.email) {
     // sendVerificationOTPEmail(account, origin);
   }
@@ -299,7 +303,8 @@ const getUserById = async (id) => {
   console.log({ id });
   const account = await db.Account.findOne({ _id: id });
   console.log({ account });
-  return basicDetails(account);
+  // return basicDetails(account);
+  return account;
 };
 
 const create = async (params) => {
@@ -348,37 +353,54 @@ const update = async (id, params) => {
   return basicDetails(account);
 };
 
-const transactionPinUpdate = async (id, params) => {
+const transactionPinUpdate = async (params) => {
   try {
-    const account = await db.Account.findOne({ _id: id });
-
+    const account = await db.Account.findOne({ _id: params.userId });
     if (!account) {
       throw "Account not available";
+    } else {
+      if (
+        !account.transactionPin ||
+        account.transactionPin === "" ||
+        account.transactionPin === undefinded
+      ) {
+      } else {
+        if (
+          account.transactionPin &&
+          !bcrypt.compareSync(params.transactionPin, account.transactionPin)
+        ) {
+          throw "Your pin not matched";
+        } else {
+          params.transactionPin = hash(params.newTransactionPin);
+          params.hasTransactionPin = true;
+          account.updated = Date.now();
+          Object.assign(account, params);
+        }
+      }
     }
-    if (!bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
-      throw "Your pin not matched";
-    }
-    params.transactionPin = hash(params.transactionPin);
-    account.updated = Date.now();
-    Object.assign(account, params);
-    await account.save();
+
+    return await account.save();
   } catch (err) {
     return err;
   }
 };
 
-const passwordUpdate = async (id, params) => {
+const passwordUpdate = async (params) => {
   try {
-    const account = await db.Account.findOne({ _id: id });
+    const account = await db.Account.findOne({ _id: params.userId });
     if (!account) {
       throw "Account not available";
+    } else {
+      if (!bcrypt.compareSync(params.password, account.passwordHash)) {
+        throw "Your password not matched";
+      } else {
+        params.passwordHash = hash(params.newPassword);
+      }
     }
-    if (!bcrypt.compareSync(params.password, account.passwordHash)) {
-      throw "Your password not matched";
-    }
+
     Object.assign(account, params);
     account.updated = Date.now();
-    await account.save();
+    return await account.save();
   } catch (err) {
     return err;
   }

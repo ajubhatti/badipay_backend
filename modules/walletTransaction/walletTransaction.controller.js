@@ -20,32 +20,6 @@ const getAll = (req, res, next) => {
     .catch(next);
 };
 
-const createSchema = (req, res, next) => {
-  const schema = Joi.object({
-    userId: Joi.string().required(),
-    requestAmount: Joi.number().required(),
-    amount: Joi.number(),
-    slipNo: Joi.string(),
-    note: Joi.string(),
-    remark: Joi.string(),
-    paymentType: Joi.number(),
-    bank: Joi.string(),
-    referenceNo: Joi.string(),
-    depositBank: Joi.string(),
-    depositBranch: Joi.string(),
-    debitAmount: Joi.number(),
-    creditAmount: Joi.number(),
-    finalWalletAmount: Joi.number(),
-
-    amountType: Joi.string(),
-
-    approveBy: Joi.string(),
-    approveDate: Joi.date(),
-    password: Joi.string(),
-  });
-  validateRequest(req, next, schema);
-};
-
 const create = (req, res, next) => {
   walletTransaction
     .create2(req.body)
@@ -77,30 +51,6 @@ const getByUserId = (req, res, next) => {
       res.json({ status: 200, data: wallet, message: "success" })
     )
     .catch(next);
-};
-
-const updateSchema = (req, res, next) => {
-  const schema = Joi.object({
-    userId: Joi.string().required(),
-    requestAmount: Joi.number().required(),
-    amount: Joi.number(),
-    slipNo: Joi.string(),
-    note: Joi.string(),
-    remark: Joi.string(),
-    paymentType: Joi.number(),
-    bank: Joi.string(),
-    referenceNo: Joi.string(),
-    depositBank: Joi.string(),
-    depositBranch: Joi.string(),
-    debitAmount: Joi.number(),
-    creditAmount: Joi.number(),
-    finalWalletAmount: Joi.number(),
-    amountType: Joi.string(),
-    approveBy: Joi.string(),
-    approveDate: Joi.date(),
-    password: Joi.string(),
-  });
-  validateRequest(req, next, schema);
 };
 
 const updateById = (req, res, next) => {

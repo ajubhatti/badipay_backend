@@ -17,7 +17,7 @@ const schema = new Schema({
   city: { type: String },
   pincode: { type: Number },
   passwordReset: Date,
-
+  
   transactionPin: { type: String, required: false },
   hasTransactionPin: { type: Boolean, required: false },
 

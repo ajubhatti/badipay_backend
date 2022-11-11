@@ -359,9 +359,10 @@ const getUserIsFirstLogin = (req, res, next) => {
 const changePassword = (req, res, next) => {
   accountService
     .passwordUpdate(req.body)
-    .then((account) =>
-      res.json({ status: 200, data: account, message: "success" })
-    )
+    .then((account) => {
+      console.log({ account });
+      res.json({ status: 200, data: account, message: "success" });
+    })
     .catch(next);
 };
 

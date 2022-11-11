@@ -58,16 +58,15 @@ const sendRegisterSms = async (mobileNo, otp) => {
         source: "BadiPe",
         type: "TEXT",
         entityId: "1201161207424046279",
-        tempId: "",
+        tempId: "1207165289294413488",
         content: `Thank you for registering with us. Your One Time Password :- ${otp} BADIPAY`,
       },
     ],
   };
   const headers = {
-    Authorization: "Bearer my-token",
-    "My-Custom-Header": "foobar",
     apiKey: "YmFkaXBheTowN1gzeUZrcA==",
   };
+  console.log({ payload, headers });
   const response = await axios
     .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
       headers,
