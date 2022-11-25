@@ -58,5 +58,7 @@ module.exports = {
   Recharge: require("../modules/recharge/recharge.model"),
   Transactions: require("../modules/transactions/transaction.model"),
   PaymentMode: require("../modules/paymentMode/paymentModes.model"),
+  ServiceDiscount: require("../modules/service-discount/serviceDiscount.modal"),
+
   isValidId,
 };

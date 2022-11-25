@@ -308,21 +308,26 @@ const getUserById = async (id) => {
 };
 
 const create = async (params) => {
-  // validate
-  if (await db.Account.findOne({ email: params.email })) {
-    throw 'Email "' + params.email + '" is already registered';
+  try {
+    console.log({ params });
+    // validate
+    if (await db.Account.findOne({ email: params.email })) {
+      throw 'Email "' + params.email + '" is already registered';
+    }
+
+    const account = new db.Account(params);
+    account.verified = Date.now();
+
+    // hash password
+    account.passwordHash = hash(params.password);
+
+    // save account
+    await account.save();
+
+    return basicDetails(account);
+  } catch (err) {
+    return err;
   }
-
-  const account = new db.Account(params);
-  account.verified = Date.now();
-
-  // hash password
-  account.passwordHash = hash(params.password);
-
-  // save account
-  await account.save();
-
-  return basicDetails(account);
 };
 
 const update = async (id, params) => {
@@ -356,6 +361,7 @@ const update = async (id, params) => {
 const transactionPinUpdate = async (params) => {
   try {
     const account = await db.Account.findOne({ _id: params.userId });
+    console.log({ account });
     if (!account) {
       throw "Account not available";
     } else {
@@ -364,17 +370,26 @@ const transactionPinUpdate = async (params) => {
         account.transactionPin === "" ||
         account.transactionPin === undefinded
       ) {
+        console.log("transactionPin not available --------");
+        params.transactionPin = hash(params.transactionPin);
+        params.hasTransactionPin = true;
+        account.updated = Date.now();
+        Object.assign(account, params);
+        return await account.save();
       } else {
+        console.log("transactionPin available --------");
         if (
           account.transactionPin &&
           !bcrypt.compareSync(params.transactionPin, account.transactionPin)
         ) {
           throw "Your pin not matched";
         } else {
+          console.log("transactionPin matched --------");
           params.transactionPin = hash(params.newTransactionPin);
           params.hasTransactionPin = true;
           account.updated = Date.now();
           Object.assign(account, params);
+          return await account.save();
         }
       }
     }
@@ -391,16 +406,15 @@ const passwordUpdate = async (params) => {
     if (!account) {
       throw "Account not available";
     } else {
-      if (!bcrypt.compareSync(params.password, account.passwordHash)) {
+      if (!bcrypt.compareSync(params.currentPassword, account.passwordHash)) {
         throw "Your password not matched";
       } else {
         params.passwordHash = hash(params.newPassword);
+        Object.assign(account, params);
+        account.updated = Date.now();
+        return await account.save();
       }
     }
-
-    Object.assign(account, params);
-    account.updated = Date.now();
-    return await account.save();
   } catch (err) {
     return err;
   }

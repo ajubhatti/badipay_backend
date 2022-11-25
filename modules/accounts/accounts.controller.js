@@ -410,7 +410,7 @@ router.post("/reset-password", resetPassword);
 router.post("/getAll", getAll);
 router.get("/:id", getById);
 router.post("/getUserById", getUserById);
-router.post("/", authorize(Role.Admin), createSchema, create);
+router.post("/", create);
 
 router.put("/:id", update);
 router.delete("/:id", authorize(), _delete);

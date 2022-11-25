@@ -32,6 +32,7 @@ const apisRouter = require("./modules/apis/apis.controller");
 const rechargeRouter = require("./modules/recharge/recharge.controller");
 const transactionRouter = require("./modules/transactions/transaction.controller");
 const paymentModeRouter = require("./modules/paymentMode/paymentModes.controller");
+const serviceDiscountRouter = require("./modules/service-discount/serviceDiscount.controller");
 
 var app = express();
 
@@ -95,6 +96,7 @@ app.use("/state", stateRouter);
 app.use("/apis", apisRouter);
 app.use("/rechargeOrBill", rechargeRouter);
 app.use("/paymentMode", paymentModeRouter);
+app.use("/discount", serviceDiscountRouter);
 
 // swagger docs route
 app.use("/api-docs", require("./_helpers/swagger"));

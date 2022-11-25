@@ -13,6 +13,7 @@ const schema = new Schema({
   minAmount: { type: Number, default: 10 },
   maxAmount: { type: Number, default: 500 },
   referenceApis: { type: Array },
+  discountByApi: { type: Array },
   updated: Date,
 });
 

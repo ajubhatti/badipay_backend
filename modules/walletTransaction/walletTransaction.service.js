@@ -314,6 +314,110 @@ const updateWalletStatus = async (params) => {
   }
 };
 
+const getWalletWithPagination = async (params) => {
+  // example array of 150 items to be paged
+  const items = [...Array(150).keys()].map((i) => ({
+    id: i + 1,
+    name: "Item " + (i + 1),
+  }));
+
+  // get page from query params or default to first page
+  const page = parseInt(params.page) || 1;
+
+  // get pager object for specified page
+  const pageSize = 5;
+  const pager = paginate(items.length, page, pageSize);
+
+  // get page of items from items array
+  const pageOfItems = items.slice(pager.startIndex, pager.endIndex + 1);
+
+  // return pager object and current page of items
+  return { pager, pageOfItems };
+};
+
+const getWalletWithPagination2 = async (params) => {
+  let perPage = 3;
+  let page = params.page || 1;
+  let searchKeyword = params.search;
+
+  let searchObj = {};
+  if (searchKeyword) {
+    searchObj = /^(?:\d*\.\d{1,2}|\d+)$/.test(searchKeyword)
+      ? {
+          $or: [{ discount: searchKeyword }, { price: searchKeyword }],
+        }
+      : { name: new RegExp(`${searchKeyword.toString().trim()}`, "i") };
+  }
+  // tmpSearch = { name: new RegExp(search, 'i') }
+
+  products
+    .find(searchObj)
+    .sort({ name: 1 })
+    .skip(perPage * page - perPage)
+    .limit(perPage)
+    .exec(function (err, docs) {
+      products.count(searchObj).exec(function (err, count) {
+        return {
+          search: searchKeyword,
+          quotes: docs,
+          current: page,
+          pages: Math.ceil(count / perPage),
+        };
+      });
+    });
+};
+
+const getWalletWithPagination3 = async (params) => {
+  const orderByColumn = params.order_by_column || "created_at";
+  const orderByDirection = params.order_by_direction || "desc";
+  const page = params.page || 1;
+  const limit = params.limit || 20;
+  const where = {};
+
+  if (params.status) {
+    where.status = params.status;
+  }
+
+  const images = await db.WalletTransaction.find()
+    .where(where)
+    .orderBy(orderByColumn, orderByDirection)
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  return { images };
+};
+
+// router.get("/posts", authenticate, async (req, res) => {
+//   //const _ispublished = req.query.published;
+//   const match = {};
+//   const sort = {};
+
+//   if (req.query.published) {
+//     match.published = req.query.published === "true";
+//   }
+
+//   if (req.query.sortBy && req.query.OrderBy) {
+//     sort[req.query.sortBy] = req.query.OrderBy === "desc" ? -1 : 1;
+//   }
+
+//   try {
+//     await req.user
+//       .populate({
+//         path: "posts",
+//         match,
+//         options: {
+//           limit: parseInt(req.query.limit),
+//           skip: parseInt(req.query.skip),
+//           sort,
+//         },
+//       })
+//       .execPopulate();
+//     res.send(req.user.posts);
+//   } catch (error) {
+//     res.status(500).send();
+//   }
+// });
+
 module.exports = {
   create,
   create2,

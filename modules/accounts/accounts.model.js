@@ -17,9 +17,9 @@ const schema = new Schema({
   city: { type: String },
   pincode: { type: Number },
   passwordReset: Date,
-  
+
   transactionPin: { type: String, required: false },
-  hasTransactionPin: { type: Boolean, required: false },
+  hasTransactionPin: { type: Boolean, default: false },
 
   location: { type: String, default: "" },
   otp: { type: Number },

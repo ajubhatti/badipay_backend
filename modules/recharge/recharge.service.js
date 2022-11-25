@@ -49,6 +49,8 @@ const create2 = async (params) => {
         params.status = "success";
       }
 
+      let discountdata = await getDiscountData();
+
       params.customerNo = params.mobileNo;
       params.responseData = finalRechargeData;
       params.rechargeBy = finalRechargeData.rechargeBy;
@@ -56,12 +58,27 @@ const create2 = async (params) => {
       console.log("finalrechargeData -------", params);
 
       const rechargeData = new db.Recharge(params);
-      await rechargeData.save();
+      await rechargeData.save().then(async () => {
+        let updateResult = await updateUserData(params);
+        console.log("updateResult----", updateResult);
+      });
       return rechargeData;
     }
   } catch (err) {
     return err;
   }
+};
+
+const getDiscountData = (params) => {};
+
+const updateUserData = async (params) => {
+  console.log({ params });
+  var account = await db.Account.findById({ _id: params.userId });
+  console.log({ account });
+  let walletCount = account.walletBalance - params.amount;
+  let userPayload = { walletBalance: walletCount };
+  Object.assign(account, userPayload);
+  return await account.save();
 };
 
 const recursiveFunction = async (params, operator, apiPriority) => {
