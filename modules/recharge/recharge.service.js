@@ -4,34 +4,9 @@ const axios = require("axios");
 var priorityCount = 1;
 
 const create = async (params) => {
-  let operator = await getOperatorById(params);
-  if (operator) {
-    let filteredOperator = await priorityCheck(operator, priorityCount);
-    if (!filteredOperator) {
-      priorityCount++;
-      filteredOperator = await priorityCheck(operator, priorityCount);
-    } else {
-      let payload = {
-        amount: params.amount,
-        operatorCode: filteredOperator.apiCode,
-        regMobileNumber: params.mobileNo,
-      };
-      let res = await doRecharge(filteredOperator.apiName, payload);
-      if (res && res.errorcode != 200) {
-        priorityCount++;
-        await recursiveFunction(params, operator);
-      }
-      const rechargeData = new db.Recharge(params);
-      await rechargeData.save();
-      return rechargeData;
-    }
-  }
-};
-
-const create2 = async (params) => {
   try {
     let operator = await getOperatorById(params);
-    console.log("params----", params, operator);
+
     if (operator) {
       let priority = 1;
       let finalRechargeData = await recursiveFunction(
@@ -49,18 +24,21 @@ const create2 = async (params) => {
         params.status = "success";
       }
 
-      let discountdata = await getDiscountData();
+      let discountData = await getDiscountData(finalRechargeData);
 
+      console.log("discout data ---", discountData);
+      if (discountData) {
+        addDiscount(params, discountData);
+        // params.discountData = discountData;
+      }
       params.customerNo = params.mobileNo;
       params.responseData = finalRechargeData;
       params.rechargeBy = finalRechargeData.rechargeBy;
-
-      console.log("finalrechargeData -------", params);
+      params.rechargeByApi = finalRechargeData.rechargeByApi;
 
       const rechargeData = new db.Recharge(params);
       await rechargeData.save().then(async () => {
         let updateResult = await updateUserData(params);
-        console.log("updateResult----", updateResult);
       });
       return rechargeData;
     }
@@ -69,12 +47,65 @@ const create2 = async (params) => {
   }
 };
 
-const getDiscountData = (params) => {};
+const getDiscountData = async (params) => {
+  const { rechargeBy, rechargeDoneBy } = params;
+  let discount = await db.ServiceDiscount.findOne({
+    apiId: rechargeDoneBy._id,
+    opearatorId: rechargeBy._id,
+  });
+
+  return discount;
+};
+
+const addDiscount = async (params, discountData) => {
+  var account = await db.Account.findById({ _id: params.userId });
+
+  const { amount, type } = discountData;
+  let disAmount = 0;
+  if (type === "percentage") {
+    let percentageAmount = amount / 100;
+    disAmount =
+      Number(params.amount) + Number(params.amount) * percentageAmount;
+  } else {
+    disAmount = Number(params.amount) + amount;
+  }
+
+  let rewardAmount = account.rewardedBalance + disAmount;
+  let userDisAmount = account.discount + disAmount;
+
+  let userPayload = { discount: userDisAmount, rewardedBalance: rewardAmount };
+  Object.assign(account, userPayload);
+  await account.save();
+
+  if (account.referralId) {
+    updateReferalUserDiscount(params.discountData);
+  }
+};
+
+const updateReferalUserDiscount = async (params, discountData) => {
+  var account = await db.Account.findById({ _id: params.referralId });
+
+  const { referalAmount, referalType } = discountData;
+  let disAmount = 0;
+  if (referalType === "percentage") {
+    let percentageAmount = referalAmount / 100;
+    disAmount =
+      Number(params.amount) + Number(params.amount) * percentageAmount;
+  } else {
+    disAmount = Number(params.amount) + referalAmount;
+  }
+
+  let rewardAmount = account.rewardedBalance + disAmount;
+  let userDisAmount = account.discount + disAmount;
+
+  let userPayload = { discount: userDisAmount, rewardedBalance: rewardAmount };
+  Object.assign(account, userPayload);
+  return await account.save();
+};
 
 const updateUserData = async (params) => {
-  console.log({ params });
   var account = await db.Account.findById({ _id: params.userId });
-  console.log({ account });
+
   let walletCount = account.walletBalance - params.amount;
   let userPayload = { walletBalance: walletCount };
   Object.assign(account, userPayload);
@@ -83,7 +114,6 @@ const updateUserData = async (params) => {
 
 const recursiveFunction = async (params, operator, apiPriority) => {
   try {
-    console.log("recursive function-------", apiPriority);
     let filteredOperator = await priorityCheck(operator, apiPriority);
     if (!filteredOperator) {
       apiPriority++;
@@ -95,26 +125,27 @@ const recursiveFunction = async (params, operator, apiPriority) => {
         regMobileNumber: params.mobileNo,
       };
 
-      let rechargeData = await doRecharge(filteredOperator.apiName, payload);
+      let rechargeData = await doRecharge(filteredOperator, payload);
       rechargeData.rechargeBy = operator;
       console.log("-----------------------------------------------");
-      console.log("recharge data", rechargeData);
+      console.log("rechargeData", rechargeData);
       if (
         (rechargeData && rechargeData.TRNSTATUS == 0) ||
         rechargeData.STATUSCODE == 0 ||
         rechargeData.errorcode == 200
       ) {
-        console.log("rechargeData ----68----" + JSON.stringify(rechargeData));
         return rechargeData;
       } else {
         console.log(
-          "recursiveFunction",
+          "recursiveFunctions----",
           params,
           typeof apiPriority,
           apiPriority++
         );
         let result = await recursiveFunction(params, operator, apiPriority++);
         // result.rechargeBy = operator;
+
+        console.log("result======>", result);
         return result;
       }
     }
@@ -122,18 +153,17 @@ const recursiveFunction = async (params, operator, apiPriority) => {
 };
 
 const priorityCheck = async (operator, priority) => {
-  console.log("priority check", priority);
   return operator.referenceApis.find(
     (x) => x.priority && x.priority == priority && x.isActive
   );
 };
 
-const doRecharge = async (apiName, payload) => {
-  console.log("apiName ----", apiName);
+const doRecharge = async (filterData, payload) => {
+  const { apiName } = filterData;
   if (apiName == "RechargeWale") {
     let rechargeWaleRes = await RecharegeWaleRecharge(payload);
-    console.log({ rechargeWaleRes });
 
+    rechargeWaleRes.rechargeDoneBy = filterData;
     if (rechargeWaleRes.errorcode != 200) {
       return rechargeWaleRes;
     } else {
@@ -143,8 +173,8 @@ const doRecharge = async (apiName, payload) => {
 
   if (apiName == "Ambika") {
     let ambikaRes = await ambikaRecharge(payload);
-    console.log({ ambikaRes });
 
+    ambikaRes.rechargeDoneBy = filterData;
     if (ambikaRes.errorcode != 200) {
       return ambikaRes;
     } else {
@@ -173,7 +203,8 @@ const ambikaRecharge = async (params) => {
   var timeStamp = Math.round(new Date().getTime() / 1000);
 
   let serviceUrl = `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${regMobileNumber}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${timeStamp}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${cutomerNo}&Pincode=${areaPincode}&Format=1`;
-  console.log({ serviceUrl });
+
+  console.log("service url ambika ---------------------------", serviceUrl);
 
   return await axios
     .get(serviceUrl)
@@ -181,8 +212,6 @@ const ambikaRecharge = async (params) => {
       return res.data;
     })
     .catch((err) => {
-      console.log({ err });
-      console.error(err);
       return err;
     });
 };
@@ -203,7 +232,7 @@ const RecharegeWaleRecharge = async (params) => {
   let stv = 0;
 
   let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
-  console.log({ serviceUrl });
+  console.log("service url recharge ---------------------------", serviceUrl);
 
   return await axios
     .get(serviceUrl)
@@ -211,8 +240,7 @@ const RecharegeWaleRecharge = async (params) => {
       return res.data;
     })
     .catch((err) => {
-      console.log({ err });
-      console.error(err);
+      return err;
     });
 };
 
@@ -254,7 +282,6 @@ const getState = async (id) => {
 
 module.exports = {
   create,
-  create2,
   update,
   getById,
   getAll,

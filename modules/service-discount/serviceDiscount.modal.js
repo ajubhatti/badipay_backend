@@ -3,6 +3,11 @@ const Schema = mongoose.Schema;
 
 const schema = new Schema({
   apiId: { type: mongoose.Schema.Types.ObjectId, ref: "Apis", required: true },
+  serviceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Services",
+    required: true,
+  },
   opearatorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "company",

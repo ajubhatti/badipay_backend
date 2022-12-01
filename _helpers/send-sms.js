@@ -24,7 +24,6 @@ const sendSms = async (mobileNo, otp) => {
       headers,
     })
     .then((res) => {
-      console.log(`Status: ${res.status}`);
       console.log("Body: ", res.data);
     })
     .catch((err) => {

@@ -7,7 +7,7 @@ const validateRequest = require("../../_middleware/validate-request");
 
 const create = (req, res, next) => {
   rechargeService
-    .create2(req.body)
+    .create(req.body)
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
     )

@@ -58,12 +58,22 @@ const usersAtPage = (req, res, next) => {
   return next();
 };
 
+const getDiscountList = (req, res, next) => {
+  serviceDiscount
+    .getDiscountList(req.body)
+    .then((discount) =>
+      res.json({ status: 200, data: discount, message: "success" })
+    )
+    .catch(next);
+};
+
 router
   .post("/", create)
   .get("/", usersAtPage, getAll)
   .get("/:id", getById)
   .put("/:id", update)
   .delete("/:id", _delete)
+  .post("/getDiscountList", getDiscountList)
 
   .use(notFound);
 

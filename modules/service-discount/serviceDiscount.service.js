@@ -46,10 +46,41 @@ const getDiscount = async (id) => {
   }
 };
 
+const getDiscountList = async (params) => {
+  try {
+    const apiData = await db.Apis.findById(params.apiId);
+
+    var companyData = await db.Company.find({
+      providerType: params.serviceId,
+    });
+
+    var companyData = JSON.parse(JSON.stringify(companyData));
+
+    for (let i = 0; i < companyData.length; i++) {
+      const company = companyData[i];
+      const disData = await db.ServiceDiscount.findOne({
+        opearatorId: company._id,
+        serviceId: params.serviceId,
+        apiId: params.apiId,
+      });
+
+      companyData[i].discountData = disData;
+      companyData[i].apiData = apiData;
+    }
+
+    console.log({ companyData });
+
+    return companyData;
+  } catch (err) {
+    throw err;
+  }
+};
+
 module.exports = {
   create,
   update,
   getById,
   getAll,
+  getDiscountList,
   _delete,
 };

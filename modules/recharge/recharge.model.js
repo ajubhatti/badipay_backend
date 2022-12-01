@@ -8,6 +8,7 @@ const schema = new Schema({
   state: { type: String },
   amount: { type: Number },
   rechargeBy: { type: Object },
+  rechargeByApi: { type: Object },
   status: { type: String, default: true, default: "pending" },
   created: { type: Date, default: Date.now },
   responseData: { type: Object },
