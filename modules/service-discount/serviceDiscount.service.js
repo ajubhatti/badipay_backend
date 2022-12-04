@@ -59,7 +59,7 @@ const getDiscountList = async (params) => {
     for (let i = 0; i < companyData.length; i++) {
       const company = companyData[i];
       const disData = await db.ServiceDiscount.findOne({
-        opearatorId: company._id,
+        operatorId: company._id,
         serviceId: params.serviceId,
         apiId: params.apiId,
       });

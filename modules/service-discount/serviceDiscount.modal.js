@@ -8,7 +8,7 @@ const schema = new Schema({
     ref: "Services",
     required: true,
   },
-  opearatorId: {
+  operatorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "company",
     required: true,
