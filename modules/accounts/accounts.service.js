@@ -18,7 +18,6 @@ const register = async (params, origin) => {
   let userExist = await db.Account.findOne({
     $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
   });
-  console.log({ userExist });
   if (userExist) {
     // send already registered error in email to prevent account enumeration
     // await sendAlreadyRegisteredEmail(params.email, origin);
@@ -38,7 +37,9 @@ const register = async (params, origin) => {
   // hash password
   account.passwordHash = hash(params.password);
   // save account
-  await account.save();
+  await account.save().then((res) => {
+    addReferalId(params, res);
+  });
 
   // send email
   // await sendVerificationEmail(account, origin);
@@ -54,6 +55,21 @@ const register = async (params, origin) => {
   };
 };
 
+const addReferalId = async (params, res) => {
+  const referalData = await db.Referral.findOne({
+    referralCode: params.referrelId,
+  });
+
+  if (referalData) {
+    referalData.referredBy = [...referalData.referredBy, res._id];
+
+    referalData.updated = Date.now();
+    await referalData.save();
+  } else {
+    throw new Error("Could not find");
+  }
+};
+
 const authenticate = async ({ mobileNo, password, ipAddress }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
@@ -63,7 +79,6 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
 
   if (!account.isVerified) {
     const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
-    console.log(account.otpDate, aMinuteAgo, account.otpDate <= aMinuteAgo);
     if (account.otpDate <= aMinuteAgo) {
       let userOtp = randomOTPGenerate();
       account.otp = userOtp;
@@ -183,9 +198,7 @@ const verifyEmail = async ({ token }) => {
 };
 
 const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
-  console.log("mobileNo", mobileNo);
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
-  console.log("account", account);
 
   if (!account || account.otp != otp) throw "Verification failed";
   const referalData = await generateReferralCode(account._id);
@@ -299,18 +312,27 @@ const getAll = async (params) => {
   return filterData.map((x) => basicDetails(x));
 };
 
-const getUserById = async (id) => {
-  console.log({ id });
+const getUserById = async (id, ipAddress) => {
   const account = await db.Account.findOne({ _id: id });
-  console.log({ account });
+
+  const token = generateJwtToken(account);
+  const refreshToken = generateRefreshToken(account, ipAddress);
+
+  // save refresh token
+  await refreshToken.save();
+
+  // return basic details and tokens
+  return {
+    ...basicDetails(account),
+    token,
+    refreshToken: refreshToken.token,
+  };
   // return basicDetails(account);
   return account;
 };
 
 const create = async (params) => {
   try {
-    console.log({ params });
-    // validate
     if (await db.Account.findOne({ email: params.email })) {
       throw 'Email "' + params.email + '" is already registered';
     }
@@ -346,9 +368,9 @@ const update = async (id, params) => {
   if (params.password) {
     params.passwordHash = hash(params.password);
   }
-  if (params.transactionPin) {
-    params.transactionPin = hash(params.transactionPin);
-  }
+  // if (params.transactionPin) {
+  //   params.transactionPin = hash(params.transactionPin);
+  // }
 
   // copy params to account and save
   account.updated = Date.now();
@@ -361,7 +383,6 @@ const update = async (id, params) => {
 const transactionPinUpdate = async (params) => {
   try {
     const account = await db.Account.findOne({ _id: params.userId });
-    console.log({ account });
     if (!account) {
       throw "Account not available";
     } else {
@@ -370,21 +391,18 @@ const transactionPinUpdate = async (params) => {
         account.transactionPin === "" ||
         account.transactionPin === undefinded
       ) {
-        console.log("transactionPin not available --------");
         params.transactionPin = hash(params.transactionPin);
         params.hasTransactionPin = true;
         account.updated = Date.now();
         Object.assign(account, params);
         return await account.save();
       } else {
-        console.log("transactionPin available --------");
         if (
           account.transactionPin &&
           !bcrypt.compareSync(params.transactionPin, account.transactionPin)
         ) {
           throw "Your pin not matched";
         } else {
-          console.log("transactionPin matched --------");
           params.transactionPin = hash(params.newTransactionPin);
           params.hasTransactionPin = true;
           account.updated = Date.now();
@@ -435,10 +453,24 @@ const _delete = async (id) => {
 };
 
 const getuserFromReferralCode = async (code) => {
-  const account = await db.Account.findOne({ referrelCode: code });
+  try {
+    const referalData = await db.Referral.findOne({ referralCode: code });
 
-  console.log("account", account);
-  return basicDetails(account);
+    if (referalData) {
+      const account = await db.Account.findOne({
+        _id: referalData.userId,
+      });
+      if (!account) {
+        throw "user not found";
+      } else {
+        return basicDetails(account);
+      }
+    } else {
+      throw new Error("Could not find");
+    }
+  } catch (err) {
+    throw err;
+  }
 };
 
 // helper functions
@@ -485,12 +517,6 @@ const randomTokenString = () => {
 
 const randomOTPGenerate = () => {
   return Math.floor(100000 + Math.random() * 900000);
-  // let newOtp = otpGenerator.generate(6, {
-  //   upperCaseAlphabets: false,
-  //   specialChars: false,
-  // });
-  // console.log("first", newOtp);
-  // return newOtp;
 };
 
 const basicDetails = (account) => {
@@ -509,6 +535,7 @@ const basicDetails = (account) => {
     updated,
     verificationToken,
     transactionPin,
+    hasTransactionPin,
     walletBalance,
   } = account;
   return {
@@ -526,6 +553,7 @@ const basicDetails = (account) => {
     updated,
     verificationToken,
     transactionPin,
+    hasTransactionPin,
     walletBalance,
   };
 };

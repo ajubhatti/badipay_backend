@@ -234,8 +234,10 @@ const getById = (req, res, next) => {
 };
 
 const getUserById = (req, res, next) => {
+  const ipAddress = req.ip;
+  const { id } = req.body;
   accountService
-    .getUserById(req.body.id)
+    .getUserById(id, ipAddress)
     .then((account) =>
       res.json({ status: 200, data: account, message: "success" })
     )
