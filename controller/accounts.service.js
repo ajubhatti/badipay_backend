@@ -380,41 +380,82 @@ const update = async (id, params) => {
   return basicDetails(account);
 };
 
-const transactionPinUpdate = async (params) => {
+const transactionPinUpdate2 = async (req, res, next) => {
   try {
+    const params = req.body;
     const account = await db.Account.findOne({ _id: params.userId });
     if (!account) {
-      throw "Account not available";
+      res
+        .status(400)
+        .json({ status: 400, message: "Account not available", data: {} });
     } else {
-      if (
-        !account.transactionPin ||
-        account.transactionPin === "" ||
-        account.transactionPin === undefinded
-      ) {
-        params.transactionPin = hash(params.transactionPin);
-        params.hasTransactionPin = true;
-        account.updated = Date.now();
-        Object.assign(account, params);
-        return await account.save();
+      if (!account.transactionPin || account.transactionPin === "") {
+        if (bcrypt.compareSync(params.transactionPin, account.passwordHash)) {
+          res.status(400).json({
+            status: 400,
+            message: "Your pin and password can not be same!",
+            data: {},
+          });
+        } else {
+          params.transactionPin = hash(params.transactionPin);
+          params.hasTransactionPin = true;
+          account.updated = Date.now();
+          Object.assign(account, params);
+          await account.save().then((result) => {
+            res.status(200).json({
+              status: 200,
+              message: "success",
+              data: result,
+            });
+          });
+        }
       } else {
         if (
           account.transactionPin &&
           !bcrypt.compareSync(params.transactionPin, account.transactionPin)
         ) {
-          throw "Your pin not matched";
+          res
+            .status(400)
+            .json({ status: 400, message: "Your pin not match!", data: {} });
         } else {
-          params.transactionPin = hash(params.newTransactionPin);
-          params.hasTransactionPin = true;
-          account.updated = Date.now();
-          Object.assign(account, params);
-          return await account.save();
+          if (
+            bcrypt.compareSync(params.newTransactionPin, account.passwordHash)
+          ) {
+            res.status(400).json({
+              status: 400,
+              message: "Your pin and password can not be same!",
+              data: {},
+            });
+          } else if (
+            bcrypt.compareSync(params.newTransactionPin, account.transactionPin)
+          ) {
+            res.status(400).json({
+              status: 400,
+              message: "Your pin and new pin can not be same!",
+              data: {},
+            });
+          } else {
+            params.transactionPin = hash(params.newTransactionPin);
+            params.hasTransactionPin = true;
+            account.updated = Date.now();
+            Object.assign(account, params);
+            await account.save().then((result) => {
+              res.status(200).json({
+                status: 200,
+                message: "success",
+                data: result,
+              });
+            });
+          }
         }
       }
     }
-
-    return await account.save();
   } catch (err) {
-    return err;
+    res.status(400).json({
+      status: 400,
+      message: "something went wrong",
+      data: err,
+    });
   }
 };
 
@@ -430,15 +471,73 @@ const passwordUpdate = async (params) => {
         if (bcrypt.compareSync(params.newPassword, account.passwordHash)) {
           throw "old and new Password are same";
         } else {
-          params.passwordHash = hash(params.newPassword);
-          Object.assign(account, params);
-          account.updated = Date.now();
-          return await account.save();
+          if (bcrypt.compareSync(params.newPassword, account.transactionPin)) {
+            throw "Your pin and password can not be same";
+          } else {
+            params.passwordHash = hash(params.newPassword);
+            Object.assign(account, params);
+            account.updated = Date.now();
+            return await account.save();
+          }
         }
       }
     }
   } catch (err) {
     return err;
+  }
+};
+
+const passwordUpdate2 = async (req, res, next) => {
+  try {
+    const { body } = req;
+    const account = await db.Account.findOne({ _id: body.userId });
+    if (!account) {
+      res
+        .status(400)
+        .json({ status: 400, message: "Account not available", data: {} });
+    } else {
+      if (!bcrypt.compareSync(body.currentPassword, account.passwordHash)) {
+        res.status(400).json({
+          status: 400,
+          message: "Your password not matched",
+          data: {},
+        });
+      } else {
+        if (bcrypt.compareSync(body.newPassword, account.passwordHash)) {
+          res.status(400).json({
+            status: 400,
+            message: "old and new Password are same",
+            data: {},
+          });
+        } else {
+          if (bcrypt.compareSync(body.newPassword, account.transactionPin)) {
+            res.status(400).json({
+              status: 400,
+              message: "Your password and transaction pin can not be same",
+              data: {},
+            });
+          } else {
+            body.passwordHash = hash(body.newPassword);
+            Object.assign(account, body);
+            account.updated = Date.now();
+            await account.save().then((result) => {
+              res.status(200).json({
+                status: 200,
+                message: "success",
+                data: result,
+              });
+            });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    res.status(400).json({
+      status: 400,
+      message: "some thing went wrong",
+      data: err,
+    });
+    // return err;
   }
 };
 
@@ -454,8 +553,6 @@ const checkPassword = async (params) => {
 };
 
 const updateUserData = async (account) => {
-  // copy params to account and save
-  // Object.assign(account, params);
   account.updated = Date.now();
   await account.save();
 
@@ -712,7 +809,8 @@ module.exports = {
 
   getUserIsFirstLogin,
 
-  transactionPinUpdate,
+  transactionPinUpdate2,
   passwordUpdate,
   authenticateAdmin,
+  passwordUpdate2,
 };

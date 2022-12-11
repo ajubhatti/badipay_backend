@@ -74,15 +74,12 @@ const create = async (params) => {
   console.log("Slip " + params);
 
   const wallet = new db.Wallet(params);
-  await wallet.save().then((res) => {
-    console.log("res---", res);
-  });
+  await wallet.save();
 };
 
 const update = async (id, params) => {
   const wallet = await getWallet(id);
 
-  // validate (if slip no. was changed)
   if (
     params.slipNo &&
     wallet.slipNo !== params.slipNo &&

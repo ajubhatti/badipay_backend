@@ -426,8 +426,9 @@ router.post(
 router.post("/getByReferralCode", getuserByReferralCode);
 router.post("/resendOtp", resendOtp);
 router.get("/getUserIsFirstLogin/:id", getUserIsFirstLogin);
-router.post("/changePassword", changePassword);
-router.post("/changeTransactionPin", changeTransactionPin);
+
+router.post("/changePassword", accountService.passwordUpdate2);
+router.post("/changeTransactionPin", accountService.transactionPinUpdate2);
 
 router.post("/adminLogin", adminLogin);
 
