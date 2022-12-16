@@ -15,29 +15,29 @@ const router = require("express").Router();
 // const wishlistRoutes = require("./wishlist");
 
 // ==========================================================================
-const usersRouter = require("./user.controller");
-const accountRouter = require("./accounts.controller");
-const servicesRouter = require("./services.controller");
-const walletRouter = require("./wallet.controller");
-const walletTransactionRouter = require("./walletTransaction.controller");
-const bankRouter = require("./banks.controller");
-const bankAccountRouter = require("./bankAccounts.controller");
-const bannerRouter = require("./banners.controller");
-const tickerRouter = require("./ticker.controller");
-const referralRouter = require("./referral.controller");
-const contactUsRouter = require("./contactUs.controller");
-const supportsRouter = require("./support.controller");
-const subSupportRouter = require("./subSupport.controller");
-const myBannerRouter = require("./banner.controller");
-const stateRouter = require("./states.controller");
-const ambikaSlabRouter = require("./ambikaSlab.controller");
-const mlanRouter = require("./mplan.controller");
-const companyRouter = require("./company.controller");
-const apisRouter = require("./apis.controller");
-const rechargeRouter = require("./recharge.controller");
-const transactionRouter = require("./transaction.controller");
-const paymentModeRouter = require("./paymentModes.controller");
-const serviceDiscountRouter = require("./serviceDiscount.controller");
+const usersRouter = require("./user.route");
+const accountRouter = require("./accounts.route");
+const servicesRouter = require("./services.route");
+const walletRouter = require("./wallet.route");
+const walletTransactionRouter = require("./walletTransaction.route");
+const bankRouter = require("./banks.route");
+const bankAccountRouter = require("./bankAccounts.route");
+const bannerRouter = require("./banners.route");
+const tickerRouter = require("./ticker.route");
+const referralRouter = require("./referral.route");
+const contactUsRouter = require("./contactUs.route");
+const supportsRouter = require("./support.route");
+const subSupportRouter = require("./subSupport.route");
+const myBannerRouter = require("./banner.route");
+const stateRouter = require("./states.route");
+const ambikaSlabRouter = require("./ambikaSlab.route");
+const mlanRouter = require("./mplan.route");
+const companyRouter = require("./company.route");
+const apisRouter = require("./apis.route");
+const rechargeRouter = require("./recharge.route");
+const transactionRouter = require("./transaction.route");
+const paymentModeRouter = require("./paymentModes.route");
+const serviceDiscountRouter = require("./serviceDiscount.route");
 
 // ==========================================================================
 

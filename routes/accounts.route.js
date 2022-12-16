@@ -147,7 +147,7 @@ const forgotPasswordSchema = (req, res, next) => {
 
 const forgotPassword = (req, res, next) => {
   accountService
-    .forgotPassword(req.body, req.get("origin"))
+    .forgotPassword2(req.body, req.get("origin"))
     .then(() =>
       res.json({
         status: 200,
@@ -333,20 +333,6 @@ const setTokenCookie = (res, token) => {
   res.cookie("refreshToken", token, cookieOptions);
 };
 
-const resendOtp = (req, res, next) => {
-  const { mobileNo } = req.body;
-  accountService
-    .resendOtp({ mobileNo })
-    .then((data) => {
-      res.json({
-        status: 200,
-        message: "otp send successfully",
-        data: data,
-      });
-    })
-    .catch(next);
-};
-
 const getUserIsFirstLogin = (req, res, next) => {
   const { id } = req.params;
   accountService.getUserIsFirstLogin(id).then((data) => {
@@ -397,7 +383,8 @@ const me = (req, res, next) => {
 };
 
 // routes
-router.post("/register", register);
+router.post("/register", accountService.userRegister);
+router.post("/user-register", accountService.userRegister); // updated
 router.post("/login", authenticateSchema, authenticate);
 
 router.post("/refresh-token", refreshToken);
@@ -406,8 +393,15 @@ router.post("/revoke-token", authorize(), revokeTokenSchema, revokeToken);
 router.post("/verify-email", verifyEmailSchema, verifyEmail);
 router.post("/verify-phone-no", verifyPhoneSchema, verifyPhoneNo);
 
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post(
+  "/verify-phone-no-otp",
+  verifyPhoneSchema,
+  accountService.verifyPhoneNoOtp
+);
+
+router.post("/forgot-password", accountService.forgotPassword2);
+// router.post("/reset-password", resetPassword);
+router.post("/reset-password", accountService.resetPassword2);
 
 router.post("/getAll", getAll);
 router.get("/:id", getById);
@@ -424,7 +418,7 @@ router.post(
 );
 
 router.post("/getByReferralCode", getuserByReferralCode);
-router.post("/resendOtp", resendOtp);
+router.post("/resendOtp", accountService.resendOtp);
 router.get("/getUserIsFirstLogin/:id", getUserIsFirstLogin);
 
 router.post("/changePassword", accountService.passwordUpdate2);
