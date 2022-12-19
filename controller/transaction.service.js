@@ -3,6 +3,7 @@ const db = require("../_helpers/db");
 const { getUserById } = require("../controller/accounts.service");
 const accountsService = require("../controller/accounts.service");
 const { getBankAccountById } = require("../controller/bankAccounts.service");
+const { fetchAllData } = require("../_middleware/fetchingData");
 
 const getAll = async (params) => {
   const filterData = await db.Transactions.find({}).sort({ createdAt: -1 });
@@ -67,6 +68,13 @@ const getAll = async (params) => {
   //   }
 
   return transaction;
+};
+
+const getAll2 = async (params) => {
+  params.dataBase = db.Transactions;
+  let res = await fetchAllData(params);
+  console.log(`${res}`);
+  return res;
 };
 
 const getTrasactionById = async (id) => {
@@ -138,6 +146,7 @@ module.exports = {
   create,
   update,
   getAll,
+  getAll2,
   getTrasactionById,
   delete: _delete,
   getTransctionByUserId,

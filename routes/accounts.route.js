@@ -383,9 +383,9 @@ const me = (req, res, next) => {
 };
 
 // routes
-router.post("/register", accountService.userRegister);
-router.post("/user-register", accountService.userRegister); // updated
-router.post("/login", authenticateSchema, authenticate);
+router.post("/register", accountService.userRegister); // updated
+// router.post("/login", authenticateSchema, authenticate);
+router.post("/login", authenticateSchema, accountService.authenticate2);
 
 router.post("/refresh-token", refreshToken);
 router.post("/revoke-token", authorize(), revokeTokenSchema, revokeToken);
@@ -400,8 +400,10 @@ router.post(
 );
 
 router.post("/forgot-password", accountService.forgotPassword2);
+router.post("/forgot-transaction-pin", accountService.forgotTransactionPin);
 // router.post("/reset-password", resetPassword);
 router.post("/reset-password", accountService.resetPassword2);
+router.post("/reset-transaction-pin", accountService.resetTransactionPin);
 
 router.post("/getAll", getAll);
 router.get("/:id", getById);
@@ -425,5 +427,6 @@ router.post("/changePassword", accountService.passwordUpdate2);
 router.post("/changeTransactionPin", accountService.transactionPinUpdate2);
 
 router.post("/adminLogin", adminLogin);
+router.get("/me", me);
 
 module.exports = router;

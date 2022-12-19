@@ -1,34 +1,6 @@
 const axios = require("axios");
 const { sms } = require("../config/keys");
 
-const sendSms = async (mobileNo, otp) => {
-  const payload = {
-    data: [
-      {
-        destination: mobileNo,
-        source: sms.source,
-        type: sms.type,
-        entityId: sms.entityId,
-        tempId: "",
-        content: `Thank you for registering with us. Your One Time Password :- ${otp}`,
-      },
-    ],
-  };
-  const headers = {
-    apiKey: sms.key,
-  };
-  return await axios
-    .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
-      headers,
-    })
-    .then((res) => {
-      console.log("Body: ", res.data);
-    })
-    .catch((err) => {
-      console.error(err);
-    });
-};
-
 const sendRegisterSms = async (mobileNo, otp) => {
   const payload = {
     data: [
@@ -149,7 +121,6 @@ const sendResetPasswordSMS = async (mobileNo, message) => {
 };
 
 module.exports = {
-  sendSms,
   sendRegisterSms,
   sendForgotPasswordSms,
   sendChangeEPinSms,

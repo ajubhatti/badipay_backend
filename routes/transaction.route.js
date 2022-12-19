@@ -7,7 +7,7 @@ const transaction = require("../controller/transaction.service");
 
 const getAll = (req, res, next) => {
   transaction
-    .getAll(req.body)
+    .getAll2(req.body)
     .then((transactions) =>
       res.status(200).json({
         type: "success",

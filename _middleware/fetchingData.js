@@ -2,7 +2,7 @@ const db = require("../_helpers/db");
 
 const fetchAllData = async (params) => {
   try {
-    console.log(params.dataBase);
+    console.log(params);
     const pageNumber = parseInt(params.page) || 0;
     const limit = parseInt(params.perPage) || 12;
     const result = {};

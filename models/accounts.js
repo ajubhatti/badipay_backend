@@ -7,45 +7,34 @@ const schema = new Schema({
   phoneNumber: { type: String, unique: true, required: true },
   email: { type: String, trim: true, unique: true, required: true },
   passwordHash: { type: String, required: true },
-  acceptTerms: { type: Boolean },
+  passwordResetDate: Date,
   verificationToken: String,
-  verified: Date,
+  verifiedDate: Date,
   isVerified: { type: Boolean, default: false },
   resetToken: { token: String, expires: Date },
   isFirstLogin: { type: Boolean, default: true },
   stateId: { type: mongoose.Schema.Types.ObjectId, ref: "state" },
   city: { type: String },
   pincode: { type: Number },
-  passwordReset: Date,
 
   transactionPin: { type: String, required: false },
   hasTransactionPin: { type: Boolean, default: false },
+  transactionPinResetDate: Date,
 
   location: { type: String, default: "" },
   otp: { type: Number },
   otpDate: { type: Date, default: Date.now },
-  otpUpdateDate: { type: Date },
   isActive: { type: Boolean, default: true },
-
-  referralCode: { type: String, required: false },
-  referralId: { type: mongoose.Schema.Types.ObjectId, ref: "referral" },
 
   walletBalance: { type: Number, default: 0 },
   walletId: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
-  pendingBalane: { type: Number, default: 0 },
-  rewardedBalance: { type: Number, default: 0 },
+  pendingBalance: { type: Number, default: 0 },
+  rewardedBalance: { type: Number, default: 0 }, // cashback
   role: { type: String, enum: ["user", "moderator", "admin"], default: "user" },
-
-  // ---- discount ----
-  discount: { type: Number, default: 0 },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,
 });
-
-// schema.virtual("isVerified").get(() => {
-//   return !!(this.verified || this.passwordReset);
-// });
 
 schema.set("toJSON", {
   virtuals: true,

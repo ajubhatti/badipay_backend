@@ -12,9 +12,6 @@ const walletTransactionSchema = new Schema({
 
   paymentType: { type: String, default: "636503acf2c7df71df257a03" },
 
-  // debitAmount: { type: Number, default: 0 },
-  // creditAmount: { type: Number, default: 0 },
-
   amountType: {
     type: String,
     enum: ["debit", "credit"],
