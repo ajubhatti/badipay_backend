@@ -19,6 +19,18 @@ const transactionSchema = new Schema({
     default: "pending",
   },
   totalAmount: { type: Number, required: true, default: 0 },
+  // ===========================================
+  customerNo: { type: String },
+  operatorId: { type: Schema.Types.ObjectId, ref: "company" },
+  operatorName: { type: String },
+  userBalance: { tye: Number },
+  requestAmount: { tye: Number },
+  cashBackAmount: { tye: Number },
+  rechargeAmount: { tye: Number },
+  userFinalBalance: { tye: Number },
+
+  // ===========================================
+
   created: { type: Date, default: Date.now },
   updated: Date,
 });

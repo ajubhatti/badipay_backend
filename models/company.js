@@ -17,4 +17,4 @@ const schema = new Schema({
   updated: Date,
 });
 
-module.exports = mongoose.model("company", schema);
+module.exports = mongoose.model("Company", schema);

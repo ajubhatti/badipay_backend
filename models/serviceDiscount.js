@@ -33,4 +33,4 @@ const schema = new Schema({
   updated: Date,
 });
 
-module.exports = mongoose.model("serviceDiscount", schema);
+module.exports = mongoose.model("ServiceDiscount", schema);

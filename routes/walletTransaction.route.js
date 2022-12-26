@@ -4,6 +4,7 @@ const Joi = require("joi");
 const authorize = require("../_middleware/authorize");
 const validateRequest = require("../_middleware/validate-request");
 const walletTransaction = require("../controller/walletTransaction.service");
+const walletService = require("../controller/walletTransaction.service");
 
 const getAll = (req, res, next) => {
   walletTransaction
@@ -22,7 +23,7 @@ const getAll = (req, res, next) => {
 
 const create = (req, res, next) => {
   walletTransaction
-    .create2(req.body)
+    .create(req.body)
     .then((wallet) =>
       res.status(200).json({
         type: "success",
@@ -100,9 +101,10 @@ const changeWalletStatus = (req, res, next) => {
 };
 
 router.post("/getAll", getAll);
-router.post("/", create);
+router.post("/", walletService.createWallet);
 router.get("/:id", getById);
-router.post("/getByUserId", getByUserId);
+// router.post("/getByUserId", getByUserId);
+router.post("/getByUserId", walletService.walletListDataPageWise);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);

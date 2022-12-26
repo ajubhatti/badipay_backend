@@ -2,11 +2,11 @@ const Joi = require("joi");
 const express = require("express");
 const router = express.Router();
 const authorize = require("../_middleware/authorize");
-const rechargeService = require("../controller/recharge.service");
 const validateRequest = require("../_middleware/validate-request");
+const rechargeController = require("../controller/recharge.service");
 
 const create = (req, res, next) => {
-  rechargeService
+  rechargeController
     .create(req.body)
     .then((rechargeData) => {
       console.log({ rechargeData });
@@ -16,7 +16,7 @@ const create = (req, res, next) => {
 };
 
 const getById = (req, res, next) => {
-  rechargeService
+  rechargeController
     .getById(req.params.id)
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
@@ -25,7 +25,7 @@ const getById = (req, res, next) => {
 };
 
 const update = (req, res, next) => {
-  rechargeService
+  rechargeController
     .update(req.params.id, req.body)
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
@@ -34,7 +34,7 @@ const update = (req, res, next) => {
 };
 
 const _delete = (req, res, next) => {
-  rechargeService
+  rechargeController
     .delete(req.params.id)
     .then(() =>
       res.json({
@@ -47,7 +47,7 @@ const _delete = (req, res, next) => {
 };
 
 const getAll = (req, res, next) => {
-  rechargeService
+  rechargeController
     .getAll()
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
@@ -57,7 +57,8 @@ const getAll = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/:id", getById);
-router.post("/", create);
+// router.post("/", create);
+router.post("/", rechargeController.createRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 

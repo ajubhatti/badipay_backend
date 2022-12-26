@@ -3,10 +3,10 @@ const router = express.Router();
 const Joi = require("joi");
 const authorize = require("../_middleware/authorize");
 const validateRequest = require("../_middleware/validate-request");
-const transaction = require("../controller/transaction.service");
+const transactionService = require("../controller/transaction.service");
 
 const getAll = (req, res, next) => {
-  transaction
+  transactionService
     .getAll2(req.body)
     .then((transactions) =>
       res.status(200).json({
@@ -21,7 +21,7 @@ const getAll = (req, res, next) => {
 };
 
 const create = (req, res, next) => {
-  transaction
+  transactionService
     .create(req.body)
     .then((transactions) =>
       res.status(200).json({
@@ -36,7 +36,7 @@ const create = (req, res, next) => {
 };
 
 const getById = (req, res, next) => {
-  transaction
+  transactionService
     .getTrasactionById(req.params.id)
     .then((transactions) =>
       res.json({ status: 200, data: transactions, message: "success" })
@@ -45,7 +45,7 @@ const getById = (req, res, next) => {
 };
 
 const getByUserId = (req, res, next) => {
-  transaction
+  transactionService
     .getTransctionByUserId(req.body.userId)
     .then((transactions) =>
       res.json({ status: 200, data: transactions, message: "success" })
@@ -54,7 +54,7 @@ const getByUserId = (req, res, next) => {
 };
 
 const updateById = (req, res, next) => {
-  transaction
+  transactionService
     .update(req.params.id, req.body)
     .then((transactions) =>
       res.status(200).json({
@@ -69,7 +69,7 @@ const updateById = (req, res, next) => {
 };
 
 const deleteById = (req, res, next) => {
-  transaction
+  transactionService
     .delete(req.params.id)
     .then((transactions) =>
       res.status(200).json({
@@ -83,8 +83,10 @@ const deleteById = (req, res, next) => {
 
 router.post("/getAll", getAll);
 router.post("/", create);
+// router.post("/", transactionService.createTransactions);
 router.get("/:id", getById);
-router.post("/getByUserId", getByUserId);
+// router.post("/getByUserId", getByUserId);
+router.post("/getByUserId", transactionService.transactionListPageWise);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 
