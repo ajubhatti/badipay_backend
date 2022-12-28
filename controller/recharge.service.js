@@ -2,13 +2,13 @@ const db = require("../_helpers/db");
 const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const transactionService = require("./transaction.service");
+const generateRandomNumber = require("../_helpers/randomNumber");
 
 var priorityCount = 1;
 
 const createRecharge = async (req, res, next) => {
   try {
     const params = req.body;
-    // console.log({ params });
     if (!params.transactionPin) {
       res
         .status(400)
@@ -19,7 +19,6 @@ const createRecharge = async (req, res, next) => {
         account &&
         !bcrypt.compareSync(params.transactionPin, account.transactionPin)
       ) {
-        console.log({ account });
         res.status(400).json({
           status: 400,
           data: "",
@@ -30,6 +29,7 @@ const createRecharge = async (req, res, next) => {
         if (operator) {
           let finalRechargeData = await recursiveFunction2(params, operator);
           console.log({ finalRechargeData });
+          priorityCount = 1;
           if (finalRechargeData) {
             if (
               (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
@@ -71,7 +71,7 @@ const createRecharge = async (req, res, next) => {
             res.status(400).json({
               status: 400,
               data: "",
-              message: "fail",
+              message: "Recharge can not be proceed!",
             });
           }
         } else {
@@ -84,7 +84,7 @@ const createRecharge = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.log(err);
+    console.error({ err });
     res.status(500).json({ status: 500, message: "", data: err });
   }
 };
@@ -95,13 +95,12 @@ const create = async (params) => {
       throw "transaction pin not found";
     } else {
       const account = await db.Account.findOne({ _id: params.userId });
-      console.log({ account });
+
       if (!bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
         throw "your transaction pin not matched!";
       } else {
         let operator = await getOperatorById(params);
 
-        console.log({ operator });
         if (operator) {
           let priority = 1;
           let finalRechargeData = await recursiveFunction(
@@ -109,7 +108,6 @@ const create = async (params) => {
             operator,
             priority
           );
-          console.log("finalrechargeData -------", finalRechargeData);
 
           if (
             (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
@@ -128,7 +126,6 @@ const create = async (params) => {
 
           let discountData = await getDiscountData(finalRechargeData);
 
-          console.log("discout data ---", discountData);
           if (discountData) {
             addDiscount(params, discountData);
           }
@@ -146,7 +143,7 @@ const create = async (params) => {
       }
     }
   } catch (err) {
-    console.log("recharge err ---", err);
+    console.error({ err });
 
     throw err;
   }
@@ -162,7 +159,7 @@ const getDiscountData = async (params) => {
 
     return discount;
   } catch (err) {
-    console.log(err);
+    console.error({ err });
     // throw err;
   }
 };
@@ -249,18 +246,15 @@ const updateUserData = async (params) => {
 
 const updateTransactionData = async (userId, params, amount, type) => {
   try {
-    console.log({ params });
-
     let accountDetail = await await db.Account.findById({ _id: userId });
-
+    console.log("account detail ---------------", accountDetail);
     let payload = {
       userId: params.userId,
-      status: params.status,
+      status: params.status == "Success" ? "approve" : "pending",
       slipNo: "",
       remark: "",
       description: {},
-      operatorId: "",
-      operatorCode: "",
+      operatorName: "",
       requestAmount: null,
       rechargeAmount: null,
       cashBackAmount: null,
@@ -274,21 +268,24 @@ const updateTransactionData = async (userId, params, amount, type) => {
       payload.userBalance = accountDetail.walletBalance || null;
       payload.description = params.description || {};
       payload.customerNo = params.mobileNo;
-      payload.operatorId = "";
-      payload.operatorCode = "";
+      payload.operatorName = "";
       payload.requestAmount = params.amount || null;
       payload.rechargeAmount = params.amount || null;
-      payload.userFinalAmount = accountDetail.walletBalance - params.amount;
+      payload.userFinalBalance = accountDetail.walletBalance - params.amount;
     } else {
       payload.type = "credit";
       payload.amount = null;
       payload.userBalance = accountDetail.walletBalance || null;
       payload.customerNo = params.mobileNo;
       payload.cashBackAmount = amount;
-      payload.userFinalAmount = accountDetail.walletBalance + amount;
+      payload.userFinalBalance = accountDetail.walletBalance + amount;
     }
 
-    await transactionService.createTransactions(payload);
+    payload.transactionId = await generateRandomNumber(6);
+    // params.transactionId = lastCount;
+    const transactionData = new db.Transactions(payload);
+    console.log("transactions payload ---", { payload, transactionData });
+    return await transactionData.save();
   } catch (err) {
     console.error(err);
   }
@@ -297,13 +294,11 @@ const updateTransactionData = async (userId, params, amount, type) => {
 const recursiveFunction = async (params, operator, apiPriority) => {
   try {
     let filteredOperator = await priorityCheck(operator, apiPriority);
-    console.log({ filteredOperator });
+
     if (!filteredOperator) {
       apiPriority++;
       filteredOperator = await priorityCheck(operator, apiPriority);
-      console.log("in if ---------", { filteredOperator });
     } else {
-      console.log("in else ---------", { filteredOperator });
       let payload = {
         amount: params.amount,
         operatorCode: filteredOperator.apiCode,
@@ -312,8 +307,7 @@ const recursiveFunction = async (params, operator, apiPriority) => {
 
       let rechargeData = await doRecharge(filteredOperator, payload);
       rechargeData.rechargeBy = operator;
-      console.log("-----------------------------------------------");
-      console.log("rechargeData", rechargeData);
+
       if (
         (rechargeData && rechargeData.TRNSTATUS == 0) ||
         (rechargeData.STATUSCODE && rechargeData.STATUSCODE == 0) ||
@@ -321,21 +315,15 @@ const recursiveFunction = async (params, operator, apiPriority) => {
       ) {
         return rechargeData;
       } else {
-        console.log(
-          "recursiveFunctions----",
-          params,
-          typeof apiPriority,
-          apiPriority++
-        );
         let result = await recursiveFunction(params, operator, apiPriority++);
         // result.rechargeBy = operator;
 
-        console.log("result======>", result);
+        console.log(result);
         return result;
       }
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     return err;
   }
 };
@@ -354,10 +342,11 @@ const recursiveFunction2 = async (params, operator) => {
     } else {
       // throw Error();
       // throw new Error("operator not found");
+
       return;
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     return err;
   }
 };
@@ -391,14 +380,7 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
 
 const priorityCheck = async (operator, priority) => {
   try {
-    // console.log({ operator, priority });
     return await operator.referenceApis.find((x) => {
-      console.log(
-        x.priority,
-        priority,
-        x.isActive,
-        x.priority && x.priority == priority && x.isActive
-      );
       return x.priority && x.priority == priority && x.isActive;
     });
   } catch (err) {

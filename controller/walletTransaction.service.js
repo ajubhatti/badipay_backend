@@ -109,22 +109,29 @@ const createWallet = async (req, res, next) => {
     }
 
     let accountDetail = await accountsService.getUserById(params.userId);
-
+    console.log("account detail ---------------", accountDetail);
     let payload = {
       userId: params.userId,
       amount: params.requestAmount || null,
-      requestAmount: params.requestAmount || null,
       slipNo: params.slipNo || "",
       remark: params.remark || "",
       type: "credit",
       status: "pending",
-      userBalance: accountDetail.walletBalance || null,
       description: params.description || {},
       transactionId: await generateRandomNumber(6),
+      totalAmount: null,
+      // ===========================================
+      customerNo: "",
+      operatorName: "",
+      userBalance: accountDetail.walletBalance || null,
+      requestAmount: params.requestAmount || null,
+      cashBackAmount: null,
+      rechargeAmount: null,
+      userFinalBalance: null,
     };
 
-    const transaction = new db.Transactions(payload);
-    let transactionSave = await transaction.save();
+    const transactionData = new db.Transactions(payload);
+    let transactionSave = await transactionData.save();
 
     if (transactionSave) {
       let lastCount = await db.WalletTransaction.countDocuments();
@@ -161,6 +168,7 @@ const createWallet = async (req, res, next) => {
       });
     }
   } catch (err) {
+    console.log({ err });
     res.status(500).json({
       status: 500,
       message: "server error",
