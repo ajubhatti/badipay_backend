@@ -167,22 +167,16 @@ const transactionListPageWise = async (req, res, next) => {
     const params = req.body;
     const filter = req.body;
     const match = {};
-
+    console.log({ params });
     let searchObj = {};
     let searchKeyword = params.search;
     if (searchKeyword) {
       searchObj = /^(?:\d*\.\d{1,2}|\d+)$/.test(searchKeyword)
         ? {
-            $or: [
-              { statusOfWalletRequest: searchKeyword },
-              { price: searchKeyword },
-            ],
+            $or: [{ search: searchKeyword }, { price: searchKeyword }],
           }
         : {
-            statusOfWalletRequest: new RegExp(
-              `${searchKeyword.toString().trim()}`,
-              "i"
-            ),
+            search: new RegExp(`${searchKeyword.toString().trim()}`, "i"),
           };
     }
 
@@ -208,9 +202,7 @@ const transactionListPageWise = async (req, res, next) => {
       match.created = created;
     }
 
-    const total = await db.WalletTransaction.find(searchObj).countDocuments(
-      match
-    );
+    const total = await db.Transactions.find(searchObj).countDocuments(match);
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;
@@ -223,7 +215,8 @@ const transactionListPageWise = async (req, res, next) => {
       {
         $sort: sort,
       },
-
+      { $skip: skipNo },
+      { $limit: params.limits },
       // {
       //   $lookup: {
       //     from: "accounts",
@@ -254,9 +247,7 @@ const transactionListPageWise = async (req, res, next) => {
       // { $unwind: "$transactionData" },
     ];
 
-    if (skipNo) {
-      aggregateRules.push({ $skip: skipNo }, { $limit: params.limits });
-    }
+    console.log(JSON.stringify(aggregateRules));
 
     await db.Transactions.aggregate(aggregateRules).then((result) => {
       res.status(200).json({

@@ -701,15 +701,15 @@ const walletListDataPageWise = async (req, res, next) => {
       },
       { $skip: skipNo },
       { $limit: params.limits },
-      {
-        $lookup: {
-          from: "accounts",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userDetail",
-        },
-      },
-      { $unwind: "$userDetail" },
+      // {
+      //   $lookup: {
+      //     from: "accounts",
+      //     localField: "userId",
+      //     foreignField: "_id",
+      //     as: "userDetail",
+      //   },
+      // },
+      // { $unwind: "$userDetail" },
       {
         $lookup: {
           from: "paymentmodes",
@@ -730,6 +730,8 @@ const walletListDataPageWise = async (req, res, next) => {
       },
       { $unwind: "$transactionData" },
     ];
+
+    console.log({aggregateRules})
 
     await db.WalletTransaction.aggregate(aggregateRules).then((result) => {
       res.status(200).json({

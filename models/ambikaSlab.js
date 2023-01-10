@@ -13,4 +13,4 @@ const schema = new Schema({
   updated: Date,
 });
 
-module.exports = mongoose.model("AmbikaSlabs", schema); 0
+module.exports = mongoose.model("AmbikaSlabs", schema);

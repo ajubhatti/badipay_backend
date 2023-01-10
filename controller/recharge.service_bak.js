@@ -3,6 +3,7 @@ const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const transactionService = require("./transaction.service");
 const generateRandomNumber = require("../_helpers/randomNumber");
+
 var priorityCount = 1;
 
 const createRecharge = async (req, res, next) => {
@@ -27,6 +28,7 @@ const createRecharge = async (req, res, next) => {
         let operator = await getOperatorById(params);
         if (operator) {
           let finalRechargeData = await recursiveFunction2(params, operator);
+          console.log({ finalRechargeData });
           priorityCount = 1;
           if (finalRechargeData) {
             if (
@@ -35,13 +37,26 @@ const createRecharge = async (req, res, next) => {
                 finalRechargeData.STATUSCODE == 0) ||
               finalRechargeData.errorcode == 200
             ) {
-              await addDiscount2(params, finalRechargeData);
+              let discountData = await getDiscountData(finalRechargeData);
+
+              console.log("discout data ---", discountData);
+              if (discountData) {
+                await addDiscount(params, discountData);
+              } else {
+                params.status = finalRechargeData.TRNSTATUSDESC || "success";
+                await updateTransactionData(
+                  params.userId,
+                  params,
+                  params.amount,
+                  "debit"
+                );
+              }
             }
 
             params.customerNo = params.mobileNo;
             params.responseData = finalRechargeData;
-            params.rechargeBy = finalRechargeData.rechargeOperator;
-            params.rechargeByApi = finalRechargeData.rechargeApi;
+            params.rechargeBy = finalRechargeData.rechargeBy;
+            params.rechargeByApi = finalRechargeData.rechargeByApi;
 
             const rechargeData = new db.Recharge(params);
             await rechargeData.save().then(async () => {
@@ -75,113 +90,145 @@ const createRecharge = async (req, res, next) => {
   }
 };
 
-const addDiscount2 = async (params, rechargeData) => {
+const create = async (params) => {
   try {
-    var account = await db.Account.findById({ _id: params.userId });
+    if (!params.transactionPin) {
+      throw "transaction pin not found";
+    } else {
+      const account = await db.Account.findOne({ _id: params.userId });
 
-    if (account && account.referralId) {
-      updateReferalUserDiscount(account, params, rechargeData);
-    }
+      if (!bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
+        throw "your transaction pin not matched!";
+      } else {
+        let operator = await getOperatorById(params);
 
-    let disAmount = 0;
-    if (rechargeData) {
-      let discountData = await getDiscountData(rechargeData);
-      console.log("discout data ---", discountData);
-      if (discountData) {
-        const { amount, type } = discountData;
-        if (type === "percentage") {
-          let percentageAmount = amount / 100;
-          disAmount = Number(params.amount) * percentageAmount;
-        } else {
-          disAmount = amount;
+        if (operator) {
+          let priority = 1;
+          let finalRechargeData = await recursiveFunction(
+            params,
+            operator,
+            priority
+          );
+
+          if (
+            (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
+            (finalRechargeData.STATUSCODE &&
+              finalRechargeData.STATUSCODE == 0) ||
+            finalRechargeData.errorcode == 200
+          ) {
+            params.status = "success";
+            await updateTransactionData(
+              params.userId,
+              params,
+              params.amount,
+              "debit"
+            );
+          }
+
+          let discountData = await getDiscountData(finalRechargeData);
+
+          if (discountData) {
+            addDiscount(params, discountData);
+          }
+          params.customerNo = params.mobileNo;
+          params.responseData = finalRechargeData;
+          params.rechargeBy = finalRechargeData.rechargeBy;
+          params.rechargeByApi = finalRechargeData.rechargeByApi;
+
+          const rechargeData = new db.Recharge(params);
+          await rechargeData.save().then(async () => {
+            await updateUserData(params);
+          });
+          return rechargeData;
         }
       }
     }
-
-    let rewardAmount = account.rewardedBalance + disAmount;
-    let userDisAmount = account.discount + disAmount;
-    let walletBalance = account.walletBalance + disAmount;
-
-    let userPayload = {
-      discount: userDisAmount,
-      rewardedBalance: rewardAmount,
-      walletBalance: walletBalance,
-    };
-    Object.assign(account, userPayload);
-    await account.save();
-
-    await updateTransactionData(
-      params.userId,
-      params,
-      disAmount,
-      "credit",
-      "user",
-      rechargeData
-    );
   } catch (err) {
-    console.error(err);
-  }
-};
+    console.error({ err });
 
-const updateReferalUserDiscount = async (accountData, params, rechargeData) => {
-  try {
-    let disAmount = 0;
-    if (rechargeData) {
-      let discountData = await getDiscountData(rechargeData);
-      if (discountData) {
-        const { referalAmount, referalType } = discountData;
-        if (referalType === "percentage") {
-          let percentageAmount = referalAmount / 100;
-          disAmount =
-            Number(params.amount) + Number(params.amount) * percentageAmount;
-        } else {
-          disAmount = Number(params.amount) + referalAmount;
-        }
-      }
-    }
-
-    var account = await db.Account.findById({ _id: accountData.referralId });
-    let rewardAmount = account.rewardedBalance + disAmount;
-    let userDisAmount = account.discount + disAmount;
-    let walletBalance = account.walletBalance + disAmount;
-
-    let userPayload = {
-      discount: userDisAmount,
-      rewardedBalance: rewardAmount,
-      walletBalance: walletBalance,
-    };
-
-    Object.assign(account, userPayload);
-    await account.save();
-    await updateTransactionData(
-      params.referralId,
-      params,
-      disAmount,
-      "credit",
-      "referral",
-      rechargeData
-    );
-  } catch (err) {
-    console.error(err);
+    throw err;
   }
 };
 
 const getDiscountData = async (params) => {
   try {
-    if (params) {
-      const { rechargeOperator, rechargeApi } = params;
-      let discount = await db.ServiceDiscount.findOne({
-        apiId: rechargeApi._id,
-        operatorId: rechargeOperator._id,
-      });
+    const { rechargeBy, rechargeDoneBy } = params;
+    let discount = await db.ServiceDiscount.findOne({
+      apiId: rechargeDoneBy._id,
+      operatorId: rechargeBy._id,
+    });
 
-      return discount;
-    } else {
-      return null;
-    }
+    return discount;
   } catch (err) {
     console.error({ err });
     // throw err;
+  }
+};
+
+const addDiscount = async (params, discountData) => {
+  try {
+    var account = await db.Account.findById({ _id: params.userId });
+
+    if (account && account.referralId) {
+      updateReferalUserDiscount(params.discountData);
+    }
+
+    const { amount, type } = discountData;
+    let disAmount = 0;
+    if (type === "percentage") {
+      let percentageAmount = amount / 100;
+      disAmount = Number(params.amount) * percentageAmount;
+    } else {
+      disAmount = amount;
+    }
+
+    let rewardAmount = account.rewardedBalance + disAmount;
+    let userDisAmount = account.discount + disAmount;
+    let walletBalance = account.walletBalance + disAmount;
+
+    let userPayload = {
+      discount: userDisAmount,
+      rewardedBalance: rewardAmount,
+      walletBalance: walletBalance,
+    };
+    Object.assign(account, userPayload);
+    await account.save();
+
+    await updateTransactionData(params.userId, params, disAmount, "credit");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const updateReferalUserDiscount = async (params, discountData) => {
+  try {
+    var account = await db.Account.findById({ _id: params.referralId });
+
+    const { referalAmount, referalType } = discountData;
+    let disAmount = 0;
+    if (referalType === "percentage") {
+      let percentageAmount = referalAmount / 100;
+      disAmount =
+        Number(params.amount) + Number(params.amount) * percentageAmount;
+    } else {
+      disAmount = Number(params.amount) + referalAmount;
+    }
+
+    let rewardAmount = account.rewardedBalance + disAmount;
+    let userDisAmount = account.discount + disAmount;
+    let walletBalance = account.walletBalance + disAmount;
+
+    let userPayload = {
+      discount: userDisAmount,
+      rewardedBalance: rewardAmount,
+      walletBalance: walletBalance,
+    };
+
+    Object.assign(account, userPayload);
+    await account.save();
+    await updateTransactionData(params.referralId, params, disAmount, "credit");
+  } catch (err) {
+    console.error(err);
   }
 };
 
@@ -198,67 +245,87 @@ const updateUserData = async (params) => {
   }
 };
 
-const updateTransactionData = async (
-  userId,
-  params,
-  amount,
-  type,
-  discountType,
-  rechargeData
-) => {
+const updateTransactionData = async (userId, params, amount, type) => {
   try {
-    console.log({ userId, params, amount, type, discountType, rechargeData });
-
-    let accountDetail = await db.Account.findById({ _id: userId });
+    let accountDetail = await await db.Account.findById({ _id: userId });
+    console.log("account detail ---------------", accountDetail);
     let payload = {
-      userId: userId,
+      userId: params.userId,
+      status: params.status == "Success" ? "approve" : "pending",
       slipNo: "",
       remark: "",
       description: {},
-      operatorId: "",
       operatorName: "",
       requestAmount: null,
       rechargeAmount: null,
       cashBackAmount: null,
-      type: "credit",
-      customerNo: "",
     };
 
-    let rechargeAmount = params.amount - amount;
-    let userFinalBalance = accountDetail.walletBalance - rechargeAmount;
-
-    if (discountType == "user") {
-      payload.status = params.status == "Success" ? "approve" : "pending";
+    if (type == "debit") {
+      payload.type = "debit";
+      payload.amount = params.amount || null;
       payload.slipNo = params.slipNo || "";
       payload.remark = params.remark || "";
+      payload.userBalance = accountDetail.walletBalance || null;
       payload.description = params.description || {};
       payload.customerNo = params.mobileNo;
       payload.operatorName = "";
-      payload.operatorId = "";
-      payload.rechargeData = rechargeData;
-      payload.amount = params.amount || null;
-      payload.userBalance = accountDetail.walletBalance || null;
       payload.requestAmount = params.amount || null;
-      payload.rechargeAmount = rechargeAmount || null;
-      payload.cashBackAmount = amount;
-      payload.userFinalBalance = userFinalBalance;
+      payload.rechargeAmount = params.amount || null;
+      payload.userFinalBalance = accountDetail.walletBalance - params.amount;
     } else {
-      payload.status = "approve";
+      payload.type = "credit";
       payload.amount = null;
       payload.userBalance = accountDetail.walletBalance || null;
+      payload.customerNo = params.mobileNo;
       payload.cashBackAmount = amount;
-      payload.userFinalBalance = userFinalBalance;
+      payload.userFinalBalance = accountDetail.walletBalance + amount;
     }
 
-    payload.transactionId = await generateRandomNumber(8);
+    payload.transactionId = await generateRandomNumber(6);
     // params.transactionId = lastCount;
     const transactionData = new db.Transactions(payload);
     console.log("transactions payload ---", { payload, transactionData });
-    let transactionRes = await transactionData.save();
-    console.log({ transactionRes });
-    return transactionRes;
+    return await transactionData.save();
   } catch (err) {
     console.error(err);
+  }
+};
+
+const recursiveFunction = async (params, operator, apiPriority) => {
+  try {
+    let filteredOperator = await priorityCheck(operator, apiPriority);
+
+    if (!filteredOperator) {
+      apiPriority++;
+      filteredOperator = await priorityCheck(operator, apiPriority);
+    } else {
+      let payload = {
+        amount: params.amount,
+        operatorCode: filteredOperator.apiCode,
+        regMobileNumber: params.mobileNo,
+      };
+
+      let rechargeData = await doRecharge(filteredOperator, payload);
+      rechargeData.rechargeBy = operator;
+
+      if (
+        (rechargeData && rechargeData.TRNSTATUS == 0) ||
+        (rechargeData.STATUSCODE && rechargeData.STATUSCODE == 0) ||
+        rechargeData.errorcode == 200
+      ) {
+        return rechargeData;
+      } else {
+        let result = await recursiveFunction(params, operator, apiPriority++);
+        // result.rechargeBy = operator;
+
+        console.log(result);
+        return result;
+      }
+    }
+  } catch (err) {
+    console.error({ err });
+    return err;
   }
 };
 
@@ -295,7 +362,7 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
     console.log("in recharge fun ----------", { payload, filteredOperator });
 
     let rechargeData = await doRecharge(filteredOperator, payload);
-    rechargeData.rechargeOperator = operator;
+    rechargeData.rechargeBy = operator;
     console.log("-----------------------------------------------");
     console.log("rechargeData", rechargeData);
     if (
@@ -328,7 +395,7 @@ const doRecharge = async (filterData, payload) => {
     if (apiName == "RechargeWale") {
       let rechargeWaleRes = await RecharegeWaleRecharge(payload);
 
-      rechargeWaleRes.rechargeApi = filterData;
+      rechargeWaleRes.rechargeDoneBy = filterData;
       if (rechargeWaleRes.errorcode != 200) {
         return rechargeWaleRes;
       } else {
@@ -339,7 +406,7 @@ const doRecharge = async (filterData, payload) => {
     if (apiName == "Ambika") {
       let ambikaRes = await ambikaRecharge(payload);
 
-      ambikaRes.rechargeApi = filterData;
+      ambikaRes.rechargeDoneBy = filterData;
       if (ambikaRes.errorcode != 200) {
         return ambikaRes;
       } else {
@@ -481,6 +548,7 @@ const getRecharge = async (id) => {
 };
 
 module.exports = {
+  create,
   createRecharge,
   update,
   getById,

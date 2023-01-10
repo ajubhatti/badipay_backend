@@ -21,14 +21,14 @@ const transactionSchema = new Schema({
   totalAmount: { type: Number, default: null },
   // ===========================================
   customerNo: { type: String, default: "" },
-  operatorId: { type: Schema.Types.ObjectId, ref: "company" },
+  operatorId: { type: String, default: "" },
   operatorName: { type: String, default: "" },
   userBalance: { type: Number, default: null },
   requestAmount: { type: Number, default: null },
   cashBackAmount: { type: Number, default: null },
   rechargeAmount: { type: Number, default: null },
   userFinalBalance: { type: Number, default: null },
-
+  rechargeData: { type: Object, default: {} },
   // ===========================================
 
   created: { type: Date, default: Date.now },

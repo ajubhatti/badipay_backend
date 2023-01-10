@@ -38,6 +38,7 @@ const rechargeRouter = require("./recharge.route");
 const transactionRouter = require("./transaction.route");
 const paymentModeRouter = require("./paymentModes.route");
 const serviceDiscountRouter = require("./serviceDiscount.route");
+const spSlabRouter = require("./slabs.route");
 
 // ==========================================================================
 
@@ -104,6 +105,7 @@ router.use("/apis", apisRouter);
 router.use("/rechargeOrBill", rechargeRouter);
 router.use("/paymentMode", paymentModeRouter);
 router.use("/discount", serviceDiscountRouter);
+router.use("/spslabs", spSlabRouter);
 
 // =================================================================
 
