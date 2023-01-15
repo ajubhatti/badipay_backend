@@ -251,7 +251,7 @@ const updateTransactionData = async (userId, params, amount, type) => {
     console.log("account detail ---------------", accountDetail);
     let payload = {
       userId: params.userId,
-      status: params.status == "Success" ? "approve" : "pending",
+      status: params.status == "Success" ? "success" : "pending",
       slipNo: "",
       remark: "",
       description: {},

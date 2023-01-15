@@ -4,9 +4,11 @@ const bcrypt = require("bcryptjs");
 const transactionService = require("./transaction.service");
 const generateRandomNumber = require("../_helpers/randomNumber");
 var priorityCount = 1;
+var lastTransactionsReport = {};
 
 const createRecharge = async (req, res, next) => {
   try {
+    lastTransactionsReport = {};
     const params = req.body;
     if (!params.transactionPin) {
       res
@@ -28,6 +30,7 @@ const createRecharge = async (req, res, next) => {
         if (operator) {
           let finalRechargeData = await recursiveFunction2(params, operator);
           priorityCount = 1;
+          console.log("final recharge data ----------", finalRechargeData);
           if (finalRechargeData) {
             if (
               (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
@@ -36,6 +39,15 @@ const createRecharge = async (req, res, next) => {
               finalRechargeData.errorcode == 200
             ) {
               await addDiscount2(params, finalRechargeData);
+            } else {
+              await updateTransactionData2(
+                params.userId,
+                params,
+                0,
+                "credit",
+                "user",
+                lastTransactionsReport
+              );
             }
 
             params.customerNo = params.mobileNo;
@@ -54,6 +66,14 @@ const createRecharge = async (req, res, next) => {
               message: "Recharge successful",
             });
           } else {
+            updateTransactionData2(
+              params.userId,
+              params,
+              0,
+              "credit",
+              "user",
+              lastTransactionsReport
+            );
             res.status(400).json({
               status: 400,
               data: "",
@@ -222,13 +242,13 @@ const updateTransactionData = async (
       cashBackAmount: null,
       type: "credit",
       customerNo: "",
+      status: "success",
     };
 
     let rechargeAmount = params.amount - amount;
     let userFinalBalance = accountDetail.walletBalance - rechargeAmount;
 
     if (discountType == "user") {
-      payload.status = params.status == "Success" ? "approve" : "pending";
       payload.slipNo = params.slipNo || "";
       payload.remark = params.remark || "";
       payload.description = params.description || {};
@@ -243,17 +263,86 @@ const updateTransactionData = async (
       payload.cashBackAmount = amount;
       payload.userFinalBalance = userFinalBalance;
     } else {
-      payload.status = "approve";
       payload.amount = null;
       payload.userBalance = accountDetail.walletBalance || null;
       payload.cashBackAmount = amount;
       payload.userFinalBalance = userFinalBalance;
     }
 
-    payload.transactionId = await generateRandomNumber(8);
+    payload.transactionId = (await db.Transactions.countDocuments()) + 1;
     // params.transactionId = lastCount;
     const transactionData = new db.Transactions(payload);
     console.log("transactions payload ---", { payload, transactionData });
+    let transactionRes = await transactionData.save();
+    console.log({ transactionRes });
+    return transactionRes;
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const updateTransactionData2 = async (
+  userId,
+  params,
+  amount,
+  type,
+  discountType,
+  rechargeData
+) => {
+  try {
+    console.log({ userId, params, amount, type, discountType, rechargeData });
+
+    let accountDetail = await db.Account.findById({ _id: userId });
+    let payload = {
+      userId: userId,
+      slipNo: "",
+      remark: "",
+      description: {},
+      operatorId: "",
+      operatorName: "",
+      requestAmount: null,
+      rechargeAmount: null,
+      cashBackAmount: null,
+      type: "credit",
+      customerNo: "",
+      status: "pending",
+    };
+
+    if (lastTransactionsReport) {
+      console.log("lst trans cation report ----------", lastTransactionsReport);
+
+      if (
+        (lastTransactionsReport.TRNSTATUS &&
+          lastTransactionsReport.TRNSTATUS !== 4) ||
+        (lastTransactionsReport.TRNSTATUSDESC &&
+          lastTransactionsReport.TRNSTATUSDESC !== "Pending") ||
+        (lastTransactionsReport.status && lastTransactionsReport.status !== 4)
+      ) {
+        payload.status = "failed";
+      }
+    }
+
+    payload.slipNo = params.slipNo || "";
+    payload.remark = params.remark || "";
+    payload.description = params.description || {};
+    payload.customerNo = params.mobileNo;
+    payload.operatorName = "";
+    payload.operatorId = "";
+    payload.rechargeData = rechargeData;
+    payload.amount = params.amount || null;
+    payload.userBalance = accountDetail.walletBalance || null;
+    payload.requestAmount = params.amount || null;
+    payload.rechargeAmount = null;
+    payload.cashBackAmount = null;
+    payload.userFinalBalance = accountDetail.walletBalance;
+
+    payload.transactionId = (await db.Transactions.countDocuments()) + 1;
+    // params.transactionId = lastCount;
+    const transactionData = new db.Transactions(payload);
+    console.log("transactions payload in cancel and pending ---", {
+      payload,
+      transactionData,
+    });
     let transactionRes = await transactionData.save();
     console.log({ transactionRes });
     return transactionRes;
@@ -298,6 +387,7 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
     rechargeData.rechargeOperator = operator;
     console.log("-----------------------------------------------");
     console.log("rechargeData", rechargeData);
+    lastTransactionsReport = rechargeData;
     if (
       (rechargeData && rechargeData.TRNSTATUS == 0) ||
       (rechargeData.STATUSCODE && rechargeData.STATUSCODE == 0) ||

@@ -15,7 +15,7 @@ const transactionSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "cancel", "approve", "refund"],
+    enum: ["pending", "failed", "success", "refund"],
     default: "pending",
   },
   totalAmount: { type: Number, default: null },
