@@ -7,69 +7,124 @@ const { getBankAccountById } = require("../controller/bankAccounts.service");
 const { fetchAllData } = require("../_middleware/fetchingData");
 const generateRandomNumber = require("../_helpers/randomNumber");
 
-const getAll = async (params) => {
-  const filterData = await db.Transactions.find({}).sort({ createdAt: -1 });
+const getAll = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+    console.log({ params });
 
-  let transaction = await db.Transactions.aggregate([
-    {
-      $lookup: {
-        from: "accounts",
-        localField: "userId",
-        foreignField: "_id",
-        as: "userdetail",
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "desc";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.created = created;
+    }
+
+    const total = await db.Transactions.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    const aggregateRules = [
+      {
+        $match: match,
       },
-    },
-    { $unwind: "$userdetail" },
-    { $sort: { _id: -1 } },
-  ]);
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: "$userDetail" },
+      // {
+      //   $lookup: {
+      //     from: "paymentmodes",
+      //     localField: "paymentType",
+      //     foreignField: "_id",
+      //     as: "paymentMode",
+      //   },
+      // },
+      // { $unwind: "$paymentMode" },
 
-  // console.log({ transaction });
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transactionId",
+      //     foreignField: "_id",
+      //     as: "transactionData",
+      //   },
+      // },
+      // { $unwind: "$transactionData" },
+    ];
 
-  // var startDate = new Date(params.startDate);
-  // var endDate = new Date(params.endDate);
+    console.log(JSON.stringify(aggregateRules));
 
-  // let filterData = transaction;
-  // if (params.startDate && params.endDate) {
-  //   filterData = filterData.filter((user) => {
-  //     let date = new Date(user.created);
-  //     return date >= startDate && date <= endDate;
-  //   });
-  // }
-
-  // let bankData = await db.Transactions.aggregate([
-  //   {
-  //     $lookup: {
-  //       from: "bankaccounts",
-  //       localField: "bank",
-  //       foreignField: "_id",
-  //       as: "bankData",
-  //     },
-  //   },
-  // ]);
-
-  // filterData.map(async (transation) => {
-  //   console.log({ transation });
-  //   let user = await accountsService.getById(transation.userId);
-  //   filterData.userdata = user;
-  // });
-
-  //   if (params.role) {
-  //     filterData = filterData.filter((user) => {
-  //       return user.role == params.role;
-  //     });
-  //   }
-
-  //   if (params.searchParams) {
-  //     filterData = filterData.filter((user) => {
-  //       if (user.userName.includes(params.searchParams)) {
-  //         return user.userName.includes(params.searchParams);
-  //       } else {
-  //         return user.phoneNumber.includes(params.searchParams);
-  //       }
-  //     });
-  //   }
-
-  return transaction;
+    await db.Transactions.aggregate(aggregateRules).then((result) => {
+      res.status(200).json({
+        status: 200,
+        message: "success",
+        data: {
+          sort,
+          filter,
+          count: result.length,
+          page,
+          pages,
+          data: result,
+          total,
+        },
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
 };
 
 const getAll2 = async (params) => {
@@ -166,18 +221,17 @@ const transactionListPageWise = async (req, res, next) => {
   try {
     const params = req.body;
     const filter = req.body;
-    const match = {};
+    let match = {};
     console.log({ params });
-    let searchObj = {};
+
     let searchKeyword = params.search;
     if (searchKeyword) {
-      searchObj = /^(?:\d*\.\d{1,2}|\d+)$/.test(searchKeyword)
-        ? {
-            $or: [{ search: searchKeyword }, { price: searchKeyword }],
-          }
-        : {
-            search: new RegExp(`${searchKeyword.toString().trim()}`, "i"),
-          };
+      match = {
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
     }
 
     const orderByColumn = params.sortBy || "created";
@@ -195,14 +249,25 @@ const transactionListPageWise = async (req, res, next) => {
       match.userId = mongoose.Types.ObjectId(params.userId);
     }
     if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
       let created = {
-        $gte: new Date(params.startDate),
-        $lt: new Date(params.endDate),
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
       };
       match.created = created;
     }
 
-    const total = await db.Transactions.find(searchObj).countDocuments(match);
+    const total = await db.Transactions.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;

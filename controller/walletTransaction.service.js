@@ -642,24 +642,16 @@ const walletListDataPageWise = async (req, res, next) => {
   try {
     const params = req.body;
     const filter = req.body;
-    const match = {};
+    let match = {};
 
-    let searchObj = {};
     let searchKeyword = params.search;
     if (searchKeyword) {
-      searchObj = /^(?:\d*\.\d{1,2}|\d+)$/.test(searchKeyword)
-        ? {
-            $or: [
-              { statusOfWalletRequest: searchKeyword },
-              { price: searchKeyword },
-            ],
-          }
-        : {
-            statusOfWalletRequest: new RegExp(
-              `${searchKeyword.toString().trim()}`,
-              "i"
-            ),
-          };
+      match = {
+        $or: [
+          { walletTransactionId: { $regex: searchKeyword, $options: "i" } },
+          { slipNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
     }
 
     const orderByColumn = params.sortBy || "created";
@@ -677,16 +669,25 @@ const walletListDataPageWise = async (req, res, next) => {
       match.userId = mongoose.Types.ObjectId(params.userId);
     }
     if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
       let created = {
-        $gte: new Date(params.startDate),
-        $lt: new Date(params.endDate),
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
       };
       match.created = created;
     }
 
-    const total = await db.WalletTransaction.find(searchObj).countDocuments(
-      match
-    );
+    const total = await db.WalletTransaction.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;
@@ -731,7 +732,7 @@ const walletListDataPageWise = async (req, res, next) => {
       { $unwind: "$transactionData" },
     ];
 
-    console.log({aggregateRules})
+    console.log({ aggregateRules });
 
     await db.WalletTransaction.aggregate(aggregateRules).then((result) => {
       res.status(200).json({

@@ -81,7 +81,7 @@ const deleteById = (req, res, next) => {
     .catch(next);
 };
 
-router.post("/getAll", getAll);
+router.post("/getAll", transactionService.getAll);
 router.post("/", create);
 // router.post("/", transactionService.createTransactions);
 router.get("/:id", getById);

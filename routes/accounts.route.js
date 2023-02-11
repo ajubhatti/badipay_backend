@@ -44,7 +44,7 @@ const authenticate = async (req, res, next) => {
     .catch(next);
 };
 
-const adminLogin = async (req, res) => {
+const adminLogin = async (req, res,next) => {
   const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
   await accountService
