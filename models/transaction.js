@@ -20,6 +20,7 @@ const transactionSchema = new Schema({
   },
   totalAmount: { type: Number, default: null },
   // ===========================================
+  rechargeId: { type: Schema.Types.ObjectId, ref: "Recharge" },
   customerNo: { type: String, default: "" },
   operatorId: { type: String, default: "" },
   operatorName: { type: String, default: "" },
@@ -29,6 +30,10 @@ const transactionSchema = new Schema({
   rechargeAmount: { type: Number, default: null },
   userFinalBalance: { type: Number, default: null },
   rechargeData: { type: Object, default: {} },
+
+  requestAmountBack: { type: Number, default: null },
+  cashBackAmountBack: { type: Number, default: null },
+  rechargeAmountBack: { type: Number, default: null },
   // ===========================================
 
   created: { type: Date, default: Date.now },

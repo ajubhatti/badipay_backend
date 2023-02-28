@@ -155,7 +155,131 @@ const referalcodeGenerator = async () => {
 const update = async (id, params) => {
   const transaction = await getTransaction(id);
 
+  const transactionData = await db.Transactions.find({
+    rechargeId: params.rechargeId,
+  });
   // copy params to account and save
+  if (
+    params.status &&
+    params.status != transaction.status &&
+    params.status != "success"
+  ) {
+    //  get user and referal user transaction data
+    if (transactionData) {
+      for (let i = 0; i < transactionData.length; i++) {
+        let userTransaction = transactionData[i];
+        const accountData = await db.Account.findById(userTransaction.userId);
+
+        let blnc = accountData.walletBalance;
+        let dscnt = accountData.rewardedBalance;
+
+        if (userTransaction.requestAmount) {
+          blnc = blnc + userTransaction.requestAmount;
+        }
+
+        if (userTransaction.cashBackAmount) {
+          blnc = blnc - userTransaction.cashBackAmount;
+        }
+
+        let userDisAmount =
+          accountData.rewardedBalance != 0
+            ? accountData.rewardedBalance - userTransaction.cashBackAmount
+            : 0;
+
+        let rewardAmount =
+          accountData.rewardedBalance != 0
+            ? accountData.rewardedBalance - userTransaction.cashBackAmount
+            : 0;
+
+        let userPayload = {
+          discount: userDisAmount,
+          rewardedBalance: rewardAmount,
+          walletBalance: blnc,
+        };
+
+        console.log({ userPayload });
+
+        Object.assign(accountData, userPayload);
+        await accountData.save();
+
+        let transactionPayload = {};
+
+        transactionPayload.userBalance = userTransaction.userBalance || null;
+        transactionPayload.requestAmount =
+          userTransaction.requestAmount || null;
+        transactionPayload.rechargeAmount = 0;
+        transactionPayload.cashBackAmount = 0;
+        transactionPayload.userFinalBalance =
+          userTransaction.userFinalBalance +
+          userTransaction.requestAmount -
+          userTransaction.cashBackAmount;
+
+        transactionPayload.requestAmountBack = userTransaction.requestAmount;
+        transactionPayload.cashBackAmountBack = userTransaction.cashBackAmount;
+        transactionPayload.rechargeAmountBack = userTransaction.rechargeAmount;
+
+        console.log({ transactionPayload });
+
+        Object.assign(userTransaction, transactionPayload);
+        await userTransaction.save();
+      }
+    }
+  } else if (
+    params.status &&
+    params.status != transaction.status &&
+    params.status == "success"
+  ) {
+    console.log({ params });
+    for (let i = 0; i < transactionData.length; i++) {
+      let userTransaction = transactionData[i];
+      const accountData = await db.Account.findById(userTransaction.userId);
+
+      let blnc = accountData.walletBalance;
+      let dscnt = accountData.rewardedBalance;
+
+      if (userTransaction.requestAmount) {
+        blnc = blnc != 0 ? blnc - userTransaction.requestAmount : 0;
+      }
+
+      if (userTransaction.cashBackAmount) {
+        blnc = blnc + userTransaction.cashBackAmount;
+      }
+
+      let userDisAmount = accountData.rewardedBalance + dscnt;
+      let rewardAmount = accountData.rewardedBalance + dscnt;
+
+      let userPayload = {
+        discount: userDisAmount,
+        rewardedBalance: rewardAmount,
+        walletBalance: blnc,
+      };
+
+      console.log({ userPayload });
+
+      Object.assign(accountData, userPayload);
+      await accountData.save();
+
+      let transactionPayload = {};
+
+      transactionPayload.userBalance = userTransaction.userBalance || null;
+      transactionPayload.requestAmount = userTransaction.requestAmount || null;
+      transactionPayload.rechargeAmount = userTransaction.rechargeAmountBack;
+      transactionPayload.cashBackAmount = userTransaction.cashBackAmount;
+      transactionPayload.userFinalBalance =
+        userTransaction.userFinalBalance -
+        userTransaction.requestAmount +
+        userTransaction.cashBackAmount;
+
+      transactionPayload.requestAmountBack = 0;
+      transactionPayload.cashBackAmountBack = 0;
+      transactionPayload.rechargeAmountBack = 0;
+
+      console.log({ transactionPayload });
+
+      Object.assign(userTransaction, transactionPayload);
+      await userTransaction.save();
+    }
+  }
   Object.assign(transaction, params);
   return await transaction.save();
 };

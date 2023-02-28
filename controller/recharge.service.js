@@ -1,8 +1,7 @@
 const db = require("../_helpers/db");
 const axios = require("axios");
 const bcrypt = require("bcryptjs");
-const transactionService = require("./transaction.service");
-const generateRandomNumber = require("../_helpers/randomNumber");
+
 var priorityCount = 1;
 var lastTransactionsReport = {};
 
@@ -32,13 +31,23 @@ const createRecharge = async (req, res, next) => {
           priorityCount = 1;
           console.log("final recharge data ----------", finalRechargeData);
           if (finalRechargeData) {
+            params.customerNo = params.mobileNo;
+            params.responseData = finalRechargeData;
+            params.rechargeBy = finalRechargeData.rechargeOperator;
+            params.rechargeByApi = finalRechargeData.rechargeApi;
+
+            const rechargeData = new db.Recharge(params);
+            const rechargeResult = await rechargeData.save();
+
+            console.log({ rechargeResult });
+
             if (
               (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
               (finalRechargeData.STATUSCODE &&
                 finalRechargeData.STATUSCODE == 0) ||
               finalRechargeData.errorcode == 200
             ) {
-              await addDiscount2(params, finalRechargeData);
+              await addDiscount2(params, finalRechargeData, rechargeResult);
             } else {
               await updateTransactionData2(
                 params.userId,
@@ -50,15 +59,17 @@ const createRecharge = async (req, res, next) => {
               );
             }
 
-            params.customerNo = params.mobileNo;
-            params.responseData = finalRechargeData;
-            params.rechargeBy = finalRechargeData.rechargeOperator;
-            params.rechargeByApi = finalRechargeData.rechargeApi;
+            // params.customerNo = params.mobileNo;
+            // params.responseData = finalRechargeData;
+            // params.rechargeBy = finalRechargeData.rechargeOperator;
+            // params.rechargeByApi = finalRechargeData.rechargeApi;
 
-            const rechargeData = new db.Recharge(params);
-            await rechargeData.save().then(async () => {
-              await updateUserData(params);
-            });
+            // const rechargeData = new db.Recharge(params);
+            // await rechargeData.save().then(async () => {
+            //   await updateUserData(params);
+            // });
+
+            await updateUserData(params);
 
             res.status(200).json({
               status: 200,
@@ -95,17 +106,22 @@ const createRecharge = async (req, res, next) => {
   }
 };
 
-const addDiscount2 = async (params, rechargeData) => {
+const addDiscount2 = async (params, finalRechargeData, rechargeResult) => {
   try {
     var account = await db.Account.findById({ _id: params.userId });
 
     if (account && account.referralId) {
-      updateReferalUserDiscount(account, params, rechargeData);
+      updateReferalUserDiscount(
+        account,
+        params,
+        finalRechargeData,
+        rechargeResult
+      );
     }
 
     let disAmount = 0;
-    if (rechargeData) {
-      let discountData = await getDiscountData(rechargeData);
+    if (finalRechargeData) {
+      let discountData = await getDiscountData(finalRechargeData);
       console.log("discout data ---", discountData);
       if (discountData) {
         const { amount, type } = discountData;
@@ -127,6 +143,7 @@ const addDiscount2 = async (params, rechargeData) => {
       rewardedBalance: rewardAmount,
       walletBalance: walletBalance,
     };
+    
     Object.assign(account, userPayload);
     await account.save();
 
@@ -136,14 +153,20 @@ const addDiscount2 = async (params, rechargeData) => {
       disAmount,
       "credit",
       "user",
-      rechargeData
+      finalRechargeData,
+      rechargeResult
     );
   } catch (err) {
     console.error(err);
   }
 };
 
-const updateReferalUserDiscount = async (accountData, params, rechargeData) => {
+const updateReferalUserDiscount = async (
+  accountData,
+  params,
+  rechargeData,
+  rechargeResult
+) => {
   try {
     let disAmount = 0;
     if (rechargeData) {
@@ -179,7 +202,8 @@ const updateReferalUserDiscount = async (accountData, params, rechargeData) => {
       disAmount,
       "credit",
       "referral",
-      rechargeData
+      rechargeData,
+      rechargeResult
     );
   } catch (err) {
     console.error(err);
@@ -224,7 +248,8 @@ const updateTransactionData = async (
   amount,
   type,
   discountType,
-  rechargeData
+  rechargeData,
+  rechargeResult
 ) => {
   try {
     console.log({ userId, params, amount, type, discountType, rechargeData });
@@ -269,6 +294,7 @@ const updateTransactionData = async (
       payload.userFinalBalance = userFinalBalance;
     }
 
+    payload.rechargeId = rechargeResult._id;
     payload.transactionId = (await db.Transactions.countDocuments()) + 1;
     // params.transactionId = lastCount;
     const transactionData = new db.Transactions(payload);
