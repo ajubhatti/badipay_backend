@@ -44,7 +44,7 @@ const authenticate = async (req, res, next) => {
     .catch(next);
 };
 
-const adminLogin = async (req, res,next) => {
+const adminLogin = async (req, res, next) => {
   const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
   await accountService
@@ -405,7 +405,8 @@ router.post("/forgot-transaction-pin", accountService.forgotTransactionPin);
 router.post("/reset-password", accountService.resetPassword2);
 router.post("/reset-transaction-pin", accountService.resetTransactionPin);
 
-router.post("/getAll", getAll);
+// router.post("/getAll", getAll);
+router.post("/getAll", accountService.getAll2);
 router.get("/:id", getById);
 router.post("/getUserById", getUserById);
 router.post("/", create);

@@ -13,7 +13,7 @@ const schema = new Schema({
   isVerified: { type: Boolean, default: false },
   resetToken: { token: String, expires: Date },
   isFirstLogin: { type: Boolean, default: true },
-  stateId: { type: mongoose.Schema.Types.ObjectId, ref: "state" },
+  stateId: { type: mongoose.Schema.Types.ObjectId, ref: "State" },
   city: { type: String },
   pincode: { type: Number },
 
@@ -25,6 +25,7 @@ const schema = new Schema({
   otp: { type: Number },
   otpDate: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true },
+  isLogin: { type: Boolean, default: true },
 
   walletBalance: { type: Number, default: 0 },
   walletId: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
@@ -32,7 +33,10 @@ const schema = new Schema({
   rewardedBalance: { type: Number, default: 0 }, // cashback
   role: { type: String, enum: ["user", "moderator", "admin"], default: "user" },
 
+  isFromAdmin: { type: Boolean, default: false },
+
   createdAt: { type: Date, default: Date.now },
+  referralId: { type: mongoose.Schema.Types.ObjectId, ref: "Referral" },
   updatedAt: Date,
 });
 

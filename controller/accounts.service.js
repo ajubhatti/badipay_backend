@@ -33,7 +33,7 @@ const register = async (params, origin) => {
   account.passwordHash = hash(params.password);
   // save account
   await account.save().then(async (res) => {
-    if (params.referrelId) {
+    if (params.referralId) {
       addReferalId(params, res);
     }
 
@@ -92,7 +92,7 @@ const userRegister = async (req, res, next) => {
   account.passwordHash = hash(params.password);
   // save account
   await account.save().then(async (res) => {
-    if (params.referrelId) {
+    if (params.referralId) {
       addReferalId(params, res);
     }
     await sendRegisterSms(account.phoneNumber, account.otp)
@@ -132,13 +132,23 @@ const userRegister = async (req, res, next) => {
 };
 
 const addReferalId = async (params, res) => {
-  const referalData = await db.Referral.findOne({
-    referralCode: params.referrelId,
+  const referralData = await db.Referral.findOne({
+    referralCode: params.referralId,
   });
-  if (referalData) {
-    referalData.referredBy = [...referalData.referredBy, res._id];
-    referalData.updated = Date.now();
-    await referalData.save();
+  if (referralData) {
+    referralData.referredUser = [...referralData.referredUser, res._id];
+    referralData.updated = Date.now();
+    await referralData.save();
+
+    const referalUser = await db.Referral.findOne({
+      userId: params.userId,
+    });
+
+    if (referalUser) {
+      referalUser.referredBy = [...referalUser.referredBy, referralData.userId];
+      referalUser.updated = Date.now();
+      await referalUser.save();
+    }
   } else {
     throw new Error("Could not find");
   }
@@ -354,10 +364,10 @@ const revokeToken = async ({ token, ipAddress }) => {
 const verifyEmail = async ({ token }) => {
   const account = await db.Account.findOne({ verificationToken: token });
   if (!account) throw "Verification failed";
-  const referalData = await generateReferralCode(account._id);
+  const referralData = await generateReferralCode(account._id);
 
-  account.referralId = referalData._id;
-  account.referrelCode = referalData.referralCode;
+  account.referralId = referralData._id;
+  account.referrelCode = referralData.referralCode;
   account.verifiedDate = Date.now();
   account.verificationToken = undefined;
   account.verificationStatus = true;
@@ -368,10 +378,10 @@ const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
   if (!account || account.otp != otp) throw "Verification failed";
-  const referalData = await generateReferralCode(account._id);
+  const referralData = await generateReferralCode(account._id);
 
-  account.referralId = referalData._id;
-  account.referrelCode = referalData.referralCode;
+  account.referralId = referralData._id;
+  account.referrelCode = referralData.referralCode;
   account.verifiedDate = Date.now();
   account.otp = undefined;
   account.verificationToken = undefined;
@@ -716,6 +726,119 @@ const getAll = async (params) => {
   return filterData.map((x) => basicDetails(x));
 };
 
+const getAll2 = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+    console.log({ params });
+
+    let searchKeyword = params.searchParams;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { userName: { $regex: searchKeyword, $options: "i" } },
+          { phoneNumber: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "desc";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.createdAt = created;
+    }
+
+    console.log({ match });
+
+    const total = await db.Account.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
+      {
+        $lookup: {
+          from: "states",
+          localField: "stateId",
+          foreignField: "_id",
+          as: "stateDetail",
+        },
+      },
+      { $unwind: "$stateDetail" },
+    ];
+
+    console.log(JSON.stringify(aggregateRules));
+
+    await db.Account.aggregate(aggregateRules).then((result) => {
+      // result.forEach((x) => {
+      //   console.log(
+      //     "hash decrypt ---",
+      //     x,
+      //     x.passwordHash,
+      //     bcrypt.getSalt(x.passwordHash)
+      //   );
+      // });
+
+      res.status(200).json({
+        status: 200,
+        message: "success",
+        data: {
+          sort,
+          filter,
+          count: result.length,
+          page,
+          pages,
+          data: result,
+          total,
+        },
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
+};
+
 const getUserById = async (id, ipAddress) => {
   const account = await db.Account.findOne({ _id: id });
 
@@ -801,10 +924,15 @@ const transactionPinUpdate2 = async (req, res, next) => {
             data: {},
           });
         } else {
-          params.transactionPin = hash(params.transactionPin);
-          params.hasTransactionPin = true;
-          account.updated = Date.now();
-          Object.assign(account, params);
+          let payload = {
+            transactionPin: hash(params.transactionPin),
+            hasTransactionPin: true,
+            updated: Date.now(),
+          };
+
+          console.log({ payload });
+
+          Object.assign(account, payload);
           await account.save().then((result) => {
             res.status(200).json({
               status: 200,
@@ -839,10 +967,12 @@ const transactionPinUpdate2 = async (req, res, next) => {
               data: {},
             });
           } else {
-            params.transactionPin = hash(params.newTransactionPin);
-            params.hasTransactionPin = true;
-            account.updated = Date.now();
-            Object.assign(account, params);
+            let payload = {
+              transactionPin: hash(params.newTransactionPin),
+              updated: Date.now(),
+            };
+
+            Object.assign(account, payload);
             await account.save().then((result) => {
               res.status(200).json({
                 status: 200,
@@ -969,11 +1099,11 @@ const _delete = async (id) => {
 
 const getuserFromReferralCode = async (code) => {
   try {
-    const referalData = await db.Referral.findOne({ referralCode: code });
+    const referralData = await db.Referral.findOne({ referralCode: code });
 
-    if (referalData) {
+    if (referralData) {
       const account = await db.Account.findOne({
-        _id: referalData.userId,
+        _id: referralData.userId,
       });
       if (!account) {
         throw "user not found";
@@ -1176,6 +1306,7 @@ module.exports = {
   getuserFromReferralCode,
 
   getAll,
+  getAll2,
   getUserById,
   create,
   update,

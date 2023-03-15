@@ -8,7 +8,7 @@ const generateRandomNumber = require("../_helpers/randomNumber");
 const mongoose = require("mongoose");
 
 const getAll = async (params) => {
-  let walletData = await db.WalletTransaction.aggregate([
+  let walletTransactionData = await db.WalletTransaction.aggregate([
     {
       $lookup: {
         from: "accounts",
@@ -35,13 +35,13 @@ const getAll = async (params) => {
     return result;
   });
 
-  let temp = JSON.stringify(walletData);
+  let temp = JSON.stringify(walletTransactionData);
   let paramsResult = JSON.parse(temp);
 
   var startDate = new Date(params.startDate);
   var endDate = new Date(params.endDate);
 
-  let filterData = walletData;
+  let filterData = walletTransactionData;
   if (params.startDate && params.endDate) {
     filterData = filterData.filter((user) => {
       let date = new Date(user.created);
@@ -60,8 +60,8 @@ const getAll = async (params) => {
   //   },
   // ]);
 
-  //   filterData.map(async (wallet) => {
-  //     let user = await accountsService.getById(wallet.userId);
+  //   filterData.map(async (x) => {
+  //     let user = await accountsService.getById(x.userId);
   //     filterData.userdata = user;
   //   });
 
@@ -85,8 +85,8 @@ const getAll = async (params) => {
 };
 
 const getById = async (id) => {
-  const walletData = await getWallet(id);
-  return walletData;
+  const walletTransactionData = await getWalletTransactionById(id);
+  return walletTransactionData;
 };
 
 const createWallet = async (req, res, next) => {
@@ -120,7 +120,6 @@ const createWallet = async (req, res, next) => {
       description: params.description || {},
       transactionId: await generateRandomNumber(6),
       totalAmount: null,
-      // ===========================================
       customerNo: "",
       operatorName: "",
       userBalance: accountDetail.walletBalance || null,
@@ -144,9 +143,9 @@ const createWallet = async (req, res, next) => {
         paramsResult.transactionId = transactionSave._id;
       }
 
-      const wallet = new db.WalletTransaction(paramsResult);
+      const walletTransactionData = new db.WalletTransaction(paramsResult);
 
-      let walletSave = await wallet.save();
+      let walletSave = await walletTransactionData.save();
       if (walletSave) {
         return res.status(200).json({
           status: 200,
@@ -211,9 +210,9 @@ const create2 = async (params) => {
       paramsResult.walletTransactionId = lastCount + 1;
       paramsResult.transactionId = trnscRes._id;
     }
-    const wallet = new db.WalletTransaction(paramsResult);
+    const walletTransactionData = new db.WalletTransaction(paramsResult);
 
-    let walletRes = await wallet.save();
+    let walletRes = await walletTransactionData.save();
     if (walletRes) {
       return walletRes;
     }
@@ -223,85 +222,121 @@ const create2 = async (params) => {
 };
 
 const update = async (id, params) => {
-  const wallet = await getWallet(id);
+  const walletTransactionData = await getWalletTransactionById(id);
   if (
     params.slipNo &&
-    wallet.slipNo !== params.slipNo &&
+    walletTransactionData.slipNo !== params.slipNo &&
     (await db.Account.findOne({ slipNo: params.slipNo }))
   ) {
     throw 'slip no "' + params.slipNo + '" is already taken';
   }
 
   // copy params to account and save
-  Object.assign(wallet, params);
-  return await wallet.save();
+  Object.assign(walletTransactionData, params);
+  return await walletTransactionData.save();
 };
 
 const updateExistingBalance = async (params) => {
-  let accountDetail = await accountsService.getById(params.userId);
+  try {
+    console.log({ params });
+    let accountDetail = await db.Account.findOne({ _id: params.userId });
+    // let accountDetail = await accountsService.getById(params.userId);
+    console.log({ accountDetail });
 
-  if (accountDetail) {
-    if (params.type == "add") {
-      accountDetail.balance = Number(accountDetail.balance)
-        ? Number(accountDetail.balance) + Number(params.amount)
-        : Number(params.amount);
+    let calBalance = 0;
+
+    if (accountDetail) {
+      if (params.type == "add") {
+        calBalance = Number(accountDetail.walletBalance)
+          ? Number(accountDetail.walletBalance) + Number(params.amount)
+          : Number(params.amount);
+      } else {
+        calBalance = Number(accountDetail.walletBalance)
+          ? Number(accountDetail.walletBalance) - Number(params.amount)
+          : Number(params.amount);
+      }
+
+      // const walletTransactionData = await db.WalletTransaction.find({
+      //   userId: params.userId,
+      // });
+
+      // let userWalletData = walletTransactionData;
+
+      // console.log({ userWalletData });
+
+      // let requestPayload = {
+      //   userId: params.userId,
+      //   requestAmount: params.amount,
+      //   remark: params.remarks,
+      //   paymentType: "1",
+      //   bank: userWalletData.bank,
+      //   referenceNo: userWalletData.referenceNo,
+      //   depositBank: userWalletData.depositBank,
+      //   depositBranch: userWalletData.depositBranch,
+      //   amount: userWalletData.amount,
+      //   debitAmount: userWalletData.debitAmount,
+      //   creditAmount: userWalletData.creditAmount,
+      //   finalWalletAmount: userWalletData.finalWalletAmount,
+      //   amountType: userWalletData.amountType,
+      //   approveBy: userWalletData.approveBy,
+      // };
+
+      // const walletTransaction = await new db.WalletTransaction(requestPayload);
+
+      // walletTransaction.save();
+      // return walletTransaction;
+
+      let payload = {
+        userId: params.userId,
+        amount: calBalance || 0,
+        slipNo: params.slipNo || "",
+        remark: params.remark || "",
+        type: params.type === "add" ? "credit" : "debit",
+        status: "success",
+        description: params.remarks || {},
+        transactionId: (await db.Transactions.countDocuments()) + 1,
+        totalAmount: 0,
+        userBalance: accountDetail.walletBalance || 0,
+        requestAmount: params.amount || 0,
+        cashBackAmount: 0,
+        rechargeAmount: 0,
+        userFinalBalance: calBalance,
+      };
+
+      const transactionData = new db.Transactions(payload);
+      await transactionData.save();
+
+      accountDetail.walletBalance = calBalance;
+      delete accountDetail._id;
+
+      let userData = await accountsService.update(params.userId, accountDetail);
+      return userData;
     } else {
-      accountDetail.balance = Number(accountDetail.balance)
-        ? Number(accountDetail.balance) - Number(params.amount)
-        : Number(params.amount);
+      throw "user not found";
     }
-    delete accountDetail._id;
-
-    await accountsService.update(params.userId, accountDetail);
-
-    const walletData = await getWalletByUserId(params.userId);
-
-    let userWalletData = walletData[0];
-
-    let requestPayload = {
-      userId: params.userId,
-      requestAmount: params.amount,
-      remark: params.remarks,
-      paymentType: "1",
-      bank: userWalletData.bank,
-      referenceNo: userWalletData.referenceNo,
-      depositBank: userWalletData.depositBank,
-      depositBranch: userWalletData.depositBranch,
-      amount: userWalletData.amount,
-      debitAmount: userWalletData.debitAmount,
-      creditAmount: userWalletData.creditAmount,
-      finalWalletAmount: userWalletData.finalWalletAmount,
-      amountType: userWalletData.amountType,
-      approveBy: userWalletData.approveBy,
-      password: params.password,
-    };
-
-    const wallet = await new db.WalletTransaction(requestPayload);
-
-    wallet.save();
-    return wallet;
-  } else {
-    throw "user not found";
+  } catch (e) {
+    console.log(e);
+    return e;
   }
 };
 
 const _delete = async (id) => {
-  const wallet = await getWallet(id);
-  return await wallet.remove();
+  const walletTransac = await getWalletTransactionById(id);
+  return await walletTransac.remove();
 };
 
-const getWallet = async (id) => {
-  if (!db.isValidId(id)) throw "wallet not found";
-  const walletData = await db.WalletTransaction.findById(id);
-  if (!walletData) throw "wallet not found";
-  return walletData;
+const getWalletTransactionById = async (id) => {
+  if (!db.isValidId(id)) throw "walletTransaction not found";
+  const walletTransactionData = await db.WalletTransaction.findById(id);
+  if (!walletTransactionData) throw "walletTransaction not found";
+  return walletTransactionData;
 };
 
 const getTransctionByUserId = async (userId) => {
   try {
     let walletData1 = await db.WalletTransaction.find({ userId });
 
-    if (!walletData1) throw "wallet data not found";
+    if (!walletData1) throw "walletTransaction data not found";
     return walletData1;
   } catch (err) {
     return err;
@@ -310,18 +345,21 @@ const getTransctionByUserId = async (userId) => {
 
 const updateWalletStatus = async (params) => {
   try {
+    console.log({ params });
     // if (params.password) {
     //   const account = await db.Account.findOne({ _id: userId });
     //   if (!bcrypt.compareSync(password, account.passwordHash)) {
     //     throw "Your email or password not matched";
     //   }
     // }
-    const wallet = await getWallet(params.id);
+
+    const walletTransactionData = await getWalletTransactionById(params.id);
     delete params.id;
     delete params.userId;
-    params.finalWalletAmount = wallet.requestAmount;
 
-    let approveAmount = wallet.requestAmount;
+    let approveAmount = walletTransactionData.requestAmount;
+
+    // for deduction amount by admin
     if (params.amount) {
       approveAmount =
         approveAmount > 0 ? approveAmount - params.amount : approveAmount;
@@ -329,44 +367,40 @@ const updateWalletStatus = async (params) => {
       params.debitAmount = params.amount;
     }
 
+    params.finalWalletAmount = approveAmount;
+
     params.statusChangeDate = new Date();
 
-    Object.assign(wallet, params);
-    let walletRes = await wallet.save();
+    Object.assign(walletTransactionData, params);
+    let walletRes = await walletTransactionData.save();
 
     if (walletRes) {
-      walletRes.transactionId;
-      let transactionData = await getTrasactionById(walletRes.transactionId);
-      let payload = { status: params.statusOfWalletRequest };
-      Object.assign(transactionData, payload);
-      let transactionRes = await transactionData.save();
-
       if (params.statusOfWalletRequest === "approve") {
-        var account = await db.Account.findById({ _id: wallet.userId });
-        let walletCount = account.walletBalance + wallet.requestAmount;
-        if (params.amount) {
-          walletCount = walletCount - params.amount;
-        }
-
-        // here update user wallet balance
+        var account = await db.Account.findOne({
+          _id: walletTransactionData.userId,
+        });
+        let walletCount =
+          account.walletBalance + walletTransactionData.requestAmount;
 
         let userPayload = { walletBalance: walletCount };
         Object.assign(account, userPayload);
-        let accRes = await account.save();
+        await account.save();
 
-        if (params.amount) {
-          let payload = {
-            userId: wallet.userId,
-            amount: params.amount || "",
-            type: "debit",
-            status: "approve",
-            description: params.reason || "",
-          };
+        let transactionData = await getTrasactionById(walletRes.transactionId);
 
-          let trnscRes = await transaction.create(payload);
-        }
+        let transactionPayload = {
+          userId: walletTransactionData.userId,
+          amount: walletCount || "",
+          type: "debit",
+          status: "success",
+          description: params.reason || "",
+          userBalance: transactionData.userBalance || null,
+          userFinalBalance: walletCount,
+          requestAmount: walletTransactionData.requestAmount,
+        };
+        Object.assign(transactionData, transactionPayload);
+        let transactionRes = await transactionData.save();
       }
-
       return walletRes;
     }
   } catch (err) {

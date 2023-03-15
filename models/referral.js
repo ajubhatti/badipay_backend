@@ -15,6 +15,11 @@ const referralSchema = new Schema({
       ref: "account",
     },
   ],
+  referredUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "account",
+  },
+
   createdAt: {
     type: Date,
     default: Date.now(),
