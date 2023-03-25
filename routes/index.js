@@ -39,6 +39,8 @@ const transactionRouter = require("./transaction.route");
 const paymentModeRouter = require("./paymentModes.route");
 const serviceDiscountRouter = require("./serviceDiscount.route");
 const spSlabRouter = require("./slabs.route");
+const cashbackRouter = require("./cashback.route");
+const adminLoyaltyRouter = require("./adminLoyalty.route");
 
 // ==========================================================================
 
@@ -106,6 +108,8 @@ router.use("/rechargeOrBill", rechargeRouter);
 router.use("/paymentMode", paymentModeRouter);
 router.use("/discount", serviceDiscountRouter);
 router.use("/spslabs", spSlabRouter);
+router.use("/cashback", cashbackRouter);
+router.use("/adminLoyalty", adminLoyaltyRouter);
 
 // =================================================================
 

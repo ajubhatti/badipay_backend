@@ -4,6 +4,74 @@ const bcrypt = require("bcryptjs");
 
 var priorityCount = 1;
 var lastTransactionsReport = {};
+var responseJSON = {
+  STATUSCODE: "0",
+  STATUSMSG: "Success",
+  REFNO: "1679739513",
+  TRNID: 50239930,
+  TRNSTATUS: 1,
+  TRNSTATUSDESC: "Success",
+  OPRID: "2865867125",
+  BAL: 125.8355,
+  rechargeApi: {
+    _id: "632cd4c77cbd0e5d32d50fbd",
+    apiName: "RechargeWale",
+    apiDetail: "Recharge Wale",
+    apiImage: "",
+    isActive: true,
+    created: "2022-09-22T21:33:59.185Z",
+    __v: 0,
+    apiCode: "AR",
+    pendingLimit: "1",
+    priority: "1",
+    failureLimit: "1",
+  },
+  rechargeOperator: {
+    _id: "632da0e95e38c36f95b2a77d",
+    companyName: "Airtel",
+    mobileAppCode: "1",
+    companyDetail: "Airtel recharge",
+    image: "",
+    isActive: true,
+    isVisible: true,
+    providerType: "61ebf005b15b7b52ddc35dff",
+    minAmount: 1,
+    maxAmount: 1000,
+    referenceApis: [
+      {
+        _id: "632cd4c77cbd0e5d32d50fbd",
+        apiName: "RechargeWale",
+        apiDetail: "Recharge Wale",
+        apiImage: "",
+        isActive: true,
+        created: "2022-09-22T21:33:59.185Z",
+        __v: 0,
+        apiCode: "AR",
+        pendingLimit: "1",
+        priority: "1",
+        failureLimit: "1",
+      },
+      {
+        _id: "632974511164a0942d5d56 e1",
+        apiName: "Ambika",
+        apiDetail: "ambika api",
+        apiImage: "",
+        isActive: true,
+        created: "2022-09-20T08:05:37.763Z",
+        __v: 0,
+        updated: "2022-09-22T21:53:41.053Z",
+        apiCode: "201",
+        pendingLimit: "1",
+        priority: "2",
+        failureLimit: "0",
+      },
+    ],
+    created: "2022-09-23T12:04:57.054Z",
+    __v: 19,
+    updated: "2022-12-26T08:45:13.204Z",
+    discountByApi: [],
+  },
+};
 
 const createRecharge = async (req, res, next) => {
   try {
@@ -25,30 +93,52 @@ const createRecharge = async (req, res, next) => {
           message: "your transaction pin not matched!",
         });
       } else {
-        let operator = await getOperatorById(params);
-        if (operator) {
-          let finalRechargeData = await recursiveFunction2(params, operator);
-          priorityCount = 1;
-          console.log("final recharge data ----------", finalRechargeData);
-          console.log("params data ----------", params);
-          if (finalRechargeData) {
-            params.customerNo = params.mobileNo;
-            params.responseData = finalRechargeData;
-            params.rechargeBy = finalRechargeData.rechargeOperator;
-            params.rechargeByApi = finalRechargeData.rechargeApi;
+        console.log({ account });
+        if (account) {
+        } else {
+          let operator = await getOperatorById(params);
+          if (operator) {
+            // let finalRechargeData = await recursiveFunction2(params, operator);
+            let finalRechargeData = responseJSON;
+            priorityCount = 1;
 
-            const rechargeData = new db.Recharge(params);
-            const rechargeResult = await rechargeData.save();
+            if (finalRechargeData) {
+              params.customerNo = params.mobileNo;
+              params.responseData = finalRechargeData;
+              params.rechargeBy = finalRechargeData.rechargeOperator;
+              params.rechargeByApi = finalRechargeData.rechargeApi;
 
-            console.log({ rechargeResult });
+              // we can delet this two keys because we already save it in rechargeBy and rechargeByApi
+              // delete finalRechargeData.rechargeOperator;
+              // delete finalRechargeData.rechargeApi;
+              const rechargeData = new db.Recharge(params);
+              const rechargeResult = await rechargeData.save();
 
-            if (
-              (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
-              (finalRechargeData.STATUSCODE &&
-                finalRechargeData.STATUSCODE == 0) ||
-              finalRechargeData.errorcode == 200
-            ) {
-              await addDiscount2(params, finalRechargeData, rechargeResult);
+              if (
+                (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
+                (finalRechargeData.STATUSCODE &&
+                  finalRechargeData.STATUSCODE == 0) ||
+                finalRechargeData.errorcode == 200
+              ) {
+                await addDiscount2(params, rechargeResult);
+              } else {
+                await updateTransactionData2(
+                  params.userId,
+                  params,
+                  0,
+                  "credit",
+                  "user",
+                  lastTransactionsReport
+                );
+              }
+
+              await updateUserData(params);
+
+              res.status(200).json({
+                status: 200,
+                data: rechargeData,
+                message: "Recharge successful",
+              });
             } else {
               await updateTransactionData2(
                 params.userId,
@@ -58,46 +148,19 @@ const createRecharge = async (req, res, next) => {
                 "user",
                 lastTransactionsReport
               );
+              res.status(400).json({
+                status: 400,
+                data: "",
+                message: "Recharge can not be proceed!",
+              });
             }
-
-            // params.customerNo = params.mobileNo;
-            // params.responseData = finalRechargeData;
-            // params.rechargeBy = finalRechargeData.rechargeOperator;
-            // params.rechargeByApi = finalRechargeData.rechargeApi;
-
-            // const rechargeData = new db.Recharge(params);
-            // await rechargeData.save().then(async () => {
-            //   await updateUserData(params);
-            // });
-
-            await updateUserData(params);
-
-            res.status(200).json({
-              status: 200,
-              data: rechargeData,
-              message: "Recharge successful",
-            });
           } else {
-            await updateTransactionData2(
-              params.userId,
-              params,
-              0,
-              "credit",
-              "user",
-              lastTransactionsReport
-            );
             res.status(400).json({
               status: 400,
               data: "",
-              message: "Recharge can not be proceed!",
+              message: "operator not matched!",
             });
           }
-        } else {
-          res.status(400).json({
-            status: 400,
-            data: "",
-            message: "operator not matched!",
-          });
         }
       }
     }
@@ -107,99 +170,37 @@ const createRecharge = async (req, res, next) => {
   }
 };
 
-const addDiscount2 = async (params, finalRechargeData, rechargeResult) => {
+const addDiscount2 = async (params, rechargeResult) => {
   try {
     var account = await db.Account.findById({ _id: params.userId });
+    let discountData = await getDiscountData(params);
 
-    console.log("account data 1 ---------------", account);
-    console.log(
-      "account data referal id  ---------------",
-      account.userName,
-      account.referralId
+    await addDiscountAmount(
+      account,
+      params,
+      discountData,
+      "user",
+      rechargeResult
     );
 
     const referalUserData = await db.Referral.findOne({
       userId: params.userId,
     });
 
-    console.log("referal user data ----------------", referalUserData);
-    console.log("check length -------", referalUserData.referredUser);
-
     if (referalUserData && referalUserData.referredUser) {
-      console.log("account data 2 ---------------", account);
-      updateReferalUserDiscount(
-        account,
-        params,
-        finalRechargeData,
-        rechargeResult
-      );
+      await updateReferalUserDiscount(params, rechargeResult, discountData);
     }
-
-    let disAmount = 0;
-    if (finalRechargeData) {
-      let discountData = await getDiscountData(finalRechargeData);
-      console.log("discout data ---", discountData);
-      if (discountData) {
-        const { amount, type } = discountData;
-        if (type === "percentage") {
-          let percentageAmount = amount / 100;
-          disAmount = Number(params.amount) * percentageAmount;
-        } else {
-          disAmount = amount;
-        }
-      }
-    }
-
-    let rewardAmount = account.rewardedBalance + disAmount;
-    let userDisAmount = account.discount + disAmount;
-    let walletBalance = account.walletBalance + disAmount;
-
-    let userPayload = {
-      discount: userDisAmount,
-      rewardedBalance: rewardAmount,
-      walletBalance: walletBalance,
-    };
-
-    Object.assign(account, userPayload);
-    await account.save();
-
-    console.log("params ----------------", params);
-
-    await updateTransactionData(
-      params.userId,
-      params,
-      disAmount,
-      "credit",
-      "user",
-      finalRechargeData,
-      rechargeResult
-    );
   } catch (err) {
     console.error(err);
   }
 };
 
 const updateReferalUserDiscount = async (
-  accountData,
   params,
-  rechargeData,
-  rechargeResult
+  rechargeResult,
+  discountData
 ) => {
   try {
-    let disAmount = 0;
-    if (rechargeData) {
-      let discountData = await getDiscountData(rechargeData);
-      if (discountData) {
-        const { referalAmount, referalType } = discountData;
-        if (referalType === "percentage") {
-          let percentageAmount = referalAmount / 100;
-          disAmount = Number(params.amount) * percentageAmount;
-        } else {
-          disAmount = referalAmount;
-        }
-      }
-    }
-
     const referalUserData = await db.Referral.findOne({
       userId: params.userId,
     });
@@ -208,25 +209,11 @@ const updateReferalUserDiscount = async (
       _id: referalUserData.referredUser,
     });
 
-    let rewardAmount = account.rewardedBalance + disAmount;
-    let userDisAmount = account.discount + disAmount;
-    let walletBalance = account.walletBalance + disAmount;
-
-    let userPayload = {
-      discount: userDisAmount,
-      rewardedBalance: rewardAmount,
-      walletBalance: walletBalance,
-    };
-
-    Object.assign(account, userPayload);
-    await account.save();
-    await updateTransactionData(
-      account._id,
+    await addDiscountAmount(
+      account,
       params,
-      disAmount,
-      "credit",
+      discountData,
       "referral",
-      rechargeData,
       rechargeResult
     );
   } catch (err) {
@@ -234,13 +221,62 @@ const updateReferalUserDiscount = async (
   }
 };
 
+const addDiscountAmount = async (
+  account,
+  params,
+  discountData,
+  type,
+  rechargeResult
+) => {
+  let disAmount = 0;
+  if (rechargeResult) {
+    if (type === "referral") {
+      const { referalDiscount, referalDiscountType } = discountData;
+      if (referalDiscountType === "percentage") {
+        let percentageAmount = referalDiscount / 100;
+        disAmount = round(Number(params.amount) * percentageAmount, 2);
+      } else {
+        disAmount = round(referalDiscount, 2);
+      }
+    } else {
+      const { userDiscount, userDiscountType } = discountData;
+      if (userDiscountType === "percentage") {
+        let percentageAmount = userDiscount / 100;
+        disAmount = round(Number(params.amount) * percentageAmount, 2);
+      } else {
+        disAmount = round(userDiscount, 2);
+      }
+    }
+  }
+  let rewardAmount = account.rewardedBalance + disAmount;
+  let walletBalance = account.walletBalance + disAmount;
+
+  let userPayload = {
+    discount: round(rewardAmount, 2),
+    rewardedBalance: round(rewardAmount, 2),
+    walletBalance: round(walletBalance, 2),
+  };
+
+  Object.assign(account, userPayload);
+  await account.save();
+
+  await updateTransactionData(
+    account._id,
+    params,
+    disAmount,
+    type,
+    rechargeResult,
+    discountData
+  );
+};
+
 const getDiscountData = async (params) => {
   try {
     if (params) {
-      const { rechargeOperator, rechargeApi } = params;
+      const { rechargeBy, rechargeByApi } = params;
       let discount = await db.ServiceDiscount.findOne({
-        apiId: rechargeApi._id,
-        operatorId: rechargeOperator._id,
+        apiId: rechargeByApi._id,
+        operatorId: rechargeBy._id,
       });
 
       return discount;
@@ -250,6 +286,7 @@ const getDiscountData = async (params) => {
   } catch (err) {
     console.error({ err });
     // throw err;
+    return null;
   }
 };
 
@@ -269,51 +306,13 @@ const updateUserData = async (params) => {
 const updateTransactionData = async (
   userId,
   params,
-  amount,
+  discountAmount,
   userType,
-  discountType,
-  rechargeData,
-  rechargeResult
+  rechargeResult,
+  discountData
 ) => {
   try {
-    console.log({
-      userId,
-      params,
-      amount,
-      userType,
-      discountType,
-      rechargeData,
-    });
-
     let accountDetail = await db.Account.findById({ _id: userId });
-
-    // let disAmount = 0;
-    // if (finalRechargeData) {
-    //   let discountData = await getDiscountData(finalRechargeData);
-    //   console.log("discout data ---", discountData);
-    //   if (discountData) {
-    //     const { amount, type } = discountData;
-    //     if (type === "percentage") {
-    //       let percentageAmount = amount / 100;
-    //       disAmount = Number(params.amount) * percentageAmount;
-    //     } else {
-    //       disAmount = amount;
-    //     }
-    //   }
-    // }
-
-    // let rewardAmount = account.rewardedBalance + disAmount;
-    // let userDisAmount = account.discount + disAmount;
-    // let walletBalance = account.walletBalance + disAmount;
-
-    // let userPayload = {
-    //   discount: userDisAmount,
-    //   rewardedBalance: rewardAmount,
-    //   walletBalance: walletBalance,
-    // };
-
-    // Object.assign(account, userPayload);
-    // await account.save();
 
     let payload = {
       userId: userId,
@@ -322,50 +321,176 @@ const updateTransactionData = async (
       description: {},
       operatorId: "",
       operatorName: "",
-      requestAmount: null,
-      rechargeAmount: null,
-      cashBackAmount: null,
+      requestAmount: 0,
+      rechargeAmount: 0,
+      cashBackAmount: 0,
       type: "credit",
       customerNo: "",
       status: "success",
     };
 
-    let rechargeAmount = params.amount - amount;
+    let rechargeAmount = round(params.amount, 2) - round(discountAmount, 2);
     let userFinalBalance =
-      accountDetail.walletBalance - amount - rechargeAmount;
+      round(accountDetail.walletBalance, 2) -
+      round(discountAmount, 2) -
+      round(rechargeAmount, 2);
 
-    if (discountType == "user") {
+    if (userType == "user") {
       payload.slipNo = params.slipNo || "";
       payload.remark = params.remark || "";
       payload.description = params.description || {};
       payload.customerNo = params.mobileNo;
       payload.operatorName = "";
       payload.operatorId = "";
-      payload.rechargeData = rechargeData;
-      payload.amount = params.amount || 0;
-      payload.userBalance = accountDetail.walletBalance - amount || 0;
-      payload.requestAmount = params.amount || 0;
-      payload.rechargeAmount = rechargeAmount || 0;
-      payload.cashBackAmount = amount;
-      payload.userFinalBalance = userFinalBalance;
+      payload.rechargeData = rechargeResult.responseData;
+      payload.amount = round(params.amount, 2) || 0;
+      payload.userBalance =
+        round(accountDetail.walletBalance - discountAmount, 2) || 0;
+      payload.requestAmount = round(params.amount, 2) || 0;
+      payload.rechargeAmount = round(rechargeAmount, 2) || 0;
+      payload.cashBackAmount = round(discountAmount, 2);
+      payload.userFinalBalance = round(userFinalBalance, 2);
     } else {
       payload.amount = 0;
-      payload.userBalance = accountDetail.walletBalance - amount || 0;
-      payload.cashBackAmount = amount;
-      payload.userFinalBalance = userFinalBalance;
+      payload.userBalance =
+        round(accountDetail.walletBalance, 2) - round(discountAmount, 2) || 0;
+      payload.cashBackAmount = round(discountAmount, 2);
+      payload.userFinalBalance =
+        round(accountDetail.walletBalance, 2) - round(discountAmount, 2);
     }
 
     payload.rechargeId = rechargeResult._id;
     payload.transactionId = (await db.Transactions.countDocuments()) + 1;
     const transactionData = new db.Transactions(payload);
-    console.log("transactions payload ---", { payload, transactionData });
     let transactionRes = await transactionData.save();
-    console.log({ transactionRes });
+
+    if (userType == "user") {
+      let adminDiscnt = 0;
+      const { adminDiscount, adminDiscountType } = discountData;
+      if (adminDiscountType === "percentage") {
+        let percentageAmount = adminDiscount / 100;
+        adminDiscnt = round(Number(params.amount) * percentageAmount, 2);
+      } else {
+        adminDiscnt = round(adminDiscount, 2);
+      }
+
+      let cashBackPayload = {
+        rechargeId: rechargeResult._id,
+        userId: params.userId,
+        transactionId: transactionRes._id,
+        rechargeAmount: round(params.amount, 2),
+        cashBackReceive: round(adminDiscnt, 2),
+        userCashBack: round(discountAmount, 2),
+        referralCashBack: 0,
+        netCashBack: round(adminDiscnt, 2) - round(discountAmount, 2),
+      };
+
+      console.log({ cashBackPayload });
+      const cashBackData = await new db.Cashback(cashBackPayload);
+      await cashBackData.save();
+      console.log("cashback save ----", cashBackData);
+
+      let loyaltyData = await db.AdminLoyalty.find();
+      if (loyaltyData.length > 0) {
+        let loyaltyRes = loyaltyData[0];
+        console.log("loyaltyRes data ------", loyaltyRes);
+        console.log(
+          "check type ----",
+          loyaltyRes.netCashBack,
+          adminDiscnt,
+          discountAmount
+        );
+        let lyltyPayld = {
+          requestAmount:
+            round(loyaltyRes.requestAmount, 2) + round(params.amount, 2),
+
+          rechargeAmount:
+            round(loyaltyRes.rechargeAmount, 2) + round(rechargeAmount, 2),
+
+          cashBackReceive:
+            round(loyaltyRes.cashBackReceive, 2) + round(adminDiscnt, 2),
+
+          userCashBack:
+            round(loyaltyRes.userCashBack, 2) + round(discountAmount, 2),
+
+          referralCashBack: round(loyaltyRes.referralCashBack, 2) + 0,
+
+          netCashBack:
+            round(loyaltyRes.netCashBack, 2) +
+            round(loyaltyRes.netCashBack, 2) +
+            round(adminDiscnt, 2) -
+            round(discountAmount, 2),
+        };
+
+        console.log("lyltyPayld ---------", lyltyPayld);
+
+        Object.assign(loyaltyRes, lyltyPayld);
+        loyaltyRes.updated = Date.now();
+        await loyaltyRes.save();
+      } else {
+        let addlyltyPayld = {
+          requestAmount: round(params.amount, 2),
+          rechargeAmount: round(rechargeAmount, 2),
+          cashBackReceive: round(adminDiscnt, 2),
+          userCashBack: round(discountAmount, 2),
+          referralCashBack: 0,
+          netCashBack: round(adminDiscnt, 2) - round(discountAmount, 2),
+        };
+        console.log("addlyltyPayld -------------", addlyltyPayld);
+        const loyaltyData = new db.AdminLoyalty(addlyltyPayld);
+        await loyaltyData.save();
+      }
+    } else {
+      console.log("recharge id ---------------", rechargeResult._id);
+      let cashBack = await db.Cashback.findOne({
+        rechargeId: rechargeResult._id,
+      });
+      console.log("update cashback ---", cashBack);
+      if (cashBack) {
+        let updatePayld = {
+          referralCashBack: round(discountAmount, 2),
+          netCashBack:
+            round(cashBack.netCashBack, 2) - round(discountAmount, 2),
+        };
+
+        console.log("update payload ---", updatePayld);
+
+        Object.assign(cashBack, updatePayld);
+        cashBack.updated = Date.now();
+        await cashBack.save();
+
+        let loyaltyData = await db.AdminLoyalty.find();
+        if (loyaltyData.length > 0) {
+          let loyaltyRes = loyaltyData[0];
+          let lyltyPayld = {
+            referralCashBack:
+              round(loyaltyRes.referralCashBack, 2) + round(discountAmount, 2),
+
+            netCashBack:
+              round(loyaltyRes.netCashBack, 2) +
+              round(loyaltyRes.netCashBack) -
+              round(discountAmount, 2),
+          };
+
+          Object.assign(loyaltyRes, lyltyPayld);
+          loyaltyRes.updated = Date.now();
+          await loyaltyRes.save();
+        }
+      }
+    }
+
     return transactionRes;
   } catch (err) {
-    console.error(err);
+    console.error({ err });
   }
 };
+
+function round(num, decimalPlaces = 0) {
+  if (!Number.isNaN(num)) {
+    num = Math.round(num + "e" + decimalPlaces);
+    return Number(num + "e" + -decimalPlaces);
+  }
+}
 
 const updateTransactionData2 = async (
   userId,
@@ -376,8 +501,6 @@ const updateTransactionData2 = async (
   rechargeData
 ) => {
   try {
-    console.log({ userId, params, amount, type, discountType, rechargeData });
-
     let accountDetail = await db.Account.findById({ _id: userId });
     let payload = {
       userId: userId,
@@ -386,17 +509,15 @@ const updateTransactionData2 = async (
       description: {},
       operatorId: "",
       operatorName: "",
-      requestAmount: null,
-      rechargeAmount: null,
-      cashBackAmount: null,
+      requestAmount: 0,
+      rechargeAmount: 0,
+      cashBackAmount: 0,
       type: "credit",
       customerNo: "",
       status: "pending",
     };
 
     if (lastTransactionsReport) {
-      console.log("lst trans cation report ----------", lastTransactionsReport);
-
       if (
         (lastTransactionsReport.TRNSTATUS &&
           lastTransactionsReport.TRNSTATUS !== 4) ||
@@ -415,21 +536,18 @@ const updateTransactionData2 = async (
     payload.operatorName = "";
     payload.operatorId = "";
     payload.rechargeData = rechargeData;
-    payload.amount = params.amount || null;
-    payload.userBalance = accountDetail.walletBalance || null;
-    payload.requestAmount = params.amount || null;
-    payload.rechargeAmount = null;
-    payload.cashBackAmount = null;
+    payload.amount = params.amount || 0;
+    payload.userBalance = accountDetail.walletBalance || 0;
+    payload.requestAmount = params.amount || 0;
+    payload.rechargeAmount = 0;
+    payload.cashBackAmount = 0;
     payload.userFinalBalance = accountDetail.walletBalance;
 
     payload.transactionId = (await db.Transactions.countDocuments()) + 1;
     const transactionData = new db.Transactions(payload);
-    console.log("transactions payload in cancel and pending ---", {
-      payload,
-      transactionData,
-    });
+
     let transactionRes = await transactionData.save();
-    console.log({ transactionRes });
+
     return transactionRes;
   } catch (err) {
     console.error(err);
@@ -466,12 +584,10 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
       operatorCode: filteredOperator.apiCode,
       regMobileNumber: params.mobileNo,
     };
-    console.log("in recharge fun ----------", { payload, filteredOperator });
 
     let rechargeData = await doRecharge(filteredOperator, payload);
     rechargeData.rechargeOperator = operator;
-    console.log("-----------------------------------------------");
-    console.log("rechargeData", rechargeData);
+
     lastTransactionsReport = rechargeData;
     if (
       (rechargeData && rechargeData.TRNSTATUS == 0) ||

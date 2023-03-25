@@ -86,7 +86,7 @@ router.post("/", create);
 // router.post("/", transactionService.createTransactions);
 router.get("/:id", getById);
 // router.post("/getByUserId", getByUserId);
-router.post("/getByUserId", transactionService.transactionListPageWise);
+router.post("/getByUserId", transactionService.transactionListWithPagination);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 

@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const shortid = require("shortid");
 const db = require("../_helpers/db");
 const { getUserById } = require("../controller/accounts.service");
-const accountsService = require("../controller/accounts.service");
 const { getBankAccountById } = require("../controller/bankAccounts.service");
 const { fetchAllData } = require("../_middleware/fetchingData");
 const generateRandomNumber = require("../_helpers/randomNumber");
@@ -331,7 +330,7 @@ const createTransactions = async (req, res, next) => {
   }
 };
 
-const transactionListPageWise = async (req, res, next) => {
+const transactionListWithPagination = async (req, res, next) => {
   try {
     const params = req.body;
     const filter = req.body;
@@ -462,5 +461,5 @@ module.exports = {
   getTrasactionById,
   delete: _delete,
   getTransctionByUserId,
-  transactionListPageWise,
+  transactionListWithPagination,
 };

@@ -13,21 +13,28 @@ const schema = new Schema({
     ref: "company",
     required: true,
   },
-  amount: { type: Number, default: 0 },
-  type: {
+  userDiscount: { type: Number, default: 0 },
+  userDiscountType: {
     type: String,
     enum: ["number", "percentage"],
     default: "number",
   },
-  discountLimit: { type: Number, default: -1 },
+  userDiscountLimit: { type: Number, default: -1 },
 
-  referalAmount: { type: Number, default: 0 },
-  referalType: {
+  referalDiscount: { type: Number, default: 0 },
+  referalDiscountType: {
     type: String,
     enum: ["number", "percentage"],
     default: "number",
   },
   referalDiscountLimit: { type: Number, default: -1 },
+
+  adminDiscount: { type: Number, default: 0 },
+  adminDiscountType: {
+    type: String,
+    enum: ["number", "percentage"],
+    default: "number",
+  },
 
   created: { type: Date, default: Date.now },
   updated: Date,

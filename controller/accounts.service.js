@@ -871,7 +871,12 @@ const create = async (params) => {
     account.passwordHash = hash(params.password);
 
     // save account
-    await account.save();
+    // await account.save();
+    await account.save().then(async (res) => {
+      if (params.referralId) {
+        await addReferalId(params, res);
+      }
+    });
 
     return basicDetails(account);
   } catch (err) {

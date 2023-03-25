@@ -59,6 +59,8 @@ module.exports = {
   Transactions: require("../models/transaction"),
   PaymentMode: require("../models/paymentModes"),
   ServiceDiscount: require("../models/serviceDiscount"),
-  Slabs : require("../models/slabs"),
+  Slabs: require("../models/slabs"),
+  Cashback: require("../models/cashBack"),
+  AdminLoyalty: require("../models/adminLoyalty"),
   isValidId,
 };

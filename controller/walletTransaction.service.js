@@ -399,7 +399,7 @@ const updateWalletStatus = async (params) => {
           requestAmount: walletTransactionData.requestAmount,
         };
         Object.assign(transactionData, transactionPayload);
-        let transactionRes = await transactionData.save();
+        await transactionData.save();
       }
       return walletRes;
     }
@@ -745,25 +745,25 @@ const walletListDataPageWise = async (req, res, next) => {
       //   },
       // },
       // { $unwind: "$userDetail" },
-      {
-        $lookup: {
-          from: "paymentmodes",
-          localField: "paymentType",
-          foreignField: "_id",
-          as: "paymentMode",
-        },
-      },
-      { $unwind: "$paymentMode" },
+      // {
+      //   $lookup: {
+      //     from: "paymentmodes",
+      //     localField: "paymentType",
+      //     foreignField: "_id",
+      //     as: "paymentMode",
+      //   },
+      // },
+      // { $unwind: "$paymentMode" },
 
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transactionId",
-          foreignField: "_id",
-          as: "transactionData",
-        },
-      },
-      { $unwind: "$transactionData" },
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transactionId",
+      //     foreignField: "_id",
+      //     as: "transactionData",
+      //   },
+      // },
+      // { $unwind: "$transactionData" },
     ];
 
     console.log({ aggregateRules });
