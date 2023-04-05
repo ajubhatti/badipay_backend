@@ -35,8 +35,9 @@ const schema = new Schema({
 
   isFromAdmin: { type: Boolean, default: false },
 
-  createdAt: { type: Date, default: Date.now },
   referralId: { type: mongoose.Schema.Types.ObjectId, ref: "Referral" },
+  lastDiscount: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
   updatedAt: Date,
 });
 

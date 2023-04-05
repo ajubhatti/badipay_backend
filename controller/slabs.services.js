@@ -131,9 +131,9 @@ const slabListDataPageWise = async (req, res, next) => {
 
     const sort = {};
     const orderByColumn = params.sortBy || "created";
-    const orderByDirection = params.orderBy || "desc";
+    const orderByDirection = params.orderBy || "DESC";
     if (orderByColumn && orderByDirection) {
-      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
     if (params.status) {

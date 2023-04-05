@@ -108,8 +108,14 @@ const createWallet = async (req, res, next) => {
       });
     }
 
-    let accountDetail = await accountsService.getUserById(params.userId);
+    let accountDetail = await db.Account.findById({ _id: params.userId });
     console.log("account detail ---------------", accountDetail);
+    let pyld = {
+      pendingBalance: accountDetail.pendingBalance + params.requestAmount,
+    };
+    console.log({ pyld });
+    Object.assign(accountDetail, pyld);
+    await accountDetail.save();
     let payload = {
       userId: params.userId,
       amount: params.requestAmount || null,
@@ -118,7 +124,7 @@ const createWallet = async (req, res, next) => {
       type: "credit",
       status: "pending",
       description: params.description || {},
-      transactionId: await generateRandomNumber(6),
+      transactionId: (await db.Transactions.countDocuments()) + 1,
       totalAmount: null,
       customerNo: "",
       operatorName: "",
@@ -141,11 +147,13 @@ const createWallet = async (req, res, next) => {
       if (transactionSave) {
         paramsResult.walletTransactionId = lastCount + 1;
         paramsResult.transactionId = transactionSave._id;
+        paramsResult.creditAccount = params.PayerType;
       }
 
       const walletTransactionData = new db.WalletTransaction(paramsResult);
 
       let walletSave = await walletTransactionData.save();
+
       if (walletSave) {
         return res.status(200).json({
           status: 200,
@@ -198,6 +206,7 @@ const create2 = async (params) => {
       status: "pending",
       userBalance: accountDetail.walletBalance || null,
       description: params.description || {},
+      pendingBalance: accountDetail.pendingBalance + params.requestAmount,
     };
 
     let trnscRes = await transaction.create(payload);
@@ -382,7 +391,10 @@ const updateWalletStatus = async (params) => {
         let walletCount =
           account.walletBalance + walletTransactionData.requestAmount;
 
-        let userPayload = { walletBalance: walletCount };
+        let userPayload = {
+          walletBalance: walletCount,
+          pendingBalance: account.pendingBalance - params.amount,
+        };
         Object.assign(account, userPayload);
         await account.save();
 
@@ -444,7 +456,7 @@ const getWalletWithPagination3 = async (req, res, next) => {
   const params = req.body;
   const { userId } = params;
   const orderByColumn = params.order_by_column || "created";
-  const orderByDirection = params.order_by_direction || "desc";
+  const orderByDirection = params.order_by_direction || "DESC";
   const page = params.page || 1;
   const limit = params.limit || 20;
   const where = {};
@@ -471,7 +483,7 @@ const getAllData2 = async (req, res, next) => {
   const sort = {};
 
   if (req.body.sortBy && req.body.orderBy) {
-    sort[req.body.sortBy] = req.body.orderBy === "desc" ? -1 : 1;
+    sort[req.body.sortBy] = req.body.orderBy == "DESC" ? -1 : 1;
   }
 
   try {
@@ -540,7 +552,7 @@ const getAllData = async (req, res, next) => {
     const sort = {};
 
     if (req.body.sortBy && req.body.orderBy) {
-      sort[req.body.sortBy] = req.body.orderBy === "desc" ? -1 : 1;
+      sort[req.body.sortBy] = req.body.orderBy == "DESC" ? -1 : 1;
     }
 
     if (filter) {
@@ -613,10 +625,10 @@ const newGetData = async (req, res, next) => {
     }
 
     const orderByColumn = params.sortBy || "created";
-    const orderByDirection = params.orderBy || "desc";
+    const orderByDirection = params.orderBy || "DESC";
     const sort = {};
     if (orderByColumn && orderByDirection) {
-      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
     // tmpSearch = { name: new RegExp(search, 'i') }
 
@@ -689,11 +701,11 @@ const walletListDataPageWise = async (req, res, next) => {
     }
 
     const orderByColumn = params.sortBy || "created";
-    const orderByDirection = params.orderBy || "desc";
+    const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
     if (orderByColumn && orderByDirection) {
-      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
     if (params.status) {
@@ -736,34 +748,24 @@ const walletListDataPageWise = async (req, res, next) => {
       },
       { $skip: skipNo },
       { $limit: params.limits },
-      // {
-      //   $lookup: {
-      //     from: "accounts",
-      //     localField: "userId",
-      //     foreignField: "_id",
-      //     as: "userDetail",
-      //   },
-      // },
-      // { $unwind: "$userDetail" },
-      // {
-      //   $lookup: {
-      //     from: "paymentmodes",
-      //     localField: "paymentType",
-      //     foreignField: "_id",
-      //     as: "paymentMode",
-      //   },
-      // },
-      // { $unwind: "$paymentMode" },
-
-      // {
-      //   $lookup: {
-      //     from: "transactions",
-      //     localField: "transactionId",
-      //     foreignField: "_id",
-      //     as: "transactionData",
-      //   },
-      // },
-      // { $unwind: "$transactionData" },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: "$userDetail" },
+      {
+        $lookup: {
+          from: "paymentmodes",
+          localField: "paymentType",
+          foreignField: "_id",
+          as: "paymentMode",
+        },
+      },
+      { $unwind: "$paymentMode" },
     ];
 
     console.log({ aggregateRules });
@@ -833,10 +835,10 @@ const queryBlogPostsByUser = async (req, res, next) => {
       // { $match: Object.assign({ "user._id": userId }, filter) },
     ];
     const orderByColumn = sortBy || "created";
-    const orderByDirection = orderBy || "desc";
+    const orderByDirection = orderBy || "DESC";
     const sort = {};
     if (orderByColumn && orderByDirection) {
-      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
     if (sort) {

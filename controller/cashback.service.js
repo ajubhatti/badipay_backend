@@ -1,4 +1,5 @@
 const db = require("../_helpers/db");
+const { roundOfNumber } = require("../_middleware/middleware");
 
 const create = async (params) => {
   const cashBack = new db.Cashback(params);
@@ -30,7 +31,6 @@ const getAll2 = async (req, res, next) => {
     const params = req.body;
     const filter = req.body;
     let match = {};
-    console.log({ params });
 
     let searchKeyword = params.search;
     if (searchKeyword) {
@@ -43,11 +43,11 @@ const getAll2 = async (req, res, next) => {
     }
 
     const orderByColumn = params.sortBy || "created";
-    const orderByDirection = params.orderBy || "desc";
+    const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
     if (orderByColumn && orderByDirection) {
-      sort[orderByColumn] = orderByDirection === "desc" ? -1 : 1;
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
     if (params.status) {
@@ -97,16 +97,6 @@ const getAll2 = async (req, res, next) => {
         },
       },
       { $unwind: "$userDetail" },
-      // {
-      //   $lookup: {
-      //     from: "paymentmodes",
-      //     localField: "paymentType",
-      //     foreignField: "_id",
-      //     as: "paymentMode",
-      //   },
-      // },
-      // { $unwind: "$paymentMode" },
-
       {
         $lookup: {
           from: "transactions",
@@ -118,23 +108,124 @@ const getAll2 = async (req, res, next) => {
       { $unwind: "$transactionData" },
     ];
 
-    console.log(JSON.stringify(aggregateRules));
+    console.log("aggregateRules -------", JSON.stringify(aggregateRules));
 
-    await db.Cashback.aggregate(aggregateRules).then((result) => {
+    let cashbackResult = await db.Cashback.aggregate(aggregateRules);
+    if (cashbackResult) {
       res.status(200).json({
         status: 200,
         message: "success",
         data: {
           sort,
           filter,
-          count: result.length,
+          count: cashbackResult.length,
           page,
           pages,
-          data: result,
+          data: cashbackResult,
           total,
         },
       });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
     });
+  }
+};
+
+const getTotalReports = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "DESC";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.created = created;
+    }
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+    ];
+
+    let cashbackResult = await db.Cashback.aggregate(aggregateRules);
+    if (cashbackResult) {
+      let totalReports = {
+        rechargeAmount: 0,
+        cashBackReceive: 0,
+        userCashBack: 0,
+        referralCashBack: 0,
+        netCashBack: 0,
+        requestAmount: 0,
+      };
+
+      for (let i = 0; i < cashbackResult.length; i++) {
+        totalReports.rechargeAmount =
+          roundOfNumber(totalReports.rechargeAmount) +
+          roundOfNumber(cashbackResult[i].rechargeAmount);
+        totalReports.cashBackReceive =
+          roundOfNumber(totalReports.cashBackReceive) +
+          roundOfNumber(cashbackResult[i].cashBackReceive);
+        totalReports.requestAmount =
+          roundOfNumber(totalReports.requestAmount) +
+          roundOfNumber(cashbackResult[i].requestAmount);
+        totalReports.userCashBack =
+          roundOfNumber(totalReports.userCashBack) +
+          roundOfNumber(cashbackResult[i].userCashBack);
+        totalReports.referralCashBack =
+          roundOfNumber(totalReports.referralCashBack) +
+          roundOfNumber(cashbackResult[i].referralCashBack);
+        totalReports.netCashBack =
+          roundOfNumber(totalReports.netCashBack) +
+          roundOfNumber(cashbackResult[i].netCashBack);
+      }
+      res.status(200).json({
+        status: 200,
+        message: "success",
+        data: totalReports,
+      });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -163,5 +254,6 @@ module.exports = {
   getById,
   getAll,
   getAll2,
+  getTotalReports,
   delete: _delete,
 };

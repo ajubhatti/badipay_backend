@@ -35,8 +35,10 @@ const transactionSchema = new Schema({
   cashBackAmountBack: { type: Number, default: null },
   rechargeAmountBack: { type: Number, default: null },
   // ===========================================
-
+  apiProvider: { type: String, default: "" },
+  serviceType: { type: String, default: "" },
   created: { type: Date, default: Date.now },
+
   updated: Date,
 });
 
