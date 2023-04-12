@@ -1,16 +1,18 @@
 const db = require("../_helpers/db");
 const axios = require("axios");
 const bcrypt = require("bcryptjs");
+const { updateTransactionById } = require("./transaction.service");
+const { CONSTANT_STATUS } = require("../_helpers/constant");
 
 var priorityCount = 1;
 var lastTransactionsReport = {};
 var responseJSON = {
   STATUSCODE: "0",
-  STATUSMSG: "Success",
+  STATUSMSG: CONSTANT_STATUS.SUCCESS,
   REFNO: "1679739513",
   TRNID: 50239930,
   TRNSTATUS: 1,
-  TRNSTATUSDESC: "Success",
+  TRNSTATUSDESC: CONSTANT_STATUS.SUCCESS,
   OPRID: "2865867125",
   BAL: 125.8355,
   rechargeApi: {
@@ -126,14 +128,16 @@ const createRecharge = async (req, res, next) => {
                 finalRechargeData.errorcode == 200
               ) {
                 await addDiscount2(params, rechargeResult);
+                Object.assign(rechargeResult, {
+                  status: CONSTANT_STATUS.SUCCESS,
+                });
+                await rechargeResult.save();
               } else {
                 await updateTransactionData2(
                   params.userId,
                   params,
-                  0,
-                  "credit",
-                  "user",
-                  lastTransactionsReport
+                  lastTransactionsReport,
+                  rechargeResult
                 );
               }
 
@@ -145,14 +149,6 @@ const createRecharge = async (req, res, next) => {
                 message: "Recharge successful",
               });
             } else {
-              await updateTransactionData2(
-                params.userId,
-                params,
-                0,
-                "credit",
-                "user",
-                lastTransactionsReport
-              );
               res.status(400).json({
                 status: 400,
                 data: "",
@@ -340,7 +336,7 @@ const updateTransactionData = async (
       cashBackAmount: 0,
       type: "credit",
       customerNo: "",
-      status: "success",
+      status: CONSTANT_STATUS.SUCCESS,
     };
 
     let rechargeAmount = round(params.amount, 2) - round(discountAmount, 2);
@@ -400,6 +396,7 @@ const updateTransactionData = async (
         userCashBack: round(discountAmount, 2),
         referralCashBack: 0,
         netCashBack: round(adminDiscnt, 2) - round(discountAmount, 2),
+        status: payload.status,
       };
 
       console.log({ cashBackPayload });
@@ -468,6 +465,7 @@ const updateTransactionData = async (
           referralCashBack: round(discountAmount, 2),
           netCashBack:
             round(cashBack.netCashBack, 2) - round(discountAmount, 2),
+          status: CONSTANT_STATUS.SUCCESS,
         };
 
         console.log("update payload ---", updatePayld);
@@ -512,10 +510,8 @@ function round(num, decimalPlaces = 0) {
 const updateTransactionData2 = async (
   userId,
   params,
-  amount,
-  type,
-  discountType,
-  rechargeData
+  rechargeData,
+  rechargeResult
 ) => {
   try {
     let accountDetail = await db.Account.findById({ _id: userId });
@@ -564,6 +560,9 @@ const updateTransactionData2 = async (
     const transactionData = new db.Transactions(payload);
 
     let transactionRes = await transactionData.save();
+
+    Object.assign(rechargeResult, { status: payload.status });
+    await rechargeResult.save(); // update recharge data
 
     return transactionRes;
   } catch (err) {
@@ -737,13 +736,20 @@ const getOperatorById = async (params) => {
   }
 };
 
-const update = async (id, params) => {
+const updateRechargeById = async (id, params) => {
   try {
-    const rechargeData = await getState(id);
+    const rechargeData = await getRecharge(id);
 
     Object.assign(rechargeData, params);
     rechargeData.updated = Date.now();
     await rechargeData.save();
+
+    let transaction = await db.Transactions.findOne({ rechargeId: id });
+
+    let transactionId = transaction._id;
+    console.log({ rechargeData, transactionId });
+
+    await updateTransactionById(transactionId, params);
 
     return rechargeData;
   } catch (err) {
@@ -753,7 +759,7 @@ const update = async (id, params) => {
 
 const getById = async (id) => {
   try {
-    const rechargeData = await getState(id);
+    const rechargeData = await getRecharge(id);
     return rechargeData;
   } catch (err) {
     console.error(err);
@@ -789,10 +795,127 @@ const getRecharge = async (id) => {
   }
 };
 
+const rechargeListWithPagination = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    if (params.services) {
+      match.rechargeByApi = { $regex: params.services, $options: "i" };
+    }
+
+    if (params.provider) {
+      match.rechargeBy = { $regex: params.provider, $options: "i" };
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "DESC";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+    if (params.userId) {
+      match.userId = mongoose.Types.ObjectId(params.userId);
+    }
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.created = created;
+    }
+
+    const total = await db.Recharge.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
+    ];
+
+    const rechargeResult = await db.Recharge.aggregate(aggregateRules);
+
+    for (let i = 0; i < rechargeResult.length; i++) {
+      console.log(rechargeResult[i]._id);
+      let transactionRslt = await db.Transactions.findOne({
+        rechargeId: rechargeResult[i]._id,
+        requestAmount: { $gt: 0 },
+      });
+
+      transactionRslt = JSON.parse(JSON.stringify(transactionRslt));
+
+      let serviceType = await db.Services.findById(transactionRslt.serviceType);
+      transactionRslt.serviceTypeName = serviceType.serviceName || "";
+
+      rechargeResult[i].transactionData = transactionRslt;
+      let userDetail = await db.Account.findById(rechargeResult[i].userId);
+      rechargeResult[i].userDetail = userDetail;
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: CONSTANT_STATUS.SUCCESS,
+      data: {
+        sort,
+        filter,
+        count: rechargeResult.length,
+        page,
+        pages,
+        data: rechargeResult,
+        total,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
+};
+
 module.exports = {
   createRecharge,
-  update,
+  updateRechargeById,
   getById,
   getAll,
   delete: _delete,
+  rechargeListWithPagination,
 };

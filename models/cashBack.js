@@ -20,6 +20,12 @@ const schema = new Schema({
   referralCashBackBckup: { type: Number, required: false },
   netCashBackBckup: { type: Number, required: false },
 
+  status: {
+    type: String,
+    enum: ["pending", "failed", "success", "refund"],
+    default: "pending",
+  },
+
   created: { type: Date, default: Date.now },
   updated: Date,
 });

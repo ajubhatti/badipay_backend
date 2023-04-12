@@ -9,7 +9,11 @@ const schema = new Schema({
   amount: { type: Number },
   rechargeBy: { type: Object },
   rechargeByApi: { type: Object },
-  status: { type: String, default: true, default: "pending" },
+  status: {
+    type: String,
+    enum: ["pending", "failed", "success", "refund"],
+    default: "pending",
+  },
   created: { type: Date, default: Date.now },
   responseData: { type: Object },
   updated: Date,

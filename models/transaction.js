@@ -37,6 +37,7 @@ const transactionSchema = new Schema({
   // ===========================================
   apiProvider: { type: String, default: "" },
   serviceType: { type: String, default: "" },
+  isPendingOrFail: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
 
   updated: Date,

@@ -26,7 +26,7 @@ const getById = (req, res, next) => {
 
 const update = (req, res, next) => {
   rechargeController
-    .update(req.params.id, req.body)
+    .updateRechargeById(req.params.id, req.body)
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
     )
@@ -61,5 +61,6 @@ router.get("/:id", getById);
 router.post("/", rechargeController.createRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
+router.post("/getRecharges", rechargeController.rechargeListWithPagination);
 
 module.exports = router;

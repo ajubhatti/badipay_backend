@@ -768,8 +768,6 @@ const walletListDataPageWise = async (req, res, next) => {
       { $unwind: "$paymentMode" },
     ];
 
-    console.log({ aggregateRules });
-
     await db.WalletTransaction.aggregate(aggregateRules).then((result) => {
       res.status(200).json({
         status: 200,
@@ -905,60 +903,6 @@ const queryBlogPostsByUser = async (req, res, next) => {
   }
 };
 
-const getByAggeration = (req, res, next) => {
-  try {
-    const params = req.body;
-    const {
-      userId,
-      page,
-      limits,
-      sortBy,
-      orderBy,
-      skip,
-      search,
-      startDate, //"10-15-2022",
-      endDate,
-    } = params;
-
-    const skipNo = (page - 1) * limits;
-
-    const aggregateRules = [
-      { $match: {} },
-      {
-        $sort: {
-          created: -1,
-        },
-      },
-      { $skip: skipNo },
-      { $limit: limits },
-      {
-        $lookup: {
-          from: "accounts",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userDetail",
-        },
-      },
-      { $unwind: "$userDetail" },
-      // {
-      //   $lookup: {
-      //     from: "PaymentMode",
-      //     localField: "paymentType",
-      //     foreignField: "_id",
-      //     as: "paymentMode",
-      //   },
-      // },
-      // { $unwind: "$paymentMode" },
-    ];
-
-    db.WalletTransaction.aggregate(aggregateRules).then((result) => {
-      res.status(200).send({ result });
-    });
-  } catch (err) {
-    res.json(500).json({ status: 500, message: "fail", data: err });
-  }
-};
-
 const getAllDataByPaginate = (req, res, next) => {
   const { page, limits, title, active } = req.body;
   // query documents based on  condition
@@ -1000,6 +944,134 @@ const getPagination = (page, size) => {
   return { limit, offset };
 };
 
+const getwalletListData = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { walletTransactionId: { $regex: searchKeyword, $options: "i" } },
+          { slipNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "DESC";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+    if (params.userId) {
+      match.userId = mongoose.Types.ObjectId(params.userId);
+    }
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.created = created;
+    }
+
+    const total = await db.WalletTransaction.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    console.log(JSON.stringify(match));
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: "$userDetail" },
+      {
+        $lookup: {
+          from: "paymentmodes",
+          localField: "paymentType",
+          foreignField: "_id",
+          as: "paymentMode",
+        },
+      },
+      { $unwind: "$paymentMode" },
+      {
+        $lookup: {
+          from: "bankaccounts",
+          localField: "creditAccount",
+          foreignField: "_id",
+          as: "bankData",
+        },
+      },
+      { $unwind: "$bankData" },
+    ];
+
+    let walletData = await db.WalletTransaction.aggregate(aggregateRules);
+
+    for (let i = 0; i < walletData.length; i++) {
+      let bankData = await getBankAccountById(walletData[i].creditAccount);
+      walletData[i].bankData = bankData || {};
+      if (walletData[i].paymentType) {
+        let paymnetModeData = await getModeById(walletData[i].paymentType);
+        walletData[i].paymnetModeData = paymnetModeData || {};
+      }
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "success",
+      data: {
+        sort,
+        filter,
+        count: walletData.length,
+        page,
+        pages,
+        data: walletData,
+        total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
+};
+
 module.exports = {
   createWallet,
   create2,
@@ -1016,9 +1088,9 @@ module.exports = {
 
   newGetData,
   queryBlogPostsByUser,
-  getByAggeration,
 
   getAllDataByPaginate,
 
   walletListDataPageWise,
+  getwalletListData,
 };

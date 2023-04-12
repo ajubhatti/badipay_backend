@@ -109,5 +109,6 @@ router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);
 router.post("/updateWalletStatus", changeWalletStatus);
+router.post("/getWallet", walletService.getwalletListData);
 
 module.exports = router;

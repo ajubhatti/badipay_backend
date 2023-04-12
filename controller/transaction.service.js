@@ -5,6 +5,7 @@ const { getUserById } = require("../controller/accounts.service");
 const { getBankAccountById } = require("../controller/bankAccounts.service");
 const { fetchAllData } = require("../_middleware/fetchingData");
 const generateRandomNumber = require("../_helpers/randomNumber");
+const { CONSTANT_STATUS } = require("../_helpers/constant");
 
 const getAll = async (req, res, next) => {
   try {
@@ -13,7 +14,7 @@ const getAll = async (req, res, next) => {
     let match = {};
 
     let searchKeyword = params.search;
-    if (searchKeyword || params.provider || params.services) {
+    if (searchKeyword) {
       match = {
         $or: [
           { transactionId: { $regex: searchKeyword, $options: "i" } },
@@ -150,37 +151,184 @@ const referalcodeGenerator = async () => {
   return await shortid.generate();
 };
 
-const update = async (id, params) => {
+const updateTransactionById = async (id, params) => {
   try {
-    const transaction = await getTransaction(id);
+    console.log({ id, params });
+    // const transaction = await getTransaction(id);
 
     const transactionData = await db.Transactions.find({
       rechargeId: params.rechargeId,
     });
-    // copy params to account and save
-    if (
-      params.status &&
-      params.status != transaction.status &&
-      params.status != "success"
-    ) {
-      //  get user and referal user transaction data
-      if (transactionData) {
-        for (let i = 0; i < transactionData.length; i++) {
-          let usrTrscn = transactionData[i];
-          const accountData = await db.Account.findById(usrTrscn.userId);
 
+    console.log({ transactionData });
+
+    //  get user and referal user transaction data
+    if (transactionData) {
+      for (let i = 0; i < transactionData.length; i++) {
+        let usrTrscn = transactionData[i];
+
+        const accountData = await db.Account.findById(usrTrscn.userId);
+
+        if (
+          params.status &&
+          params.status != usrTrscn.status &&
+          params.status != "success"
+        ) {
+          if (usrTrscn.isPendingOrFail != true) {
+            let blnc = accountData.walletBalance;
+            let dscnt = accountData.rewardedBalance;
+
+            if (usrTrscn.requestAmount) {
+              blnc = blnc + usrTrscn.requestAmount;
+            }
+
+            if (usrTrscn.cashBackAmount) {
+              blnc = blnc - usrTrscn.cashBackAmount;
+            }
+
+            let userDisAmount =
+              dscnt != 0 ? dscnt - usrTrscn.cashBackAmount : 0;
+
+            let userPayload = {
+              discount: userDisAmount,
+              rewardedBalance: userDisAmount,
+              walletBalance: blnc,
+            };
+
+            Object.assign(accountData, userPayload);
+            await accountData.save();
+
+            let transactionPayload = {
+              userBalance: usrTrscn.userBalance || 0,
+              requestAmount: usrTrscn.requestAmount || 0,
+              rechargeAmount: 0,
+              cashBackAmount: 0,
+              userFinalBalance:
+                usrTrscn.userFinalBalance + usrTrscn.rechargeAmount || 0,
+              requestAmountBack: usrTrscn.requestAmount || 0,
+              cashBackAmountBack: usrTrscn.cashBackAmount || 0,
+              rechargeAmountBack: usrTrscn.rechargeAmount || 0,
+              status: params.status,
+              isPendingOrFail: true,
+            };
+
+            Object.assign(usrTrscn, transactionPayload);
+            await usrTrscn.save();
+
+            console.log({ usrTrscn });
+
+            let cashBackData = await db.Cashback.findOne({
+              transactionId: usrTrscn._id,
+            });
+
+            console.log({ cashBackData });
+
+            let pyld = {
+              requestAmount: 0,
+              rechargeAmount: 0,
+              cashBackReceive: 0,
+              userCashBack: 0,
+              referralCashBack: 0,
+              netCashBack: 0,
+
+              // ===========================================
+              requestAmountBckup: cashBackData.requestAmount || 0,
+              rechargeAmountBckup: cashBackData.rechargeAmount || 0,
+              cashBackReceiveBckup: cashBackData.cashBackReceive || 0,
+              userCashBackBckup: cashBackData.userCashBack || 0,
+              referralCashBackBckup: cashBackData.referralCashBack || 0,
+              netCashBackBckup: cashBackData.netCashBack || 0,
+            };
+
+            if (params.status == CONSTANT_STATUS.PENDING) {
+              pyld.status = params.status;
+            } else {
+              pyld.status = params.status;
+            }
+
+            Object.assign(cashBackData, pyld);
+            cashBackData.updated = Date.now();
+            await cashBackData.save();
+
+            // await db.Cashback.find({}).then((result) => {
+            //   console.log(result);
+            // });
+
+            // let loyaltyData = await db.AdminLoyalty.findOne({});
+            // if (loyaltyData) {
+            //   let loyaltyRes = loyaltyData;
+            //   console.log("loyaltyRes data ------", loyaltyRes);
+            //   console.log(
+            //     "check type ----",
+            //     loyaltyRes.netCashBack,
+            //     adminDiscnt,
+            //     discountAmount
+            //   );
+
+            //   let lyltyPayld = {
+            //     requestAmount:
+            //       round(loyaltyRes.requestAmount, 2) + round(params.amount, 2),
+
+            //     rechargeAmount:
+            //       round(loyaltyRes.rechargeAmount, 2) + round(rechargeAmount, 2),
+
+            //     cashBackReceive:
+            //       round(loyaltyRes.cashBackReceive, 2) + round(adminDiscnt, 2),
+
+            //     userCashBack:
+            //       round(loyaltyRes.userCashBack, 2) + round(discountAmount, 2),
+
+            //     referralCashBack: round(loyaltyRes.referralCashBack, 2) + 0,
+
+            //     netCashBack:
+            //       round(loyaltyRes.netCashBack, 2) +
+            //       round(loyaltyRes.netCashBack, 2) +
+            //       round(adminDiscnt, 2) -
+            //       round(discountAmount, 2),
+            //   };
+
+            //   console.log("lyltyPayld ---------", lyltyPayld);
+
+            //   Object.assign(loyaltyRes, lyltyPayld);
+            //   loyaltyRes.updated = Date.now();
+            //   await loyaltyRes.save();
+            // }
+          } else {
+            let transactionPayload = { status: params.status };
+            Object.assign(usrTrscn, transactionPayload);
+            await usrTrscn.save();
+
+            let cashBackData = await db.Cashback.findOne({
+              transactionId: usrTrscn._id,
+            });
+
+            let pyld = { status: CONSTANT_STATUS.REFUND };
+
+            if (params.status == CONSTANT_STATUS.PENDING) {
+              pyld.status = CONSTANT_STATUS.PENDING;
+            }
+
+            Object.assign(cashBackData, pyld);
+            cashBackData.updated = Date.now();
+            await cashBackData.save();
+          }
+        } else if (
+          params.status &&
+          params.status != usrTrscn.status &&
+          params.status == "success"
+        ) {
           let blnc = accountData.walletBalance;
           let dscnt = accountData.rewardedBalance;
 
           if (usrTrscn.requestAmount) {
-            blnc = blnc + usrTrscn.requestAmount;
+            blnc = blnc != 0 ? blnc - usrTrscn.requestAmount : 0;
           }
 
           if (usrTrscn.cashBackAmount) {
-            blnc = blnc - usrTrscn.cashBackAmount;
+            blnc = blnc + usrTrscn.cashBackAmount;
           }
 
-          let userDisAmount = dscnt != 0 ? dscnt - usrTrscn.cashBackAmount : 0;
+          let userDisAmount = usrTrscn.cashBackAmount + dscnt;
 
           let userPayload = {
             discount: userDisAmount,
@@ -192,190 +340,71 @@ const update = async (id, params) => {
           await accountData.save();
 
           let transactionPayload = {
-            userBalance: usrTrscn.userBalance || 0,
-            requestAmount: usrTrscn.requestAmount || 0,
-            rechargeAmount: 0,
-            cashBackAmount: 0,
+            userBalance: usrTrscn.userBalance || null,
+            requestAmount: usrTrscn.requestAmountBack || null,
+            rechargeAmount: usrTrscn.rechargeAmountBack,
+            cashBackAmount: usrTrscn.cashBackAmountBack,
             userFinalBalance:
-              usrTrscn.userFinalBalance +
-                usrTrscn.requestAmount -
-                usrTrscn.cashBackAmount || 0,
-            requestAmountBack: usrTrscn.requestAmount || 0,
-            cashBackAmountBack: usrTrscn.cashBackAmount || 0,
-            rechargeAmountBack: usrTrscn.rechargeAmount || 0,
+              usrTrscn.userFinalBalance - usrTrscn.rechargeAmountBack,
+            requestAmountBack: 0,
+            cashBackAmountBack: 0,
+            rechargeAmountBack: 0,
+            status: params.status,
+            isPendingOrFail: false,
           };
 
           Object.assign(usrTrscn, transactionPayload);
           await usrTrscn.save();
 
-          console.log({ usrTrscn });
-
           let cashBackData = await db.Cashback.findOne({
             transactionId: usrTrscn._id,
           });
 
-          console.log({ cashBackData });
+          console.log(
+            { cashBackData },
+            typeof cashBackData.requestAmount,
+            typeof cashBackData.requestAmountBckup
+          );
 
           let pyld = {
-            requestAmount: 0,
-            rechargeAmount: 0,
-            cashBackReceive: 0,
-            userCashBack: 0,
-            referralCashBack: 0,
-            netCashBack: 0,
+            requestAmount:
+              cashBackData.requestAmount +
+              (cashBackData.requestAmountBckup || 0),
+            rechargeAmount:
+              cashBackData.rechargeAmount +
+              (cashBackData.rechargeAmountBckup || 0),
+            cashBackReceive:
+              cashBackData.cashBackReceive +
+              (cashBackData.cashBackReceiveBckup || 0),
+            userCashBack:
+              cashBackData.userCashBack + (cashBackData.userCashBackBckup || 0),
+            referralCashBack:
+              cashBackData.referralCashBack +
+              (cashBackData.referralCashBackBckup || 0),
+            netCashBack:
+              cashBackData.netCashBack + (cashBackData.netCashBackBckup || 0),
 
             // ===========================================
-            requestAmountBckup: cashBackData.requestAmount,
-            rechargeAmountBckup: cashBackData.rechargeAmount,
-            cashBackReceiveBckup: cashBackData.cashBackReceive,
-            userCashBackBckup: cashBackData.userCashBack,
-            referralCashBackBckup: cashBackData.referralCashBack,
-            netCashBackBckup: cashBackData.netCashBack,
+            requestAmountBckup: 0,
+            rechargeAmountBckup: 0,
+            cashBackReceiveBckup: 0,
+            userCashBackBckup: 0,
+            referralCashBackBckup: 0,
+            netCashBackBckup: 0,
+            status: params.status,
           };
+
+          console.log(pyld);
 
           Object.assign(cashBackData, pyld);
           cashBackData.updated = Date.now();
           await cashBackData.save();
-
-          await db.Cashback.find({}).then((result) => {
-            console.log(result);
-          });
-
-          // let loyaltyData = await db.AdminLoyalty.findOne({});
-          // if (loyaltyData) {
-          //   let loyaltyRes = loyaltyData;
-          //   console.log("loyaltyRes data ------", loyaltyRes);
-          //   console.log(
-          //     "check type ----",
-          //     loyaltyRes.netCashBack,
-          //     adminDiscnt,
-          //     discountAmount
-          //   );
-
-          //   let lyltyPayld = {
-          //     requestAmount:
-          //       round(loyaltyRes.requestAmount, 2) + round(params.amount, 2),
-
-          //     rechargeAmount:
-          //       round(loyaltyRes.rechargeAmount, 2) + round(rechargeAmount, 2),
-
-          //     cashBackReceive:
-          //       round(loyaltyRes.cashBackReceive, 2) + round(adminDiscnt, 2),
-
-          //     userCashBack:
-          //       round(loyaltyRes.userCashBack, 2) + round(discountAmount, 2),
-
-          //     referralCashBack: round(loyaltyRes.referralCashBack, 2) + 0,
-
-          //     netCashBack:
-          //       round(loyaltyRes.netCashBack, 2) +
-          //       round(loyaltyRes.netCashBack, 2) +
-          //       round(adminDiscnt, 2) -
-          //       round(discountAmount, 2),
-          //   };
-
-          //   console.log("lyltyPayld ---------", lyltyPayld);
-
-          //   Object.assign(loyaltyRes, lyltyPayld);
-          //   loyaltyRes.updated = Date.now();
-          //   await loyaltyRes.save();
-          // }
         }
-      }
-    } else if (
-      params.status &&
-      params.status != transaction.status &&
-      params.status == "success"
-    ) {
-      for (let i = 0; i < transactionData.length; i++) {
-        let usrTrscn = transactionData[i];
-        const accountData = await db.Account.findById(usrTrscn.userId);
-
-        let blnc = accountData.walletBalance;
-        let dscnt = accountData.rewardedBalance;
-
-        if (usrTrscn.requestAmount) {
-          blnc = blnc != 0 ? blnc - usrTrscn.requestAmount : 0;
-        }
-
-        if (usrTrscn.cashBackAmount) {
-          blnc = blnc + usrTrscn.cashBackAmount;
-        }
-
-        let userDisAmount = usrTrscn.cashBackAmount + dscnt;
-
-        let userPayload = {
-          discount: userDisAmount,
-          rewardedBalance: userDisAmount,
-          walletBalance: blnc,
-        };
-
-        Object.assign(accountData, userPayload);
-        await accountData.save();
-
-        let transactionPayload = {};
-
-        transactionPayload.userBalance = usrTrscn.userBalance || null;
-        transactionPayload.requestAmount = usrTrscn.requestAmount || null;
-        transactionPayload.rechargeAmount = usrTrscn.rechargeAmountBack;
-        transactionPayload.cashBackAmount = usrTrscn.cashBackAmount;
-        transactionPayload.userFinalBalance =
-          usrTrscn.userFinalBalance -
-          usrTrscn.requestAmount +
-          usrTrscn.cashBackAmount;
-
-        transactionPayload.requestAmountBack = 0;
-        transactionPayload.cashBackAmountBack = 0;
-        transactionPayload.rechargeAmountBack = 0;
-
-        Object.assign(usrTrscn, transactionPayload);
-        await usrTrscn.save();
-
-        let cashBackData = await db.Cashback.findOne({
-          transactionId: usrTrscn._id,
-        });
-
-        console.log(
-          { cashBackData },
-          typeof cashBackData.requestAmount,
-          typeof cashBackData.requestAmountBckup
-        );
-
-        let pyld = {
-          requestAmount:
-            cashBackData.requestAmount + (cashBackData.requestAmountBckup || 0),
-          rechargeAmount:
-            cashBackData.rechargeAmount +
-            (cashBackData.rechargeAmountBckup || 0),
-          cashBackReceive:
-            cashBackData.cashBackReceive +
-            (cashBackData.cashBackReceiveBckup || 0),
-          userCashBack:
-            cashBackData.userCashBack + (cashBackData.userCashBackBckup || 0),
-          referralCashBack:
-            cashBackData.referralCashBack +
-            (cashBackData.referralCashBackBckup || 0),
-          netCashBack:
-            cashBackData.netCashBack + (cashBackData.netCashBackBckup || 0),
-
-          // ===========================================
-          requestAmountBckup: 0,
-          rechargeAmountBckup: 0,
-          cashBackReceiveBckup: 0,
-          userCashBackBckup: 0,
-          referralCashBackBckup: 0,
-          netCashBackBckup: 0,
-        };
-
-        console.log(pyld);
-
-        Object.assign(cashBackData, pyld);
-        cashBackData.updated = Date.now();
-        await cashBackData.save();
       }
     }
-    Object.assign(transaction, params);
-    return await transaction.save();
+    return "success";
+    // Object.assign(transaction, params);
+    // return await transaction.save();
   } catch (err) {
     console.log({ err });
   }
@@ -543,7 +572,7 @@ const transactionListWithPagination = async (req, res, next) => {
 module.exports = {
   create,
   createTransactions,
-  update,
+  updateTransactionById,
   getAll,
   getAll2,
   getTrasactionById,

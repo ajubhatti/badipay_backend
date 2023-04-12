@@ -805,29 +805,42 @@ const getAll2 = async (req, res, next) => {
 
     console.log(JSON.stringify(aggregateRules));
 
-    await db.Account.aggregate(aggregateRules).then((result) => {
-      // result.forEach((x) => {
-      //   console.log(
-      //     "hash decrypt ---",
-      //     x,
-      //     x.passwordHash,
-      //     bcrypt.getSalt(x.passwordHash)
-      //   );
-      // });
+    let userListData = await db.Account.aggregate(aggregateRules);
 
-      res.status(200).json({
-        status: 200,
-        message: "success",
-        data: {
-          sort,
-          filter,
-          count: result.length,
-          page,
-          pages,
-          data: result,
-          total,
-        },
+    for (let i = 0; i < userListData.length; i++) {
+      console.log("id ---", userListData[i]._id);
+      let referalData = await db.Referral.findOne({
+        userId: userListData[i]._id,
       });
+
+      let temp = JSON.stringify(referalData);
+      let result = JSON.parse(temp);
+
+      console.log({ referalData });
+      if (result) {
+        let referedUser = await db.Account.findById(result.referredUser);
+        console.log({ referedUser });
+        if (referedUser) {
+          result.userName = referedUser.userName;
+          userListData[i].referedUser = result;
+        }
+      }
+    }
+
+    console.log({ userListData });
+
+    res.status(200).json({
+      status: 200,
+      message: "success",
+      data: {
+        sort,
+        filter,
+        count: userListData.length,
+        page,
+        pages,
+        data: userListData,
+        total,
+      },
     });
   } catch (error) {
     console.error(error);

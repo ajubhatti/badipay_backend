@@ -8,7 +8,7 @@ const walletTransactionSchema = new Schema({
   requestAmount: { type: Number, required: true, default: 0 },
   slipNo: { type: String },
   remark: { type: String },
-  creditAccount: { type: Schema.Types.ObjectId, ref: "BankList" },
+  creditAccount: { type: Schema.Types.ObjectId, ref: "Banks" },
   walletTransactionId: { type: String },
   transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
 

@@ -55,7 +55,7 @@ const getByUserId = (req, res, next) => {
 
 const updateById = (req, res, next) => {
   transactionService
-    .update(req.params.id, req.body)
+    .updateTransactionById(req.params.id, req.body)
     .then((transactions) =>
       res.status(200).json({
         status: 200,
