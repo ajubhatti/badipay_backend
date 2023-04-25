@@ -20,6 +20,9 @@ const schema = new Schema({
   referralCashBackBckup: { type: Number, required: false },
   netCashBackBckup: { type: Number, required: false },
 
+  operatorId: { type: Schema.Types.ObjectId, ref: "Company" },
+  apiId: { type: Schema.Types.ObjectId, ref: "Apis" },
+
   status: {
     type: String,
     enum: ["pending", "failed", "success", "refund"],

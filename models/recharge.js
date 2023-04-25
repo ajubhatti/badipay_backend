@@ -7,8 +7,10 @@ const schema = new Schema({
   operator: { type: String },
   state: { type: String },
   amount: { type: Number },
-  rechargeBy: { type: Object },
+  rechargeByOperator: { type: Object },
   rechargeByApi: { type: Object },
+  operatorId: { type: Schema.Types.ObjectId, ref: "Company" },
+  apiId: { type: Schema.Types.ObjectId, ref: "Apis" },
   status: {
     type: String,
     enum: ["pending", "failed", "success", "refund"],

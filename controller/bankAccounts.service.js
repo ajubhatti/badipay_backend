@@ -74,6 +74,7 @@ const getAll = async () => {
           accountDetail: 1,
           ifscCode: 1,
           bankId: 1,
+          isActive: 1,
           bankName: "$bankdetail.bankName",
         },
       },

@@ -1,5 +1,6 @@
 const db = require("../_helpers/db");
 const { roundOfNumber } = require("../_middleware/middleware");
+const mongoose = require("mongoose");
 
 const create = async (params) => {
   const cashBack = new db.Cashback(params);
@@ -40,6 +41,14 @@ const getAll2 = async (req, res, next) => {
           { customerNo: { $regex: searchKeyword, $options: "i" } },
         ],
       };
+    }
+
+    if (params.services) {
+      match.operatorId = mongoose.Types.ObjectId(params.services);
+    }
+
+    if (params.provider) {
+      match.apiId = mongoose.Types.ObjectId(params.provider);
     }
 
     const orderByColumn = params.sortBy || "created";

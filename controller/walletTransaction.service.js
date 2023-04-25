@@ -6,6 +6,7 @@ const { getTrasactionById } = require("../controller/transaction.service");
 const transaction = require("../controller/transaction.service");
 const generateRandomNumber = require("../_helpers/randomNumber");
 const mongoose = require("mongoose");
+const { roundOfNumber } = require("../_middleware/middleware");
 
 const getAll = async (params) => {
   let walletTransactionData = await db.WalletTransaction.aggregate([
@@ -128,8 +129,8 @@ const createWallet = async (req, res, next) => {
       totalAmount: null,
       customerNo: "",
       operatorName: "",
-      userBalance: accountDetail.walletBalance || null,
-      requestAmount: params.requestAmount || null,
+      userBalance: roundOfNumber(accountDetail.walletBalance) || null,
+      requestAmount: roundOfNumber(params.requestAmount) || null,
       cashBackAmount: null,
       rechargeAmount: null,
       userFinalBalance: null,
@@ -198,15 +199,17 @@ const create2 = async (params) => {
 
     let payload = {
       userId: params.userId,
-      amount: params.requestAmount || null,
-      requestAmount: params.requestAmount || null,
+      amount: roundOfNumber(params.requestAmount) || null,
+      requestAmount: roundOfNumber(params.requestAmount) || null,
       slipNo: params.slipNo || "",
       remark: params.remark || "",
       type: "credit",
       status: "pending",
-      userBalance: accountDetail.walletBalance || null,
+      userBalance: roundOfNumber(accountDetail.walletBalance) || null,
       description: params.description || {},
-      pendingBalance: accountDetail.pendingBalance + params.requestAmount,
+      pendingBalance:
+        roundOfNumber(accountDetail.pendingBalance) +
+        roundOfNumber(params.requestAmount),
     };
 
     let trnscRes = await transaction.create(payload);
@@ -305,8 +308,8 @@ const updateExistingBalance = async (params) => {
         description: params.remarks || {},
         transactionId: (await db.Transactions.countDocuments()) + 1,
         totalAmount: 0,
-        userBalance: accountDetail.walletBalance || 0,
-        requestAmount: params.amount || 0,
+        userBalance: roundOfNumber(accountDetail.walletBalance) || 0,
+        requestAmount: roundOfNumber(params.amount) || 0,
         cashBackAmount: 0,
         rechargeAmount: 0,
         userFinalBalance: calBalance,
@@ -406,9 +409,9 @@ const updateWalletStatus = async (params) => {
           type: "debit",
           status: "success",
           description: params.reason || "",
-          userBalance: transactionData.userBalance || null,
+          userBalance: roundOfNumber(transactionData.userBalance) || null,
           userFinalBalance: walletCount,
-          requestAmount: walletTransactionData.requestAmount,
+          requestAmount: roundOfNumber(walletTransactionData.requestAmount),
         };
         Object.assign(transactionData, transactionPayload);
         await transactionData.save();

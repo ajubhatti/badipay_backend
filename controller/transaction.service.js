@@ -27,8 +27,8 @@ const getAll = async (req, res, next) => {
       match.serviceType = { $regex: params.services, $options: "i" };
     }
 
-    if (params.provider) {
-      match.apiProvider = { $regex: params.provider, $options: "i" };
+    if (params.api) {
+      match.apiProvider = { $regex: params.api, $options: "i" };
     }
 
     const orderByColumn = params.sortBy || "created";
@@ -199,15 +199,17 @@ const updateTransactionById = async (id, params) => {
             await accountData.save();
 
             let transactionPayload = {
-              userBalance: usrTrscn.userBalance || 0,
-              requestAmount: usrTrscn.requestAmount || 0,
+              userBalance: roundOfNumber(usrTrscn.userBalance) || 0,
+              requestAmount: roundOfNumber(usrTrscn.requestAmount) || 0,
               rechargeAmount: 0,
               cashBackAmount: 0,
               userFinalBalance:
-                usrTrscn.userFinalBalance + usrTrscn.rechargeAmount || 0,
-              requestAmountBack: usrTrscn.requestAmount || 0,
-              cashBackAmountBack: usrTrscn.cashBackAmount || 0,
-              rechargeAmountBack: usrTrscn.rechargeAmount || 0,
+                roundOfNumber(
+                  usrTrscn.userFinalBalance + usrTrscn.rechargeAmount
+                ) || 0,
+              requestAmountBack: roundOfNumber(usrTrscn.requestAmount) || 0,
+              cashBackAmountBack: roundOfNumber(usrTrscn.cashBackAmount) || 0,
+              rechargeAmountBack: roundOfNumber(usrTrscn.rechargeAmount) || 0,
               status: params.status,
               isPendingOrFail: true,
             };
@@ -267,24 +269,24 @@ const updateTransactionById = async (id, params) => {
 
             //   let lyltyPayld = {
             //     requestAmount:
-            //       round(loyaltyRes.requestAmount, 2) + round(params.amount, 2),
+            //       roundOfNumber(loyaltyRes.requestAmount) + roundOfNumber(params.amount),
 
             //     rechargeAmount:
-            //       round(loyaltyRes.rechargeAmount, 2) + round(rechargeAmount, 2),
+            //       roundOfNumber(loyaltyRes.rechargeAmount) + roundOfNumber(rechargeAmount),
 
             //     cashBackReceive:
-            //       round(loyaltyRes.cashBackReceive, 2) + round(adminDiscnt, 2),
+            //       roundOfNumber(loyaltyRes.cashBackReceive) + roundOfNumber(adminDiscnt),
 
             //     userCashBack:
-            //       round(loyaltyRes.userCashBack, 2) + round(discountAmount, 2),
+            //       roundOfNumber(loyaltyRes.userCashBack) + roundOfNumber(discountAmount),
 
-            //     referralCashBack: round(loyaltyRes.referralCashBack, 2) + 0,
+            //     referralCashBack: roundOfNumber(loyaltyRes.referralCashBack) + 0,
 
             //     netCashBack:
-            //       round(loyaltyRes.netCashBack, 2) +
-            //       round(loyaltyRes.netCashBack, 2) +
-            //       round(adminDiscnt, 2) -
-            //       round(discountAmount, 2),
+            //       roundOfNumber(loyaltyRes.netCashBack) +
+            //       roundOfNumber(loyaltyRes.netCashBack) +
+            //       roundOfNumber(adminDiscnt) -
+            //       roundOfNumber(discountAmount),
             //   };
 
             //   console.log("lyltyPayld ---------", lyltyPayld);
@@ -340,10 +342,10 @@ const updateTransactionById = async (id, params) => {
           await accountData.save();
 
           let transactionPayload = {
-            userBalance: usrTrscn.userBalance || null,
-            requestAmount: usrTrscn.requestAmountBack || null,
-            rechargeAmount: usrTrscn.rechargeAmountBack,
-            cashBackAmount: usrTrscn.cashBackAmountBack,
+            userBalance: roundOfNumber(usrTrscn.userBalance) || null,
+            requestAmount: roundOfNumber(usrTrscn.requestAmountBack) || null,
+            rechargeAmount: roundOfNumber(usrTrscn.rechargeAmountBack),
+            cashBackAmount: roundOfNumber(usrTrscn.cashBackAmountBack),
             userFinalBalance:
               usrTrscn.userFinalBalance - usrTrscn.rechargeAmountBack,
             requestAmountBack: 0,

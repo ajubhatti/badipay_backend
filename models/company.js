@@ -7,13 +7,14 @@ const schema = new Schema({
   companyDetail: { type: String, required: false },
   image: { type: String, required: false },
   isActive: { type: Boolean, default: true },
-  created: { type: Date, default: Date.now },
   isVisible: { type: Boolean, default: true },
   providerType: { type: Schema.Types.ObjectId, ref: "Services" },
+  serviceId: { type: Schema.Types.ObjectId, ref: "Services" },
   minAmount: { type: Number, default: 10 },
   maxAmount: { type: Number, default: 500 },
   referenceApis: { type: Array },
   discountByApi: { type: Array },
+  created: { type: Date, default: Date.now },
   updated: Date,
 });
 

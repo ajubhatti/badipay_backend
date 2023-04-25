@@ -1,0 +1,40 @@
+{
+  "STATUSCODE": "0",
+  "STATUSMSG": "Success",
+  "REFNO": "1682014098",
+  "TRNID": 51341250,
+  "TRNSTATUS": 1,
+  "TRNSTATUSDESC": "Success",
+  "OPRID": "3579950479",
+  "BAL": 57.9355,
+  "rechargeApi": {
+    "_id": "632cd4c77cbd0e5d32d50fbd",
+    "apiName": "RechargeWale",
+    "apiDetail": "Recharge Wale",
+    "apiImage": "",
+    "isActive": true,
+    "created": "2022-09-22T21:33:59.185Z",
+    "__v": 0,
+    "apiCode": "AR",
+    "pendingLimit": "1",
+    "priority": "1",
+    "failureLimit": "1"
+  },
+  "rechargeOperator": {
+    "_id": "632da0e95e38c36f95b2a77d",
+    "companyName": "Airtel",
+    "mobileAppCode": "1",
+    "companyDetail": "Airtel recharge",
+    "image": "",
+    "isActive": true,
+    "isVisible": true,
+    "providerType": "61ebf005b15b7b52ddc35dff",
+    "minAmount": 1,
+    "maxAmount": 1000,
+    "referenceApis": [ [], [] ],
+    "created": "2022-09-23T12:04:57.054Z",
+    "__v": 19,
+    "updated": "2022-12-26T08:45:13.204Z",
+    "discountByApi": []
+  }
+}
