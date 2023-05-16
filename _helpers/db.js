@@ -1,5 +1,6 @@
 const config = require("../config.json");
 const mongoose = require("mongoose");
+const Grid = require("gridfs-stream");
 
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 
@@ -26,6 +27,14 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
+let gfs;
+
+const conn = mongoose.connection;
+conn.once("open", function () {
+  gfs = Grid(conn.db, mongoose.mongo);
+  gfs.collection("photos");
+});
+
 mongoose.Promise = global.Promise;
 
 const isValidId = (id) => {
@@ -50,7 +59,6 @@ module.exports = {
   SubSupport: require("../models/subSupport"),
   Faqs: require("../models/faqs"),
   SubFaqs: require("../models/subFaqs"),
-  MyBanner: require("../models/banner"),
   State: require("../models/states"),
   User: require("../models/user"),
   UserAccount: require("../models/userAccounts"),
@@ -62,5 +70,6 @@ module.exports = {
   Slabs: require("../models/slabs"),
   Cashback: require("../models/cashBack"),
   AdminLoyalty: require("../models/adminLoyalty"),
+  Test: require("../models/test"),
   isValidId,
 };

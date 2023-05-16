@@ -40,7 +40,7 @@ const getAll = async (req, res, next) => {
     }
 
     if (params.status) {
-      match.statusOfWalletRequest = params.status;
+      match.status = params.status;
     }
 
     if (params.startDate && params.endDate) {
@@ -487,7 +487,7 @@ const transactionListWithPagination = async (req, res, next) => {
     }
 
     if (params.status) {
-      match.statusOfWalletRequest = params.status;
+      match.status = params.status;
     }
     if (params.userId) {
       match.userId = mongoose.Types.ObjectId(params.userId);

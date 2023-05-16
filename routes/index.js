@@ -28,7 +28,6 @@ const referralRouter = require("./referral.route");
 const contactUsRouter = require("./contactUs.route");
 const supportsRouter = require("./support.route");
 const subSupportRouter = require("./subSupport.route");
-const myBannerRouter = require("./banner.route");
 const stateRouter = require("./states.route");
 const ambikaSlabRouter = require("./ambikaSlab.route");
 const mlanRouter = require("./mplan.route");
@@ -41,6 +40,8 @@ const serviceDiscountRouter = require("./serviceDiscount.route");
 const spSlabRouter = require("./slabs.route");
 const cashbackRouter = require("./cashback.route");
 const adminLoyaltyRouter = require("./adminLoyalty.route");
+const testRouter = require("./test.route");
+const uploadRouter = require("./upload.route");
 
 // ==========================================================================
 
@@ -101,7 +102,6 @@ router.use("/support", supportsRouter);
 router.use("/subSupport", subSupportRouter);
 router.use("/mlan", mlanRouter);
 router.use("/company", companyRouter);
-router.use("/myBanner", myBannerRouter);
 router.use("/state", stateRouter);
 router.use("/apis", apisRouter);
 router.use("/rechargeOrBill", rechargeRouter);
@@ -110,6 +110,9 @@ router.use("/discount", serviceDiscountRouter);
 router.use("/spslabs", spSlabRouter);
 router.use("/cashback", cashbackRouter);
 router.use("/adminLoyalty", adminLoyaltyRouter);
+router.use("/test", testRouter);
+
+router.use("/file", uploadRouter);
 
 // =================================================================
 

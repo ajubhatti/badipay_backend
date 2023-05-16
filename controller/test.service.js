@@ -10,60 +10,55 @@ const {
   sendForgotPasswordSms,
   sendRegisterSms,
 } = require("../_helpers/send-sms");
+const { encrypt, decrypt } = require("../_middleware/encryptDecrypt");
 
 const register = async (params, origin) => {
-  let userExist = await db.Account.findOne({
-    $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
-  });
-  if (userExist) {
-    throw "User already exist with User name or Number or Email!";
-  }
-
-  // create account object
-  const account = new db.Account(params);
-
-  // first registered account is an admin
-  const isFirstAccount = (await db.Account.countDocuments({})) === 0;
-  account.role = Role.User;
-  account.verificationToken = randomTokenString();
-  account.otp = randomOTPGenerate();
-  account.otpDate = new Date();
-
-  // hash password
-  account.passwordHash = hash(params.password);
-  // save account
-  await account.save().then(async (res) => {
-    if (params.referralId) {
-      addReferalId(params, res);
+  try {
+    let userExist = await db.Test.findOne({
+      $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
+    });
+    if (userExist) {
+      throw "User already exist with User name or Number or Email!";
     }
 
-    await sendRegisterSms(account.phoneNumber, account.otp)
-      .then((smsResult) => {
-        if (smsResult.status == 200) {
-          const jsnRes = strToObj(smsResult.data);
+    // create account object
+    const account = new db.Test(params);
 
-          if (jsnRes && jsnRes.code === 200) {
-            throw "We have sent OTP on your registered phone number";
-          } else {
-            throw jsnRes.cause;
-          }
-        } else {
-          throw "something went wrong";
-        }
-      })
-      .catch((err) => {
-        throw "something went wrong";
-      });
-  });
+    // first registered account is an admin
+    const isFirstAccount = (await db.Test.countDocuments({})) === 0;
+    account.role = Role.User;
+    account.verificationToken = randomTokenString();
+    account.otp = randomOTPGenerate();
+    account.otpDate = new Date();
+
+    // hash password
+    account.passwordHash = hash(params.password);
+    let encrpt = await encrypt(params.password);
+    console.log({ encrpt });
+    account.passwordEncrpt = encrpt;
+    account.isVerified = true;
+    account.verificationStatus = true;
+    // save account
+    await account.save().then(async (res) => {
+      console.log({ res });
+      if (params.referralId) {
+        addReferalId(params, res);
+      }
+      return res;
+    });
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
 };
 
 const userRegister = async (req, res, next) => {
   const params = req.body;
 
-  let MobileNoExist = await db.Account.findOne({
+  let MobileNoExist = await db.Test.findOne({
     phoneNumber: params.phoneNumber,
   });
-  let emailExist = await db.Account.findOne({
+  let emailExist = await db.Test.findOne({
     email: params.email,
   });
   if (MobileNoExist) {
@@ -84,7 +79,7 @@ const userRegister = async (req, res, next) => {
   }
 
   // create account object
-  const account = new db.Account(params);
+  const account = new db.Test(params);
   account.role = Role.User;
   account.verificationToken = randomTokenString();
   account.otp = randomOTPGenerate();
@@ -155,7 +150,7 @@ const addReferalId = async (params, res) => {
 };
 
 const authenticate = async ({ mobileNo, password, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
 
   if (!account) {
     throw "Account not available";
@@ -195,9 +190,9 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
 const authenticate2 = async (req, res, next) => {
   const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
-  console.log("mobil no--", mobileNo, password);
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
-  console.log({ account });
+
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
+
   if (!account) {
     res
       .status(400)
@@ -251,9 +246,9 @@ const authenticate2 = async (req, res, next) => {
 };
 
 const authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
 
-  if (!account) {
+  if (!account || (account && account.role !== "admin")) {
     throw "Account not available";
   }
 
@@ -278,7 +273,7 @@ const authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
 
 const resendOtp = async (req, res, next) => {
   const { mobileNo } = req.body;
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
   if (!account) {
     res
       .status(400)
@@ -362,7 +357,7 @@ const revokeToken = async ({ token, ipAddress }) => {
 };
 
 const verifyEmail = async ({ token }) => {
-  const account = await db.Account.findOne({ verificationToken: token });
+  const account = await db.Test.findOne({ verificationToken: token });
   if (!account) throw "Verification failed";
   const referralData = await generateReferralCode(account._id);
 
@@ -375,7 +370,7 @@ const verifyEmail = async ({ token }) => {
 };
 
 const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
 
   if (!account || account.otp != otp) throw "Verification failed";
   const referralData = await generateReferralCode(account._id);
@@ -408,7 +403,7 @@ const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
 const verifyPhoneNoOtp = async (req, res, next) => {
   const { mobileNo, otp } = req.body;
   const ipAddress = req.ip;
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  const account = await db.Test.findOne({ phoneNumber: mobileNo });
 
   if (!account || account.otp != otp) {
     res
@@ -439,8 +434,8 @@ const verifyPhoneNoOtp = async (req, res, next) => {
 };
 
 const forgotPassword = async ({ phoneNumber }, origin) => {
-  // const account = await db.Account.findOne({ email });
-  const account = await db.Account.findOne({ phoneNumber });
+  // const account = await db.Test.findOne({ email });
+  const account = await db.Test.findOne({ phoneNumber });
 
   // always return ok response to prevent email enumeration
   if (!account) return;
@@ -461,7 +456,7 @@ const forgotPassword2 = async (req, res, next) => {
     const { phoneNumber } = req.body;
     const origin = req.get("origin");
 
-    const account = await db.Account.findOne({ phoneNumber });
+    const account = await db.Test.findOne({ phoneNumber });
     if (!account) {
       res
         .status(400)
@@ -532,7 +527,7 @@ const forgotTransactionPin = async (req, res, next) => {
     const { phoneNumber } = req.body;
     const origin = req.get("origin");
 
-    const account = await db.Account.findOne({ phoneNumber });
+    const account = await db.Test.findOne({ phoneNumber });
     if (!account) {
       res
         .status(400)
@@ -599,7 +594,7 @@ const forgotTransactionPin = async (req, res, next) => {
 };
 
 const validateResetToken = async ({ token }) => {
-  const account = await db.Account.findOne({
+  const account = await db.Test.findOne({
     "resetToken.token": token,
     "resetToken.expires": { $gt: Date.now() },
   });
@@ -608,7 +603,7 @@ const validateResetToken = async ({ token }) => {
 };
 
 const resetPassword = async ({ token, password, phoneNumber }) => {
-  let account = await db.Account.findOne({
+  let account = await db.Test.findOne({
     phoneNumber: phoneNumber,
   });
 
@@ -630,7 +625,7 @@ const resetPassword = async ({ token, password, phoneNumber }) => {
 
 const resetPassword2 = async (req, res, next) => {
   const { token, password, phoneNumber } = req.body;
-  let account = await db.Account.findOne({
+  let account = await db.Test.findOne({
     phoneNumber: phoneNumber,
   });
 
@@ -657,7 +652,7 @@ const resetPassword2 = async (req, res, next) => {
 const resetTransactionPin = async (req, res, next) => {
   try {
     const { transactionPin, phoneNumber } = req.body;
-    let account = await db.Account.findOne({
+    let account = await db.Test.findOne({
       phoneNumber: phoneNumber,
     });
 
@@ -698,7 +693,7 @@ const getAll = async (params) => {
   var startDate = new Date(params.startDate);
   var endDate = new Date(params.endDate);
 
-  const accounts = await db.Account.find();
+  const accounts = await db.Test.find();
   let filterData = accounts;
   if (params.startDate && params.endDate) {
     filterData = filterData.filter((user) => {
@@ -731,6 +726,7 @@ const getAll2 = async (req, res, next) => {
     const params = req.body;
     const filter = req.body;
     let match = {};
+    let match2 = {};
     console.log({ params });
 
     let searchKeyword = params.searchParams;
@@ -773,11 +769,12 @@ const getAll2 = async (req, res, next) => {
         $lte: new Date(endDate),
       };
       match.createdAt = created;
+      match2.createdAt = created;
     }
 
     console.log({ match });
 
-    const total = await db.Account.find().countDocuments(match);
+    const total = await db.Test.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;
@@ -792,42 +789,48 @@ const getAll2 = async (req, res, next) => {
       },
       { $skip: skipNo },
       { $limit: params.limits },
-      {
-        $lookup: {
-          from: "states",
-          localField: "stateId",
-          foreignField: "_id",
-          as: "stateDetail",
-        },
-      },
-      { $unwind: "$stateDetail" },
     ];
 
     console.log(JSON.stringify(aggregateRules));
 
-    await db.Account.aggregate(aggregateRules).then((result) => {
-      // result.forEach((x) => {
-      //   console.log(
-      //     "hash decrypt ---",
-      //     x,
-      //     x.passwordHash,
-      //     bcrypt.getSalt(x.passwordHash)
-      //   );
-      // });
+    let userListData = await db.Test.aggregate(aggregateRules);
 
-      res.status(200).json({
-        status: 200,
-        message: "success",
-        data: {
-          sort,
-          filter,
-          count: result.length,
-          page,
-          pages,
-          data: result,
-          total,
-        },
+    for (let i = 0; i < userListData.length; i++) {
+      if (userListData[i].passwordEncrpt) {
+        userListData[i].passDecrypt = decrypt(userListData[i].passwordEncrpt);
+      }
+
+      let referalData = await db.Referral.findOne({
+        userId: userListData[i]._id,
       });
+
+      let temp = JSON.stringify(referalData);
+      let result = JSON.parse(temp);
+
+      if (result) {
+        if (result.referredUser) {
+          let referedUser = await db.Test.findById(result.referredUser);
+
+          if (referedUser) {
+            result.userName = referedUser.userName;
+            userListData[i].referedUser = result;
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "success",
+      data: {
+        sort,
+        filter,
+        count: userListData.length,
+        page,
+        pages,
+        data: userListData,
+        total,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -840,31 +843,42 @@ const getAll2 = async (req, res, next) => {
 };
 
 const getUserById = async (id, ipAddress) => {
-  const account = await db.Account.findOne({ _id: id });
+  try {
+    const account = await db.Test.findOne({ _id: id });
+    // let decrypted;
+    if (account && account.passwordEncrpt) {
+      console.log("passwordEncrpt---", account.passwordEncrpt);
+      let decrypted = decrypt(account.passwordEncrpt);
+      console.log("decrypted---", { decrypted });
+      account.decryptedPass = decrypted;
+    }
 
-  const token = generateJwtToken(account);
-  const refreshToken = generateRefreshToken(account, ipAddress);
+    const token = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
 
-  // save refresh token
-  await refreshToken.save();
+    // save refresh token
+    await refreshToken.save();
 
-  // return basic details and tokens
-  return {
-    ...basicDetails(account),
-    token,
-    refreshToken: refreshToken.token,
-  };
-  // return basicDetails(account);
-  return account;
+    // return basic details and tokens
+    return {
+      ...basicDetails(account),
+      token,
+      refreshToken: refreshToken.token,
+    };
+    // return basicDetails(account);
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
 };
 
 const create = async (params) => {
   try {
-    if (await db.Account.findOne({ email: params.email })) {
+    if (await db.Test.findOne({ email: params.email })) {
       throw 'Email "' + params.email + '" is already registered';
     }
 
-    const account = new db.Account(params);
+    const account = new db.Test(params);
     account.verifiedDate = Date.now();
 
     // hash password
@@ -891,7 +905,7 @@ const update = async (id, params) => {
   if (
     params.email &&
     account.email !== params.email &&
-    (await db.Account.findOne({ email: params.email }))
+    (await db.Test.findOne({ email: params.email }))
   ) {
     throw 'Email "' + params.email + '" is already taken';
   }
@@ -915,7 +929,7 @@ const update = async (id, params) => {
 const transactionPinUpdate2 = async (req, res, next) => {
   try {
     const params = req.body;
-    const account = await db.Account.findOne({ _id: params.userId });
+    const account = await db.Test.findOne({ _id: params.userId });
     if (!account) {
       res
         .status(400)
@@ -1000,7 +1014,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
 
 const passwordUpdate = async (params) => {
   try {
-    const account = await db.Account.findOne({ _id: params.userId });
+    const account = await db.Test.findOne({ _id: params.userId });
     if (!account) {
       throw "Account not available";
     } else {
@@ -1029,7 +1043,7 @@ const passwordUpdate = async (params) => {
 const passwordUpdate2 = async (req, res, next) => {
   try {
     const { body } = req;
-    const account = await db.Account.findOne({ _id: body.userId });
+    const account = await db.Test.findOne({ _id: body.userId });
     if (!account) {
       res
         .status(400)
@@ -1080,7 +1094,7 @@ const passwordUpdate2 = async (req, res, next) => {
 };
 
 const checkPassword = async (params) => {
-  const account = await db.Account.findOne({ _id: params.userId });
+  const account = await db.Test.findOne({ _id: params.userId });
   if (!account) {
     throw "Account not available";
   } else {
@@ -1107,7 +1121,7 @@ const getuserFromReferralCode = async (code) => {
     const referralData = await db.Referral.findOne({ referralCode: code });
 
     if (referralData) {
-      const account = await db.Account.findOne({
+      const account = await db.Test.findOne({
         _id: referralData.userId,
       });
       if (!account) {
@@ -1124,10 +1138,9 @@ const getuserFromReferralCode = async (code) => {
 };
 
 // helper functions
-
 const getAccount = async (id) => {
   if (!db.isValidId(id)) throw "Account not found";
-  const account = await db.Account.findById(id);
+  const account = await db.Test.findById(id);
   if (!account) throw "Account not found";
   return account;
 };

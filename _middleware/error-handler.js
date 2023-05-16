@@ -15,10 +15,11 @@ const errorHandler = (err, req, res, next) => {
     case err.name === "UnauthorizedError":
       // jwt authentication error
       return res.status(401).json({
-        status: statusCode,
+        status: 401,
         message: "Unauthorized",
         data: "",
       });
+
     default:
       return res
         .status(500)

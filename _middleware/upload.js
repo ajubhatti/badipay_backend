@@ -3,9 +3,10 @@ const { GridFsStorage } = require("multer-gridfs-storage");
 const config = require("../config.json");
 
 const storage = new GridFsStorage({
-  url: config.connectionString,
+  url: config.connectionString1,
   options: { useNewUrlParser: true, useUnifiedTopology: true },
   file: (req, file) => {
+    console.log("file ---", file);
     const match = ["image/png", "image/jpeg"];
 
     if (match.indexOf(file.mimetype) === -1) {

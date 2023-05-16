@@ -7,7 +7,7 @@ const schema = new Schema({
   phoneNumber: { type: String, unique: true, required: true },
   email: { type: String, trim: true, unique: true, required: true },
   passwordHash: { type: String, required: true },
-  pswdString: { type: String },
+  passwordEncrpt: { type: Object },
   passwordResetDate: Date,
   verificationToken: String,
   verifiedDate: Date,
@@ -17,7 +17,7 @@ const schema = new Schema({
   stateId: { type: mongoose.Schema.Types.ObjectId, ref: "State" },
   city: { type: String },
   pincode: { type: Number },
-  transPin: { type: String },
+
   transactionPin: { type: String, required: false },
   hasTransactionPin: { type: Boolean, default: false },
   transactionPinResetDate: Date,
@@ -52,4 +52,4 @@ schema.set("toJSON", {
   },
 });
 
-module.exports = mongoose.model("Account", schema);
+module.exports = mongoose.model("Test", schema);

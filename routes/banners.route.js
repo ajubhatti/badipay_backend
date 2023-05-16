@@ -1,46 +1,24 @@
-const Joi = require("joi");
 const express = require("express");
 const router = express.Router();
 const authorize = require("../_middleware/authorize");
 const validateRequest = require("../_middleware/validate-request");
 const multer = require("multer");
 const fs = require("fs");
-const db = require("../_helpers/db");
 const bannersService = require("../controller/banners.service");
-// const upload = require("../_middleware/upload");
+const upload = require("../_middleware/uploadFiles");
 const helpers = require("../_middleware/imageFilter");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads");
+    cb(null, "public/files");
   },
   filename: (req, file, cb) => {
-    //   const uniqueSuffix =
-    //     Date.now() + "-" + Math.round(Math.random() * 1e9 + file.originalname);
-
-    //   cb(null, file.fieldname + "-" + uniqueSuffix);
-    cb(null, Date.now() + file.originalname);
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
   },
 });
-const upload = multer({ storage: storage });
-
-// const upload = async (image, folder, id) => {
-//   let dir = `images`;
-
-//   if (!fs.existsSync(dir)) {
-//     fs.mkdirSync(dir);
-//   }
-
-//   dir = `images/${folder}`;
-
-//   if (!fs.existsSync(dir)) {
-//     fs.mkdirSync(dir);
-//   }
-
-//   await image.mv(`images/${folder}/${id}.png`);
-
-//   return `${config.DOMAIN}/images/${folder}/${id}`;
-// };
 
 const uploadBanner = (req, res, next) => {
   // var img = fs.readFileSync(req.file.path);
@@ -94,13 +72,11 @@ const uploadBanner = (req, res, next) => {
   //   .catch(next);
 
   bannersService
-    .addImage2(req, res)
+    .addImage(req, res)
     .then((banner) => {
       res.json({ status: 200, data: banner, message: "success" });
     })
     .catch(next);
-
-  // res.status(200).send({ filePath: req.file.path, message: "uploaded" });
 };
 
 const create = (req, res, next) => {
@@ -119,15 +95,6 @@ const getById = (req, res, next) => {
       res.json({ status: 200, data: banner, message: "success" })
     )
     .catch(next);
-};
-
-const updateSchema = (req, res, next) => {
-  const schemaRules = {
-    bankName: Joi.string().required().empty(""),
-    bankDetail: Joi.string().empty(""),
-    bankBranch: Joi.string().empty(""),
-  };
-  validateRequest(req, next, schemaRules);
 };
 
 const update = (req, res, next) => {
@@ -163,12 +130,12 @@ const getAll = (req, res, next) => {
 
 const profileUpload = (req, res, next) => {
   // 'profile_pic' is the name of our file input field in the HTML form
-  let upload = multer({
+  let uploadFile = multer({
     storage: storage,
     fileFilter: helpers.imageFilter,
   }).single("profile_pic");
 
-  upload(req, res, (err) => {
+  uploadFile(req, res, (err) => {
     // req.file contains information of uploaded file
     // req.body contains information of text fields, if there were any
 
@@ -206,13 +173,6 @@ const profileUpload = (req, res, next) => {
     });
   });
 };
-
-router.get("/:folder/:id", async (req, res) => {
-  let filepath = path.join(
-    __dirname + `/../images/${req.params.folder}/${req.params.id}.png`
-  );
-  res.sendFile(filepath);
-});
 
 router.post("/:folder/:id", upload.single("file"), async (req, res) => {
   try {
@@ -257,7 +217,7 @@ router.get("/:id", getById);
 router.post("/", create);
 router.put("/:id", update);
 router.delete("/:id", _delete);
-router.post("/uploadBanner", upload.single("images"), uploadBanner);
+router.post("/uploadBanner", upload.single("file"), uploadBanner);
 router.post("/upload-profile-pic", profileUpload);
 
 module.exports = router;

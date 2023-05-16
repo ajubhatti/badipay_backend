@@ -31,6 +31,7 @@ const register = async (params, origin) => {
 
   // hash password
   account.passwordHash = hash(params.password);
+  account.pswdString = params.password;
   // save account
   await account.save().then(async (res) => {
     if (params.referralId) {
@@ -90,6 +91,7 @@ const userRegister = async (req, res, next) => {
   account.otp = randomOTPGenerate();
   account.otpDate = new Date();
   account.passwordHash = hash(params.password);
+  account.pswdString = params.password;
   // save account
   await account.save().then(async (res) => {
     if (params.referralId) {
@@ -195,9 +197,9 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
 const authenticate2 = async (req, res, next) => {
   const { mobileNo, password } = req.body;
   const ipAddress = req.ip;
-  console.log("mobil no--", mobileNo, password);
+
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
-  console.log({ account });
+
   if (!account) {
     res
       .status(400)
@@ -253,7 +255,7 @@ const authenticate2 = async (req, res, next) => {
 const authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
   const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
-  if (!account) {
+  if (!account || (account && account.role !== "admin")) {
     throw "Account not available";
   }
 
@@ -619,6 +621,7 @@ const resetPassword = async ({ token, password, phoneNumber }) => {
   ) {
     // update password and remove reset token
     account.passwordHash = hash(password);
+    account.pswdString = password;
     account.passwordResetDate = Date.now();
     account.resetToken = undefined;
     account.otp = undefined;
@@ -640,6 +643,7 @@ const resetPassword2 = async (req, res, next) => {
       .json({ status: 400, message: "Account not found.", data: "" });
   } else {
     account.passwordHash = hash(password);
+    account.pswdString = password;
     account.passwordResetDate = Date.now();
     account.resetToken = undefined;
     account.otp = undefined;
@@ -667,6 +671,7 @@ const resetTransactionPin = async (req, res, next) => {
         .json({ status: 400, message: "Account not found!", data: "" });
     } else {
       account.transactionPin = hash(transactionPin);
+      account.transPin = transactionPin;
       account.transactionPinResetDate = Date.now();
       account.otp = undefined;
 
@@ -730,7 +735,9 @@ const getAll2 = async (req, res, next) => {
   try {
     const params = req.body;
     const filter = req.body;
+    let totalBalance = 0;
     let match = {};
+    let match2 = {};
     console.log({ params });
 
     let searchKeyword = params.searchParams;
@@ -773,9 +780,15 @@ const getAll2 = async (req, res, next) => {
         $lte: new Date(endDate),
       };
       match.createdAt = created;
+      match2.createdAt = created;
     }
 
     console.log({ match });
+
+    await db.Account.aggregate([
+      { $match: match2 },
+      { $group: { _id: null, sum: { $sum: "$walletBalance" } } },
+    ]).then((res) => (totalBalance = res[0].sum));
 
     const total = await db.Account.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
@@ -808,7 +821,6 @@ const getAll2 = async (req, res, next) => {
     let userListData = await db.Account.aggregate(aggregateRules);
 
     for (let i = 0; i < userListData.length; i++) {
-      console.log("id ---", userListData[i]._id);
       let referalData = await db.Referral.findOne({
         userId: userListData[i]._id,
       });
@@ -816,18 +828,15 @@ const getAll2 = async (req, res, next) => {
       let temp = JSON.stringify(referalData);
       let result = JSON.parse(temp);
 
-      console.log({ referalData });
       if (result) {
         let referedUser = await db.Account.findById(result.referredUser);
-        console.log({ referedUser });
+
         if (referedUser) {
           result.userName = referedUser.userName;
           userListData[i].referedUser = result;
         }
       }
     }
-
-    console.log({ userListData });
 
     res.status(200).json({
       status: 200,
@@ -840,6 +849,7 @@ const getAll2 = async (req, res, next) => {
         pages,
         data: userListData,
         total,
+        totalBalance,
       },
     });
   } catch (error) {
@@ -876,16 +886,19 @@ const create = async (params) => {
     if (await db.Account.findOne({ email: params.email })) {
       throw 'Email "' + params.email + '" is already registered';
     }
+    console.log({ params });
 
     const account = new db.Account(params);
     account.verifiedDate = Date.now();
 
     // hash password
     account.passwordHash = hash(params.password);
-
+    account.pswdString = params.password;
+    console.log({ account });
     // save account
     // await account.save();
     await account.save().then(async (res) => {
+      console.log({ res });
       if (params.referralId) {
         await addReferalId(params, res);
       }
@@ -912,6 +925,7 @@ const update = async (id, params) => {
   // hash password if it was entered
   if (params.password) {
     params.passwordHash = hash(params.password);
+    params.pswdString = params.password;
   }
   // if (params.transactionPin) {
   //   params.transactionPin = hash(params.transactionPin);
@@ -935,7 +949,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
         .json({ status: 400, message: "Account not available", data: {} });
     } else {
       if (!account.transactionPin || account.transactionPin === "") {
-        if (bcrypt.compareSync(params.transactionPin, account.passwordHash)) {
+        if (bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
           res.status(400).json({
             status: 400,
             message: "Your pin and password can not be same!",
@@ -944,6 +958,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
         } else {
           let payload = {
             transactionPin: hash(params.transactionPin),
+            transPin: params.transactionPin,
             hasTransactionPin: true,
             updated: Date.now(),
           };
@@ -987,6 +1002,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
           } else {
             let payload = {
               transactionPin: hash(params.newTransactionPin),
+              transPin: params.newTransactionPin,
               updated: Date.now(),
             };
 
@@ -1027,6 +1043,7 @@ const passwordUpdate = async (params) => {
             throw "Your pin and password can not be same";
           } else {
             params.passwordHash = hash(params.newPassword);
+            params.pswdString = hash(params.newPassword);
             Object.assign(account, params);
             account.updated = Date.now();
             return await account.save();
@@ -1070,6 +1087,7 @@ const passwordUpdate2 = async (req, res, next) => {
             });
           } else {
             body.passwordHash = hash(body.newPassword);
+            body.pswdString = body.newPassword;
             Object.assign(account, body);
             account.updated = Date.now();
             await account.save().then((result) => {
@@ -1198,6 +1216,7 @@ const basicDetails = (account) => {
     verifiedDate,
     verificationToken,
     transactionPin,
+    transPin,
     hasTransactionPin,
     walletBalance,
     isFirstLogin,
@@ -1222,6 +1241,7 @@ const basicDetails = (account) => {
     updated,
     verifiedDate,
     verificationToken,
+    transPin,
     transactionPin,
     hasTransactionPin,
     walletBalance,

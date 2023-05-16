@@ -1,3 +1,4 @@
+// require("dotenv").config();
 var express = require("express");
 var path = require("path");
 const bodyParser = require("body-parser");
@@ -8,9 +9,6 @@ const errorHandler = require("./_middleware/error-handler");
 const mongoSanitize = require("express-mongo-sanitize");
 const helmet = require("helmet");
 
-require("dotenv").config();
-
-const router = require("express").Router();
 const apiRoutes = require("./routes");
 
 var app = express();
@@ -19,10 +17,12 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-// app.use(express.static(__dirname + "/public"));
-app.use(express.static(`${__dirname}/public`));
+
+app.use(express.static(__dirname + "/public"));
+// app.use(express.static(`${__dirname}/public`));
 // app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static("uploads"));
+app.use("/files", express.static("./public/files"));
+app.use("/uploads", express.static("./uploads"));
 
 app.use(bodyParser.json());
 app.use(helmet());

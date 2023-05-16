@@ -910,6 +910,13 @@ const rechargeListWithPagination = async (req, res, next) => {
       match.apiId = mongoose.Types.ObjectId(params.api);
     }
 
+    if (params.status) {
+      match.status = params.status;
+    }
+    if (params.userId) {
+      match.userId = mongoose.Types.ObjectId(params.userId);
+    }
+
     const orderByColumn = params.sortBy || "created";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
@@ -918,12 +925,6 @@ const rechargeListWithPagination = async (req, res, next) => {
       sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
-    if (params.status) {
-      match.statusOfWalletRequest = params.status;
-    }
-    if (params.userId) {
-      match.userId = mongoose.Types.ObjectId(params.userId);
-    }
     console.log(
       "date -----------",
       moment(params.startDate).startOf("day"),
