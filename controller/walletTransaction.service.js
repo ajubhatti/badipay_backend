@@ -366,6 +366,8 @@ const updateWalletStatus = async (params) => {
     // }
 
     const walletTransactionData = await getWalletTransactionById(params.id);
+    console.log({ walletTransactionData });
+
     delete params.id;
     delete params.userId;
 
@@ -375,12 +377,11 @@ const updateWalletStatus = async (params) => {
     if (params.amount) {
       approveAmount =
         approveAmount > 0 ? approveAmount - params.amount : approveAmount;
-      params.approveAmount = approveAmount;
       params.debitAmount = params.amount;
     }
 
+    params.approveAmount = approveAmount;
     params.finalWalletAmount = approveAmount;
-
     params.statusChangeDate = new Date();
 
     Object.assign(walletTransactionData, params);
@@ -392,11 +393,14 @@ const updateWalletStatus = async (params) => {
           _id: walletTransactionData.userId,
         });
         let walletCount =
-          account.walletBalance + walletTransactionData.requestAmount;
+          roundOfNumber(account.walletBalance || 0) +
+          roundOfNumber(walletTransactionData.approveAmount || 0);
 
         let userPayload = {
           walletBalance: walletCount,
-          pendingBalance: account.pendingBalance - params.amount,
+          pendingBalance:
+            roundOfNumber(account.pendingBalance || 0) -
+            roundOfNumber(params.amount || 0),
         };
         Object.assign(account, userPayload);
         await account.save();
@@ -409,9 +413,11 @@ const updateWalletStatus = async (params) => {
           type: "debit",
           status: "success",
           description: params.reason || "",
-          userBalance: roundOfNumber(transactionData.userBalance) || null,
+          userBalance: roundOfNumber(transactionData.userBalance || 0) || 0,
           userFinalBalance: walletCount,
-          requestAmount: roundOfNumber(walletTransactionData.requestAmount),
+          requestAmount: roundOfNumber(
+            walletTransactionData.requestAmount || 0
+          ),
         };
         Object.assign(transactionData, transactionPayload);
         await transactionData.save();

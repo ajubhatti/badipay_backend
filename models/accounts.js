@@ -25,8 +25,8 @@ const schema = new Schema({
   location: { type: String, default: "" },
   otp: { type: Number },
   otpDate: { type: Date, default: Date.now },
-  isActive: { type: Boolean, default: true },
-  isLogin: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false },
+  isLogin: { type: Boolean, default: false },
 
   walletBalance: { type: Number, default: 0 },
   walletId: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
@@ -36,7 +36,11 @@ const schema = new Schema({
 
   isFromAdmin: { type: Boolean, default: false },
 
-  referralId: { type: mongoose.Schema.Types.ObjectId, ref: "Referral" },
+  // referralId: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "Referral",
+  //   // default: "",
+  // },
   lastDiscount: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,

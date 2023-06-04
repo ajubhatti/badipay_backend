@@ -107,6 +107,7 @@ const createRecharge = async (req, res, next) => {
           });
         } else {
           let operator = await getOperatorById(params);
+          console.log({ operator });
           if (operator) {
             let finalRechargeData = await recursiveFunction2(params, operator);
             console.log("finalrecharge data:---->>", finalRechargeData);

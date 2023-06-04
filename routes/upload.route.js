@@ -19,7 +19,10 @@ const create = async (req, res) => {
         data: "",
         message: "you must select a file.",
       });
-    const url = req.protocol + "://" + req.get("host");
+    var url = req.protocol + "://" + req.get("host");
+    if (req.get("host") !== "localhost:4000") {
+      url = "https://api.badipay.co.in";
+    }
     // const imgUrl = `http://${host}/files/${req.file.filename}`;
     console.log({ url });
     const imgUrl = `${url}/files/${req.file.filename}`;

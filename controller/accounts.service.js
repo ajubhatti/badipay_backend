@@ -59,86 +59,137 @@ const register = async (params, origin) => {
 };
 
 const userRegister = async (req, res, next) => {
-  const params = req.body;
+  try {
+    const params = req.body;
 
-  let MobileNoExist = await db.Account.findOne({
-    phoneNumber: params.phoneNumber,
-  });
-  let emailExist = await db.Account.findOne({
-    email: params.email,
-  });
-  if (MobileNoExist) {
-    res.status(400).json({
-      status: 400,
-      message: "User already exist with Mobile Number!",
-      data: "",
+    let MobileNoExist = await db.Account.findOne({
+      phoneNumber: params.phoneNumber,
     });
-    return;
-  }
-  if (emailExist) {
-    res.status(400).json({
-      status: 400,
-      message: "User already exist with Email!",
-      data: "",
+    let emailExist = await db.Account.findOne({
+      email: params.email,
     });
-    return;
-  }
-
-  // create account object
-  const account = new db.Account(params);
-  account.role = Role.User;
-  account.verificationToken = randomTokenString();
-  account.otp = randomOTPGenerate();
-  account.otpDate = new Date();
-  account.passwordHash = hash(params.password);
-  account.pswdString = params.password;
-  // save account
-  await account.save().then(async (res) => {
-    if (params.referralId) {
-      addReferalId(params, res);
-    }
-    await sendRegisterSms(account.phoneNumber, account.otp)
-      .then((smsResult) => {
-        if (smsResult.status == 200) {
-          const jsnRes = strToObj(smsResult.data);
-
-          if (jsnRes && jsnRes.code === 200) {
-            res.status(200).json({
-              status: 200,
-              message: "We have sent OTP on your registered phone number",
-              data: "",
-            });
-          } else {
-            res.status(jsnRes.code).json({
-              status: jsnRes.code,
-              message: jsnRes.cause,
-              data: jsnRes,
-            });
-          }
-        } else {
-          res.status(400).json({
-            status: 400,
-            message: "something went wrong",
-            data: smsResult,
-          });
-        }
-      })
-      .catch((err) => {
-        res.status(400).json({
-          status: 400,
-          message: "something went wrong",
-          data: err,
-        });
+    if (MobileNoExist) {
+      res.status(400).json({
+        status: 400,
+        message: "User already exist with Mobile Number!",
+        data: "",
       });
-  });
+      return;
+    }
+    if (emailExist) {
+      res.status(400).json({
+        status: 400,
+        message: "User already exist with Email!",
+        data: "",
+      });
+      return;
+    }
+
+    console.log({ params });
+    // create account object
+    const account = new db.Account(params);
+    account.role = Role.User;
+    account.verificationToken = randomTokenString();
+    account.otp = randomOTPGenerate();
+    account.otpDate = new Date();
+    account.passwordHash = hash(params.password);
+    account.pswdString = params.password;
+    // save account
+
+    const userSave = await account.save();
+    if (userSave) {
+      if (params.referralId) {
+        addReferalId(params, result);
+      }
+      await sendRegisterSms(account.phoneNumber, account.otp);
+      res.status(200).json({
+        status: 200,
+        message: "We have sent OTP on your registered phone number",
+        data: null,
+      });
+    } else {
+      res.status(400).json({
+        status: 400,
+        message: "Something went wrong",
+        data: null,
+      });
+    }
+
+    // await account.save().then(async (result) => {
+    //   console.log("check prams ---", result, params.referralId);
+    //   if (params.referralId) {
+    //     addReferalId(params, result);
+    //   }
+    //   await sendRegisterSms(account.phoneNumber, account.otp)
+    //     .then((smsResult) => {
+    //       console.log({ smsResult }, smsResult.data);
+    //       if (smsResult.status == 200) {
+    //         const jsnRes = strToObj(smsResult.data);
+    //         console.log({ jsnRes });
+    //         if (jsnRes && (jsnRes.code == 200 || jsnRes.code == 1300)) {
+    //           res.status(200).json({
+    //             status: 200,
+    //             message: "We have sent OTP on your registered phone number",
+    //             data: "",
+    //           });
+    //         } else {
+    //           if (
+    //             smsResult.data[0].code == 1300 ||
+    //             smsResult.data[0].code == 200
+    //           ) {
+    //             res.status(200).json({
+    //               status: 200,
+    //               message: "success",
+    //               data: smsResult.data[0],
+    //             });
+    //           } else {
+    //             res.status(400).json({
+    //               status: 400,
+    //               message: "fail",
+    //               data: "",
+    //             });
+    //           }
+    //         }
+    //       } else {
+    //         res.status(400).json({
+    //           status: 400,
+    //           message: "something went wrong",
+    //           data: smsResult,
+    //         });
+    //       }
+    //     })
+    //     .catch((err) => {
+    //       res.status(400).json({
+    //         status: 400,
+    //         message: "something went wrong",
+    //         data: err,
+    //       });
+    //     });
+
+    //   if (result) {
+    //     res.status(200).json({
+    //       status: 200,
+    //       message: "We have sent OTP on your registered phone number",
+    //       data: null,
+    //     });
+    //   }
+    // });
+  } catch (err) {
+    console.log({ err });
+    res.status(400).json({
+      status: 400,
+      message: err,
+      data: err,
+    });
+  }
 };
 
-const addReferalId = async (params, res) => {
+const addReferalId = async (params, result) => {
   const referralData = await db.Referral.findOne({
     referralCode: params.referralId,
   });
   if (referralData) {
-    referralData.referredUser = [...referralData.referredUser, res._id];
+    referralData.referredUser = [...referralData.referredUser, result._id];
     referralData.updated = Date.now();
     await referralData.save();
 
@@ -157,41 +208,43 @@ const addReferalId = async (params, res) => {
 };
 
 const authenticate = async ({ mobileNo, password, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
-
-  if (!account) {
-    throw "Account not available";
-  }
-
-  if (!account.isVerified) {
-    const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
-    if (account.otpDate <= aMinuteAgo) {
-      let userOtp = randomOTPGenerate();
-      account.otp = userOtp;
-      account.otpDate = new Date();
-      updateUserData(account);
-
-      sendRegisterSms(account.phoneNumber, userOtp);
+  try {
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
+    if (!account) {
+      throw "Account not available";
     }
-    throw "Your account not verified please verify your account.verify link sended to your account.";
+    if (!account.isVerified) {
+      const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
+      if (account.otpDate <= aMinuteAgo) {
+        let userOtp = randomOTPGenerate();
+        account.otp = userOtp;
+        account.otpDate = new Date();
+        updateUserData(account);
+
+        sendRegisterSms(account.phoneNumber, userOtp);
+      }
+      throw "Your account not verified!, please verify by OTP verification., We have sent OTP on your registered Mobile No.";
+    }
+    if (!bcrypt.compareSync(password, account.passwordHash)) {
+      throw "Your email or password not matched";
+    }
+
+    // authentication successful so generate jwt and refresh tokens
+    const token = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
+
+    // save refresh token
+    await refreshToken.save();
+
+    // return basic details and tokens
+    return {
+      ...basicDetails(account),
+      token,
+      refreshToken: refreshToken.token,
+    };
+  } catch (err) {
+    throw new Error(err);
   }
-  if (!bcrypt.compareSync(password, account.passwordHash)) {
-    throw "Your email or password not matched";
-  }
-
-  // authentication successful so generate jwt and refresh tokens
-  const token = generateJwtToken(account);
-  const refreshToken = generateRefreshToken(account, ipAddress);
-
-  // save refresh token
-  await refreshToken.save();
-
-  // return basic details and tokens
-  return {
-    ...basicDetails(account),
-    token,
-    refreshToken: refreshToken.token,
-  };
 };
 
 const authenticate2 = async (req, res, next) => {
@@ -368,8 +421,8 @@ const verifyEmail = async ({ token }) => {
   if (!account) throw "Verification failed";
   const referralData = await generateReferralCode(account._id);
 
-  account.referralId = referralData._id;
-  account.referrelCode = referralData.referralCode;
+  // account.referralId = referralData._id;
+  // account.referrelCode = referralData.referralCode;
   account.verifiedDate = Date.now();
   account.verificationToken = undefined;
   account.verificationStatus = true;
@@ -382,8 +435,8 @@ const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
   if (!account || account.otp != otp) throw "Verification failed";
   const referralData = await generateReferralCode(account._id);
 
-  account.referralId = referralData._id;
-  account.referrelCode = referralData.referralCode;
+  // account.referralId = referralData._id;
+  // account.referrelCode = referralData.referralCode;
   account.verifiedDate = Date.now();
   account.otp = undefined;
   account.verificationToken = undefined;
@@ -948,32 +1001,28 @@ const transactionPinUpdate2 = async (req, res, next) => {
         .status(400)
         .json({ status: 400, message: "Account not available", data: {} });
     } else {
-      if (!account.transactionPin || account.transactionPin === "") {
-        if (bcrypt.compareSync(params.transactionPin, account.transactionPin)) {
-          res.status(400).json({
-            status: 400,
-            message: "Your pin and password can not be same!",
-            data: {},
-          });
-        } else {
-          let payload = {
-            transactionPin: hash(params.transactionPin),
-            transPin: params.transactionPin,
-            hasTransactionPin: true,
-            updated: Date.now(),
-          };
+      if (
+        !account.transactionPin ||
+        account.transactionPin === "" ||
+        account.transactionPin === undefined
+      ) {
+        let payload = {
+          transactionPin: hash(params.transactionPin),
+          transPin: params.transactionPin,
+          hasTransactionPin: true,
+          updated: Date.now(),
+        };
 
-          console.log({ payload });
+        console.log({ payload });
 
-          Object.assign(account, payload);
-          await account.save().then((result) => {
-            res.status(200).json({
-              status: 200,
-              message: "success",
-              data: result,
-            });
+        Object.assign(account, payload);
+        await account.save().then((result) => {
+          res.status(200).json({
+            status: 200,
+            message: "success",
+            data: result,
           });
-        }
+        });
       } else {
         if (
           account.transactionPin &&
@@ -1019,6 +1068,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
       }
     }
   } catch (err) {
+    console.log(err);
     res.status(400).json({
       status: 400,
       message: "something went wrong",
@@ -1208,13 +1258,8 @@ const basicDetails = (account) => {
     email,
     role,
     location,
-    balance,
     isVerified,
     isActive,
-    created,
-    updated,
-    verifiedDate,
-    verificationToken,
     transactionPin,
     transPin,
     hasTransactionPin,
@@ -1228,19 +1273,15 @@ const basicDetails = (account) => {
     rewardedBalance,
   } = account;
   return {
+    hasTransactionPin: { type: Boolean, default: false },
     id,
     userName,
     phoneNumber,
     email,
     role,
     location,
-    balance,
     isVerified,
     isActive,
-    created,
-    updated,
-    verifiedDate,
-    verificationToken,
     transPin,
     transactionPin,
     hasTransactionPin,

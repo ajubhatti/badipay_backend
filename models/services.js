@@ -8,6 +8,7 @@ const schema = new Schema({
   serviceImage: { type: String, required: false },
   isActive: { type: Boolean, default: true },
   created: { type: Date, default: Date.now },
+  icon: { type: String },
   updated: Date,
 });
 

@@ -384,7 +384,7 @@ const me = (req, res, next) => {
 
 // routes
 router.post("/register", accountService.userRegister); // updated
-// router.post("/login", authenticateSchema, authenticate);
+router.post("/userLogin", authenticateSchema, authenticate);
 router.post("/login", authenticateSchema, accountService.authenticate2);
 
 router.post("/refresh-token", refreshToken);

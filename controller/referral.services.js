@@ -59,7 +59,8 @@ const generateReferralCode = async (userId) => {
 };
 
 const saveReferralCodeOfUser = async (userId) => {
-  let code = await referalcodeGenerator();
+  // let code = await referalcodeGenerator();
+  let code = Math.floor(10000000 + Math.random() * 90000000);
   let paramsData = {
     referralCode: code,
     userId: userId,

@@ -4,19 +4,26 @@ const {
   fetchDataById,
   deleteData,
 } = require("../_middleware/fetchingData");
+const mongoose = require("mongoose");
 
 const create = async (req, res, next) => {
   try {
     const params = req.body;
     console.log({ params });
-    if (params.SPKey && params.serviceProviderName) {
+    if (
+      params.SPKey &&
+      params.serviceId &&
+      params.operatorId &&
+      params.serviceApiId
+    ) {
       let serviceExist = await db.Slabs.findOne({
-        serviceProviderName: params.serviceProviderName,
+        serviceId: params.serviceId,
+        operatorId: params.operatorId,
+        serviceApiId: params.serviceApiId,
         SPKey: params.SPKey,
       });
 
       if (!serviceExist) {
-        console.log("slbId ---", Math.floor(Date.now() / 1000));
         params.slabId = Math.floor(Date.now() / 1000);
         const slab = new db.Slabs(params);
         let slabData = await slab.save();
@@ -28,7 +35,7 @@ const create = async (req, res, next) => {
         res.status(400).json({
           status: 400,
           data: "",
-          message: `name ${params.serviceProviderName} is already added`,
+          message: `already added`,
         });
       }
     }
@@ -40,30 +47,37 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const params = req.body;
+    const params = req.params;
+    const body = req.body;
+    const id = mongoose.Types.ObjectId(params.id);
+    console.log({ id });
     const service = await getService(id);
-    if (
-      params.serviceProvider &&
-      service.serviceProvider !== params.serviceProvider &&
-      (await db.Slabs.findOne({ serviceProvider: params.serviceProvider }))
-    ) {
-      return res.status(400).json({
-        status: 400,
-        message: `Name ${params.serviceProvider} is already taken`,
-        data: "",
-      });
-    }
 
-    Object.assign(service, params);
+    console.log({ service });
+    // const service = await db.Slabs.findById({ _id: params.id });
+    // if (
+    //   params.serviceProvider &&
+    //   service.serviceProvider !== params.serviceProvider &&
+    //   (await db.Slabs.findOne({ serviceProvider: params.serviceProvider }))
+    // ) {
+    //   return res.status(400).json({
+    //     status: 400,
+    //     message: `Name ${params.serviceProvider} is already taken`,
+    //     data: "",
+    //   });
+    // }
+
+    Object.assign(service, body);
     service.updated = Date.now();
 
-    return await service.save().then((result) => {
-      res.status(200).json({ status: 200, data: result, message: "" });
+    await service.save().then((result) => {
+      res
+        .status(200)
+        .json({ status: 200, data: result, message: "Updated Succesfully." });
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ status: 500, data: "", message: "Something went wrong!" });
+    console.log({ err });
+    res.status(500).json({ status: 500, data: "", message: err });
   }
 };
 
@@ -91,9 +105,9 @@ const _delete = async (id) => {
 };
 
 const getService = async (id) => {
-  if (!db.isValidId(id)) throw "Service not found";
+  if (!db.isValidId(id)) throw "slab not found";
   const service = await db.Slabs.findById(id);
-  if (!service) throw "Service not found";
+  if (!service) throw "slab not found";
   return service;
 };
 
@@ -135,7 +149,15 @@ const slabListDataPageWise = async (req, res, next) => {
     if (orderByColumn && orderByDirection) {
       sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
-
+    if (params.apis) {
+      match.serviceApiId = mongoose.Types.ObjectId(params.apis);
+    }
+    if (params.providerType) {
+      match.serviceId = mongoose.Types.ObjectId(params.providerType);
+    }
+    if (params.operator) {
+      match.operator = mongoose.Types.ObjectId(params.operator);
+    }
     if (params.status) {
       match.isActive = params.status;
     }
@@ -146,6 +168,8 @@ const slabListDataPageWise = async (req, res, next) => {
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;
     const pages = Math.ceil(total / pageSize);
+
+    console.log({ match });
 
     const aggregateRules = [
       {
@@ -184,6 +208,8 @@ const slabListDataPageWise = async (req, res, next) => {
       },
       { $unwind: "$companyData" },
     ];
+
+    console.log({ aggregateRules });
 
     await db.Slabs.aggregate(aggregateRules).then((result) => {
       res.status(200).json({
