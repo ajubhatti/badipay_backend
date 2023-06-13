@@ -71,5 +71,7 @@ module.exports = {
   Cashback: require("../models/cashBack"),
   AdminLoyalty: require("../models/adminLoyalty"),
   Test: require("../models/test"),
+  OperatorConfig: require("../models/operatorConfig"),
+  Operator: require("../models/operator"),
   isValidId,
 };

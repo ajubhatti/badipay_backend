@@ -6,68 +6,47 @@ const {
 } = require("../_middleware/fetchingData");
 const mongoose = require("mongoose");
 
-const create = async (req, res, next) => {
+const create = async (params) => {
   try {
-    const params = req.body;
     console.log({ params });
     if (
-      params.SPKey &&
+      params.apiCode &&
       params.serviceId &&
       params.operatorId &&
       params.serviceApiId
     ) {
-      let serviceExist = await db.Slabs.findOne({
+      let serviceExist = await db.OperatorConfig.findOne({
         serviceId: params.serviceId,
         operatorId: params.operatorId,
         serviceApiId: params.serviceApiId,
-        SPKey: params.SPKey,
+        apiCode: params.apiCode,
       });
 
       if (!serviceExist) {
         params.slabId = Math.floor(Date.now() / 1000);
-        const slab = new db.Slabs(params);
+        const slab = new db.OperatorConfig(params);
         let slabData = await slab.save();
 
-        res
-          .status(200)
-          .json({ status: 200, data: slabData, message: "success" });
+        return slabData;
       } else {
-        res.status(400).json({
-          status: 400,
-          data: "",
-          message: `already added`,
-        });
+        throw "Already added!";
       }
     }
   } catch (err) {
     console.log({ err });
-    res.status(500).json({ status: 500, data: err, message: "fail" });
+    throw err;
   }
 };
 
-const update = async (req, res, next) => {
+const update = async (id, params) => {
   try {
-    const params = req.params;
-    const body = req.body;
-    const id = mongoose.Types.ObjectId(params.id);
+    id = mongoose.Types.ObjectId(id);
     console.log({ id });
     const service = await getService(id);
 
     console.log({ service });
-    // const service = await db.Slabs.findById({ _id: params.id });
-    // if (
-    //   params.serviceProvider &&
-    //   service.serviceProvider !== params.serviceProvider &&
-    //   (await db.Slabs.findOne({ serviceProvider: params.serviceProvider }))
-    // ) {
-    //   return res.status(400).json({
-    //     status: 400,
-    //     message: `Name ${params.serviceProvider} is already taken`,
-    //     data: "",
-    //   });
-    // }
 
-    Object.assign(service, body);
+    Object.assign(service, params);
     service.updated = Date.now();
 
     await service.save().then((result) => {
@@ -77,63 +56,63 @@ const update = async (req, res, next) => {
     });
   } catch (err) {
     console.log({ err });
-    res.status(500).json({ status: 500, data: "", message: err });
+    throw err;
   }
 };
 
-const getById = async (req, res, next) => {
-  const params = req.body;
-  // const service = await getService(id);
-  // return service;
-  console.log("getById", params.id);
-  params.dataBase = db.Slabs;
-  return await fetchDataById(params);
+const getById = async (id) => {
+  try {
+    const service = await getService(id);
+    return service;
+  } catch (err) {
+    throw err;
+  }
 };
 
 const getAll = async (req, res, next) => {
+  try {
+  } catch (err) {
+    throw err;
+  }
   const params = req.body;
-  params.dataBase = db.Slabs;
+  params.dataBase = db.OperatorConfig;
   return await fetchAllData(params);
 };
 
-const _delete = async (req, res, next) => {
+const _delete = async (params) => {
   try {
-    const params = req.params;
     const id = mongoose.Types.ObjectId(params.id);
     console.log({ id });
     const service = await getService(id);
-    await service.remove();
 
-    await service.remove().then((result) => {
-      res
-        .status(200)
-        .json({ status: 200, data: "", message: "deleted Succesfully." });
-    });
+    return await service.remove();
   } catch (err) {
-    console.log({ err });
-    res.status(500).json({ status: 500, data: "", message: err });
+    throw err;
   }
 };
 
 const getService = async (id) => {
   if (!db.isValidId(id)) throw "slab not found";
-  const service = await db.Slabs.findById(id);
+  const service = await db.OperatorConfig.findById(id);
   if (!service) throw "slab not found";
   return service;
 };
 
 const getListByType = async (params) => {
-  console.log(params);
-  const serviceList = await db.Slabs.find({
-    serviceProviderType: params.type,
-  });
-  return serviceList;
+  try {
+    console.log(params);
+    const serviceList = await db.OperatorConfig.find({
+      serviceProviderType: params.type,
+    });
+    return serviceList;
+  } catch (err) {
+    throw err;
+  }
 };
 
-const slabListDataPageWise = async (req, res, next) => {
+const slabListDataPageWise = async (params) => {
   try {
-    const params = req.body;
-    const filter = req.body;
+    const filter = params;
     const match = {};
 
     let searchObj = {};
@@ -173,7 +152,7 @@ const slabListDataPageWise = async (req, res, next) => {
       match.isActive = params.status;
     }
 
-    const total = await db.Slabs.find(searchObj).countDocuments(match);
+    const total = await db.OperatorConfig.find(searchObj).countDocuments(match);
 
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
@@ -222,27 +201,51 @@ const slabListDataPageWise = async (req, res, next) => {
 
     console.log({ aggregateRules });
 
-    await db.Slabs.aggregate(aggregateRules).then((result) => {
-      res.status(200).json({
-        status: 200,
-        message: "success",
-        data: {
-          sort,
-          filter,
-          count: result.length,
-          page,
-          pages,
-          data: result,
-          total,
-        },
-      });
+    await db.OperatorConfig.aggregate(aggregateRules).then((result) => {
+      return {
+        sort,
+        filter,
+        count: result.length,
+        page,
+        pages,
+        data: result,
+        total,
+      };
     });
-  } catch (error) {
-    res.status(500).json({
-      status: 500,
-      message: "Server Error",
-      data: error,
-    });
+  } catch (err) {
+    throw err;
+  }
+};
+
+const scanAndAdd = async () => {
+  try {
+    const apis = await db.Apis.find();
+    const companies = await db.Company.find();
+
+    for (let i = 0; i < apis.length; i++) {
+      for (let j = 0; j < companies.length; j++) {
+        let payload = {
+          slabId: Math.floor(Date.now() / 1000),
+          apiId: apis[i]._id,
+          serviceId: companies[j].providerType,
+          operatorId: companies[j]._id,
+        };
+
+        const getOperator = await db.OperatorConfig.findOne({
+          apiId: apis[i]._id,
+          operatorId: companies[j]._id,
+        });
+
+        if (!getOperator) {
+          const slab = new db.OperatorConfig(payload);
+          let slabData = await slab.save();
+        }
+      }
+    }
+    return await db.OperatorConfig.find();
+  } catch (err) {
+    console.log({ err });
+    throw err;
   }
 };
 
@@ -254,4 +257,5 @@ module.exports = {
   delete: _delete,
   getListByType,
   slabListDataPageWise,
+  scanAndAdd,
 };

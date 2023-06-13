@@ -1093,7 +1093,7 @@ const passwordUpdate = async (params) => {
             throw "Your pin and password can not be same";
           } else {
             params.passwordHash = hash(params.newPassword);
-            params.pswdString = hash(params.newPassword);
+            params.pswdString = params.newPassword;
             Object.assign(account, params);
             account.updated = Date.now();
             return await account.save();
@@ -1125,16 +1125,18 @@ const passwordUpdate2 = async (req, res, next) => {
         if (bcrypt.compareSync(body.newPassword, account.passwordHash)) {
           res.status(400).json({
             status: 400,
-            message: "old and new Password are same",
+            message: "Old and new Password are same",
             data: {},
           });
         } else {
-          if (bcrypt.compareSync(body.newPassword, account.transactionPin)) {
-            res.status(400).json({
-              status: 400,
-              message: "Your password and transaction pin can not be same",
-              data: {},
-            });
+          if (account.hasTransactionPin) {
+            if (bcrypt.compareSync(body.newPassword, account.transactionPin)) {
+              res.status(400).json({
+                status: 400,
+                message: "Your password and transaction pin can not be same",
+                data: {},
+              });
+            }
           } else {
             body.passwordHash = hash(body.newPassword);
             body.pswdString = body.newPassword;
@@ -1143,7 +1145,7 @@ const passwordUpdate2 = async (req, res, next) => {
             await account.save().then((result) => {
               res.status(200).json({
                 status: 200,
-                message: "success",
+                message: "Password updated successfully.",
                 data: result,
               });
             });
@@ -1152,9 +1154,10 @@ const passwordUpdate2 = async (req, res, next) => {
       }
     }
   } catch (err) {
+    console.log({ err });
     res.status(400).json({
       status: 400,
-      message: "some thing went wrong",
+      message: "Something went wrong",
       data: err,
     });
   }

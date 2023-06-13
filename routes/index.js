@@ -41,7 +41,9 @@ const spSlabRouter = require("./slabs.route");
 const cashbackRouter = require("./cashback.route");
 const adminLoyaltyRouter = require("./adminLoyalty.route");
 const testRouter = require("./test.route");
+const operatorConfigRouter = require("./operatorConfig.route");
 const uploadRouter = require("./upload.route");
+const operatorRouter = require("./operator.route");
 
 // ==========================================================================
 
@@ -100,7 +102,7 @@ router.use("/referral", referralRouter);
 router.use("/contactUs", contactUsRouter);
 router.use("/support", supportsRouter);
 router.use("/subSupport", subSupportRouter);
-router.use("/mlan", mlanRouter);
+router.use("/mplan", mlanRouter);
 router.use("/company", companyRouter);
 router.use("/state", stateRouter);
 router.use("/apis", apisRouter);
@@ -111,9 +113,10 @@ router.use("/spslabs", spSlabRouter);
 router.use("/cashback", cashbackRouter);
 router.use("/adminLoyalty", adminLoyaltyRouter);
 router.use("/test", testRouter);
+router.use("/operatorConfig", operatorConfigRouter);
 
 router.use("/file", uploadRouter);
-
+router.use("/operator", operatorRouter);
 // =================================================================
 
 module.exports = router;

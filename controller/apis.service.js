@@ -6,6 +6,7 @@ const {
   fetchDataById,
   deleteData,
 } = require("../_middleware/fetchingData");
+const { scanAndAdd } = require("./operatorSlabs.services");
 
 const create = async (params) => {
   let apiExist = await db.Apis.findOne({
@@ -18,6 +19,7 @@ const create = async (params) => {
 
   const apiService = new db.Apis(params);
   await apiService.save();
+  await scanAndAdd();
   return apiService;
 };
 
