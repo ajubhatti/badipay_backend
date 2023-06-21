@@ -14,8 +14,9 @@ const schema = new Schema({
   referenceApis: { type: Array },
   discountByApi: { type: Array },
   requiredFields: { type: Array },
+  mplanCode: { type: String },
   created: { type: Date, default: Date.now },
   updated: Date,
 });
 
-module.exports = mongoose.model("operator", schema);
+module.exports = mongoose.model("Operator", schema);

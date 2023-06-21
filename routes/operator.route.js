@@ -71,7 +71,7 @@ const getOperator = (req, res, next) => {
 
 router.post("/", getAllOperator);
 router.get("/:id", getById);
-router.post("/", create);
+router.post("/create", create);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/getOperator", getOperator);

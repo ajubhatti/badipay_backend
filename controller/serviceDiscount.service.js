@@ -1,5 +1,5 @@
-const { creates, reads, updates, removes } = require("../_middleware/crud");
 const db = require("../_helpers/db");
+const mongoose = require("mongoose");
 
 const create = async (params) => {
   const discount = new db.ServiceDiscount(params);
@@ -73,6 +73,118 @@ const getDiscountList = async (params) => {
   }
 };
 
+const AddbyScan = async () => {
+  let opConf = await db.OperatorConfig.find();
+  for (let i = 0; i < opConf.length; i++) {
+    let getConfig = await db.ServiceDiscount.findOne({
+      operatorConfigId: opConf[i]._id,
+    });
+    console.log({ getConfig });
+    if (!getConfig) {
+      let payload = {
+        apiId: opConf[i].apiId,
+        serviceId: opConf[i].serviceId,
+        operatorId: opConf[i].operatorId,
+        operatorConfigId: opConf[i]._id,
+      };
+      const discount = new db.ServiceDiscount(payload);
+      await discount.save();
+    }
+  }
+  return await db.ServiceDiscount.find();
+};
+
+const discountListPageWise = async (params) => {
+  try {
+    const filter = params;
+    const match = {};
+
+    const sort = {};
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "DESC";
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+    if (params.apis) {
+      match.apiId = mongoose.Types.ObjectId(params.apis);
+    }
+    if (params.provider) {
+      match.serviceId = mongoose.Types.ObjectId(params.provider);
+    }
+    if (params.operator) {
+      match.operatorId = mongoose.Types.ObjectId(params.operator);
+    }
+
+    const total = await db.ServiceDiscount.find().countDocuments(match);
+
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    console.log({ match });
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      {
+        $lookup: {
+          from: "apis",
+          localField: "apiId",
+          foreignField: "_id",
+          as: "apiData",
+        },
+      },
+      { $unwind: "$apiData" },
+      {
+        $lookup: {
+          from: "services",
+          localField: "serviceId",
+          foreignField: "_id",
+          as: "serviceData",
+        },
+      },
+      { $unwind: "$serviceData" },
+      {
+        $lookup: {
+          from: "operators",
+          localField: "operatorId",
+          foreignField: "_id",
+          as: "operatorData",
+        },
+      },
+      { $unwind: "$operatorData" },
+    ];
+
+    if (params.limit) {
+      aggregateRules.push({ $limit: params.limits });
+    }
+
+    console.log({ aggregateRules });
+
+    let aggrResult = await db.ServiceDiscount.aggregate(aggregateRules);
+    let resultData = {
+      sort,
+      filter,
+      count: aggrResult.length,
+      page,
+      pages,
+      data: aggrResult,
+      total,
+    };
+
+    return resultData;
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
+};
+
 module.exports = {
   create,
   update,
@@ -80,4 +192,6 @@ module.exports = {
   getAll,
   getDiscountList,
   _delete,
+  AddbyScan,
+  discountListPageWise,
 };

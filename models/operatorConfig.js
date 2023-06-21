@@ -31,4 +31,4 @@ const schema = new Schema({
   updated: Date,
 });
 
-module.exports = mongoose.model("operatorConfig", schema);
+module.exports = mongoose.model("OperatorConfig", schema);

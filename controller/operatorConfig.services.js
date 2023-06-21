@@ -1,9 +1,5 @@
 const db = require("../_helpers/db");
-const {
-  fetchAllData,
-  fetchDataById,
-  deleteData,
-} = require("../_middleware/fetchingData");
+const { fetchAllData } = require("../_middleware/fetchingData");
 const mongoose = require("mongoose");
 
 const create = async (params) => {
@@ -25,9 +21,8 @@ const create = async (params) => {
       if (!serviceExist) {
         params.slabId = Math.floor(Date.now() / 1000);
         const slab = new db.OperatorConfig(params);
-        let slabData = await slab.save();
 
-        return slabData;
+        return await slab.save();
       } else {
         throw "Already added!";
       }
@@ -49,11 +44,7 @@ const update = async (id, params) => {
     Object.assign(service, params);
     service.updated = Date.now();
 
-    await service.save().then((result) => {
-      res
-        .status(200)
-        .json({ status: 200, data: result, message: "Updated Succesfully." });
-    });
+    return await service.save();
   } catch (err) {
     console.log({ err });
     throw err;
@@ -71,12 +62,11 @@ const getById = async (id) => {
 
 const getAll = async (req, res, next) => {
   try {
+    const params = req.body;
+    return await db.OperatorConfig.find();
   } catch (err) {
     throw err;
   }
-  const params = req.body;
-  params.dataBase = db.OperatorConfig;
-  return await fetchAllData(params);
 };
 
 const _delete = async (params) => {
@@ -110,7 +100,7 @@ const getListByType = async (params) => {
   }
 };
 
-const slabListDataPageWise = async (params) => {
+const operatorConfigDataPageWise = async (params) => {
   try {
     const filter = params;
     const match = {};
@@ -159,8 +149,6 @@ const slabListDataPageWise = async (params) => {
     const skipNo = (page - 1) * pageSize;
     const pages = Math.ceil(total / pageSize);
 
-    console.log({ match });
-
     const aggregateRules = [
       {
         $match: match,
@@ -169,11 +157,10 @@ const slabListDataPageWise = async (params) => {
         $sort: sort,
       },
       { $skip: skipNo },
-      { $limit: params.limits },
       {
         $lookup: {
           from: "apis",
-          localField: "serviceApiId",
+          localField: "apiId",
           foreignField: "_id",
           as: "apiData",
         },
@@ -190,29 +177,33 @@ const slabListDataPageWise = async (params) => {
       { $unwind: "$serviceData" },
       {
         $lookup: {
-          from: "companies",
+          from: "operators",
           localField: "operatorId",
           foreignField: "_id",
-          as: "companyData",
+          as: "operatorData",
         },
       },
-      { $unwind: "$companyData" },
+      { $unwind: "$operatorData" },
     ];
 
-    console.log({ aggregateRules });
+    if (params.limit) {
+      aggregateRules.push({ $limit: params.limits });
+    }
 
-    await db.OperatorConfig.aggregate(aggregateRules).then((result) => {
-      return {
-        sort,
-        filter,
-        count: result.length,
-        page,
-        pages,
-        data: result,
-        total,
-      };
-    });
+    let aggrResult = await db.OperatorConfig.aggregate(aggregateRules);
+    let resultData = {
+      sort,
+      filter,
+      count: aggrResult.length,
+      page,
+      pages,
+      data: aggrResult,
+      total,
+    };
+
+    return resultData;
   } catch (err) {
+    console.log({ err });
     throw err;
   }
 };
@@ -220,28 +211,35 @@ const slabListDataPageWise = async (params) => {
 const scanAndAdd = async () => {
   try {
     const apis = await db.Apis.find();
-    const companies = await db.Company.find();
+    const operator = await db.Operator.find();
 
-    for (let i = 0; i < apis.length; i++) {
-      for (let j = 0; j < companies.length; j++) {
-        let payload = {
-          slabId: Math.floor(Date.now() / 1000),
-          apiId: apis[i]._id,
-          serviceId: companies[j].providerType,
-          operatorId: companies[j]._id,
-        };
+    console.log({ apis, operator });
+    if (apis.length && operator.length) {
+      let priority = 1;
+      for (let i = 0; i < apis.length; i++) {
+        for (let j = 0; j < operator.length; j++) {
+          let payload = {
+            slabId: Math.floor(Date.now() / 1000),
+            apiId: apis[i]._id,
+            serviceId: operator[j].providerType,
+            operatorId: operator[j]._id,
+            priority: priority,
+          };
 
-        const getOperator = await db.OperatorConfig.findOne({
-          apiId: apis[i]._id,
-          operatorId: companies[j]._id,
-        });
+          const getOperator = await db.OperatorConfig.findOne({
+            apiId: apis[i]._id,
+            operatorId: operator[j]._id,
+          });
 
-        if (!getOperator) {
-          const slab = new db.OperatorConfig(payload);
-          let slabData = await slab.save();
+          if (!getOperator) {
+            const slab = new db.OperatorConfig(payload);
+            await slab.save();
+          }
         }
+        priority++;
       }
     }
+
     return await db.OperatorConfig.find();
   } catch (err) {
     console.log({ err });
@@ -256,6 +254,6 @@ module.exports = {
   getAll,
   delete: _delete,
   getListByType,
-  slabListDataPageWise,
+  operatorConfigDataPageWise,
   scanAndAdd,
 };

@@ -67,6 +67,24 @@ const getDiscountList = (req, res, next) => {
     .catch(next);
 };
 
+const AddbyScan = (req, res, next) => {
+  serviceDiscount
+    .AddbyScan()
+    .then((service) => {
+      res.json({ status: 200, data: service, message: "success" });
+    })
+    .catch(next);
+};
+
+const getAllWithPagination = (req, res, next) => {
+  serviceDiscount
+    .discountListPageWise(req.body)
+    .then((operator) =>
+      res.json({ status: 200, data: operator, message: "success" })
+    )
+    .catch(next);
+};
+
 router
   .post("/", create)
   .get("/", usersAtPage, getAll)
@@ -74,7 +92,8 @@ router
   .put("/:id", update)
   .delete("/:id", _delete)
   .post("/getDiscountList", getDiscountList)
-
+  .post("/AddbyScan", AddbyScan)
+  .post("/getWithPagination", getAllWithPagination)
   .use(notFound);
 
 module.exports = router;

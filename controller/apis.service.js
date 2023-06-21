@@ -6,7 +6,7 @@ const {
   fetchDataById,
   deleteData,
 } = require("../_middleware/fetchingData");
-const { scanAndAdd } = require("./operatorSlabs.services");
+const { scanAndAdd } = require("./operatorConfig.services");
 
 const create = async (params) => {
   let apiExist = await db.Apis.findOne({

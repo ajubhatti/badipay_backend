@@ -6,6 +6,7 @@ const { CONSTANT_STATUS } = require("../_helpers/constant");
 const mongoose = require("mongoose");
 const { roundOfNumber } = require("../_middleware/middleware");
 const moment = require("moment");
+const { operatorConfigDataPageWise } = require("./operatorConfig.services");
 
 var priorityCount = 1;
 var lastTransactionsReport = {};
@@ -114,8 +115,22 @@ const createRecharge = async (req, res, next) => {
             // let finalRechargeData = responseJSON;
             priorityCount = 1;
 
+            if (params.requiredFields) {
+              for (let i = 0; i < params.requiredFields.length; i++) {
+                if (
+                  params.requiredFields[i].fieldValue === "mobileNo" ||
+                  params.requiredFields[i].fieldValue === "accountNo"
+                ) {
+                  params.customerNo = params.requiredFields[i].value;
+                } else {
+                  params[params.requiredFields[i].fieldValue] =
+                    params.requiredFields[i].value;
+                }
+              }
+            }
+
             if (finalRechargeData) {
-              params.customerNo = params.mobileNo;
+              // params.customerNo = params.mobileNo;
               params.responseData = finalRechargeData;
               params.rechargeByOperator = finalRechargeData.rechargeOperator;
               params.rechargeByApi = finalRechargeData.rechargeApi;
@@ -157,7 +172,7 @@ const createRecharge = async (req, res, next) => {
                 message: "Recharge successful",
               });
             } else {
-              params.customerNo = params.mobileNo;
+              // params.customerNo = params.mobileNo;
               params.responseData = finalRechargeData || lastTransactionsReport;
               params.rechargeByOperator = {};
               params.rechargeByApi = {};
@@ -662,13 +677,22 @@ const updateTransactionData3 = async (
 
 const recursiveFunction2 = async (params, operator) => {
   try {
-    if (operator && operator.referenceApis.length >= priorityCount) {
+    let operatorConfigList = await operatorConfigDataPageWise({
+      operator: operator._id,
+    });
+
+    if (operator && operatorConfigList.data.length >= priorityCount) {
       let filteredOperator;
       if (!filteredOperator) {
-        filteredOperator = await priorityCheck(operator, priorityCount);
+        filteredOperator = await priorityCheck(
+          priorityCount,
+          operatorConfigList
+        );
         priorityCount++;
         // return await rechargeFunction(params, operator, filteredOperator);
       }
+
+      console.log({ filteredOperator });
       return await rechargeFunction(params, operator, filteredOperator);
       // else {
       //   return await rechargeFunction(params, operator, filteredOperator);
@@ -693,6 +717,22 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
       regMobileNumber: params.mobileNo,
     };
 
+    if (params.requiredFields) {
+      for (let i = 0; i < params.requiredFields.length; i++) {
+        if (
+          params.requiredFields[i].fieldValue === "mobileNo" ||
+          params.requiredFields[i].fieldValue === "accountNo"
+        ) {
+          payload.regMobileNumber = params.requiredFields[i].value;
+        } else {
+          payload[params.requiredFields[i].fieldValue] =
+            params.requiredFields[i].value;
+        }
+      }
+    }
+
+    console.log({ payload });
+
     let rechargeData = await doRecharge(filteredOperator, payload);
     console.log("rechargedata --- >>", rechargeData);
     delete operator.referenceApis;
@@ -713,9 +753,9 @@ const rechargeFunction = async (params, operator, filteredOperator) => {
   }
 };
 
-const priorityCheck = async (operator, priority) => {
+const priorityCheck = async (priority, operatorConfig) => {
   try {
-    return await operator.referenceApis.find((x) => {
+    return await operatorConfig.data.find((x) => {
       return x.priority && x.priority == priority && x.isActive;
     });
   } catch (err) {
@@ -725,7 +765,8 @@ const priorityCheck = async (operator, priority) => {
 
 const doRecharge = async (filterData, payload) => {
   try {
-    const { apiName } = filterData;
+    const { apiName } = filterData.apiData;
+
     if (apiName == "RechargeWale") {
       let rechargeWaleRes = await RecharegeWaleRecharge(payload);
 
@@ -822,7 +863,7 @@ const RecharegeWaleRecharge = async (params) => {
 
 const getOperatorById = async (params) => {
   try {
-    return await db.Company.findOne({ _id: params.operator });
+    return await db.Operator.findOne({ _id: params.operator });
   } catch (err) {
     throw err;
   }

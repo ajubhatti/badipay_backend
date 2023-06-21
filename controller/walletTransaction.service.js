@@ -95,14 +95,14 @@ const createWallet = async (req, res, next) => {
     const params = req.body;
 
     if (await db.Transactions.findOne({ slipNo: params.slipNo })) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 500,
         message: "slip no " + params.slipNo + " already taken.",
         data: "",
       });
     }
     if (!params.userId) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 500,
         message: "userId is required",
         data: "",
@@ -169,7 +169,7 @@ const createWallet = async (req, res, next) => {
         });
       }
     } else {
-      res.status(500).json({
+      return res.status(500).json({
         status: 500,
         message: "fail",
         data: "",
@@ -177,7 +177,7 @@ const createWallet = async (req, res, next) => {
     }
   } catch (err) {
     console.log({ err });
-    res.status(500).json({
+    return res.status(500).json({
       status: 500,
       message: "server error",
       data: err,

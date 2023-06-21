@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const authorize = require("../_middleware/authorize");
-const slabService = require("../controller/operatorSlabs.services");
+const operatorConfigService = require("../controller/operatorConfig.services");
 
 const getById = (req, res, next) => {
   const { id } = req.body;
-  slabService
+  operatorConfigService
     .getById(id)
     .then((operator) =>
       res.json({ status: 200, data: operator, message: "success" })
@@ -14,7 +14,7 @@ const getById = (req, res, next) => {
 };
 
 const create = (req, res, next) => {
-  slabService
+  operatorConfigService
     .create(req.body)
     .then((operator) =>
       res.json({
@@ -27,8 +27,17 @@ const create = (req, res, next) => {
 };
 
 const getAllWithPagination = (req, res, next) => {
-  slabService
-    .slabListDataPageWise(req.body)
+  operatorConfigService
+    .operatorConfigDataPageWise(req.body)
+    .then((operator) =>
+      res.json({ status: 200, data: operator, message: "success" })
+    )
+    .catch(next);
+};
+
+const getAll = (req, res, next) => {
+  operatorConfigService
+    .getAll(req.body)
     .then((operator) =>
       res.json({ status: 200, data: operator, message: "success" })
     )
@@ -36,7 +45,7 @@ const getAllWithPagination = (req, res, next) => {
 };
 
 const scanAndAdd = (req, res, next) => {
-  slabService
+  operatorConfigService
     .scanAndAdd(req.body)
     .then((operator) =>
       res.json({ status: 200, data: operator, message: "success" })
@@ -45,7 +54,7 @@ const scanAndAdd = (req, res, next) => {
 };
 
 const updateConfig = (req, res, next) => {
-  slabService
+  operatorConfigService
     .update(req.params.id, req.body)
     .then((operator) =>
       res.json({
@@ -58,7 +67,7 @@ const updateConfig = (req, res, next) => {
 };
 
 const deleteConfig = (req, res, next) => {
-  slabService
+  operatorConfigService
     .delete(req.body)
     .then((operator) =>
       res.json({
@@ -70,7 +79,8 @@ const deleteConfig = (req, res, next) => {
     .catch(next);
 };
 
-router.post("/getAll", getAllWithPagination);
+router.post("/getWithPagination", getAllWithPagination);
+router.post("/getAll", getAll);
 router.get("/:id", getById);
 router.post("/create", create);
 router.post("/scanAndAdd", scanAndAdd); // mapping of all operator and api and add in database

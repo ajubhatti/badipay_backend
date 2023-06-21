@@ -1,4 +1,3 @@
-// require("dotenv").config();
 var express = require("express");
 var path = require("path");
 const bodyParser = require("body-parser");
@@ -8,7 +7,6 @@ const cors = require("cors");
 const errorHandler = require("./_middleware/error-handler");
 const mongoSanitize = require("express-mongo-sanitize");
 const helmet = require("helmet");
-
 const apiRoutes = require("./routes");
 
 var app = express();
@@ -18,9 +16,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(express.static(__dirname + "/public"));
-// app.use(express.static(`${__dirname}/public`));
-// app.use(express.static(path.join(__dirname, "public")));
 app.use("/files", express.static("./public/files"));
 app.use("/uploads", express.static("./uploads"));
 

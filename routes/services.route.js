@@ -82,17 +82,19 @@ const getPlan = (req, res, next) => {
 
 const ambikaRecharge = (req, res, next) => {
   console.log("ambika recharge");
-  servicesService.ambikaRecharge(req.body).then((service) => {
-    console.log({ service });
-    res.json({ status: 200, data: service, message: "success" });
-  });
+  servicesService
+    .ambikaRecharge(req.body)
+    .then((service) => {
+      res.json({ status: 200, data: service, message: "success" });
+    })
+    .catch(next);
 };
 
 router.get("/", getAll);
 router.get("/:id", getById);
 router.post("/", create);
 router.put("/:id", update);
-router.delete("/:id", authorize(), _delete);
+router.delete("/:id", _delete);
 
 router.post("/getPlan", getPlan);
 router.post("/ambikaRecharge", ambikaRecharge);

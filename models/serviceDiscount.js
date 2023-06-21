@@ -10,7 +10,12 @@ const schema = new Schema({
   },
   operatorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "company",
+    ref: "Operator",
+    required: true,
+  },
+  operatorConfigId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "OperatorConfig",
     required: true,
   },
   userDiscount: { type: Number, default: 0 },
@@ -19,7 +24,7 @@ const schema = new Schema({
     enum: ["number", "percentage"],
     default: "number",
   },
-  userDiscountLimit: { type: Number, default: -1 },
+  userDiscountLimit: { type: Number, default: 1 },
 
   referalDiscount: { type: Number, default: 0 },
   referalDiscountType: {
@@ -27,7 +32,7 @@ const schema = new Schema({
     enum: ["number", "percentage"],
     default: "number",
   },
-  referalDiscountLimit: { type: Number, default: -1 },
+  referalDiscountLimit: { type: Number, default: 1 },
 
   adminDiscount: { type: Number, default: 0 },
   adminDiscountType: {
