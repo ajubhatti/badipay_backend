@@ -92,7 +92,7 @@ router
   .put("/:id", update)
   .delete("/:id", _delete)
   .post("/getDiscountList", getDiscountList)
-  .post("/AddbyScan", AddbyScan)
+  .post("/addbyScan", AddbyScan)
   .post("/getWithPagination", getAllWithPagination)
   .use(notFound);
 

@@ -1037,15 +1037,6 @@ const getwalletListData = async (req, res, next) => {
         },
       },
       { $unwind: "$paymentMode" },
-      {
-        $lookup: {
-          from: "bankaccounts",
-          localField: "creditAccount",
-          foreignField: "_id",
-          as: "bankData",
-        },
-      },
-      { $unwind: "$bankData" },
     ];
 
     let walletData = await db.WalletTransaction.aggregate(aggregateRules);
