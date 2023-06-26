@@ -597,6 +597,12 @@ const updateTransactionData3 = async (
 
 const recursiveFunction2 = async (params, operator, operatorConfigList) => {
   try {
+    console.log(
+      "operatorConfigList----",
+      operatorConfigList.data.length,
+      priorityCount,
+      operatorConfigList.data.length >= priorityCount
+    );
     if (operatorConfigList && operatorConfigList.data.length >= priorityCount) {
       let filteredOperator;
       if (!filteredOperator) {
@@ -613,27 +619,14 @@ const recursiveFunction2 = async (params, operator, operatorConfigList) => {
         // );
       }
 
-      // let rechargeFunData = await rechargeFunction(
-      //   params,
-      //   operator,
-      //   filteredOperator
-      // );
-      return await rechargeFunction(params, operator, filteredOperator).then(
-        async (rechargeFunData) => {
-          if (
-            (rechargeFunData && rechargeFunData.TRNSTATUS == 0) ||
-            (rechargeFunData.STATUSCODE && rechargeFunData.STATUSCODE == 0) ||
-            rechargeFunData.errorcode == 200
-          ) {
-            return rechargeFunData;
-          } else {
-            await recursiveFunction2(params, operator, operatorConfigList);
-          }
-        }
+       
+      return await rechargeFunction(
+        params,
+        operator,
+        filteredOperator,
+        operatorConfigList
       );
 
-      // console.log({ rechargeFunData });
-      // return rechargeFunData;
       // else {
       //   return await rechargeFunction(params, operator, filteredOperator);
       // }
@@ -701,15 +694,25 @@ const rechargeFunction = async (
     lastTransactionsReport = rechargeData;
 
     // if (
-    //   (rechargeData && rechargeData.TRNSTATUS == 0) ||
-    //   (rechargeData.STATUSCODE && rechargeData.STATUSCODE == 0) ||
-    //   rechargeData.errorcode == 200
+    //   !!responseDataFromRecharge &&
+    //   (!!responseDataFromRecharge.errorcode ||
+    //     !!!responseDataFromRecharge.STATUSCODE)
     // ) {
-    //   console.log({ rechargeData });
-    //   return rechargeData;
+    //   recursiveFunction2(params, operator, operatorConfigList);
     // } else {
-    //   await recursiveFunction2(params, operator, operatorConfigList);
+    //   return responseDataFromRecharge;
     // }
+
+    if (
+      (rechargeData && rechargeData.TRNSTATUS == 0) ||
+      (rechargeData.STATUSCODE && rechargeData.STATUSCODE == 0) ||
+      rechargeData.errorcode == 200
+    ) {
+      console.log({ rechargeData });
+      return rechargeData;
+    } else {
+      await recursiveFunction2(params, operator, operatorConfigList);
+    }
 
     return rechargeData;
   } catch (err) {
