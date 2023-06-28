@@ -9,7 +9,7 @@ const schema = new Schema({
   amount: { type: Number },
   rechargeByOperator: { type: Object },
   rechargeByApi: { type: Object },
-  operatorId: { type: Schema.Types.ObjectId, ref: "Company" },
+  operatorId: { type: Schema.Types.ObjectId, ref: "Operator" },
   apiId: { type: Schema.Types.ObjectId, ref: "Apis" },
   status: {
     type: String,

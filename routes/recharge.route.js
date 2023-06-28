@@ -7,7 +7,7 @@ const rechargeController = require("../controller/recharge.service");
 
 const create = (req, res, next) => {
   rechargeController
-    .create(req.body)
+    .createNewRecharge(req.body)
     .then((rechargeData) => {
       console.log({ rechargeData });
       res.json({ status: 200, data: rechargeData, message: "success" });
@@ -57,8 +57,8 @@ const getAll = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/:id", getById);
-// router.post("/", create);
-router.post("/", rechargeController.createRecharge);
+router.post("/", create);
+// router.post("/", rechargeController.createRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/getRecharges", rechargeController.rechargeListWithPagination);

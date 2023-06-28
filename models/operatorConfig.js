@@ -16,7 +16,7 @@ const schema = new Schema({
   },
   operatorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "company",
+    ref: "Operator",
     required: true,
   },
   apiCode: { type: String, required: false, default: null },
