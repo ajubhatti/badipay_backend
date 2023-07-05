@@ -46,7 +46,7 @@ const getAll = (req, res, next) => {
 
 const scanAndAdd = (req, res, next) => {
   operatorConfigService
-    .scanAndAdd(req.body)
+    .addOperatorConfigByScan(req.body)
     .then((operator) =>
       res.json({ status: 200, data: operator, message: "success" })
     )

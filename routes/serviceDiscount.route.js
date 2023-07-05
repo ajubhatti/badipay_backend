@@ -85,6 +85,15 @@ const getAllWithPagination = (req, res, next) => {
     .catch(next);
 };
 
+const resetDiscountById = (req, res, next) => {
+  serviceDiscount
+    .resetDiscountById(req.params.id)
+    .then((discount) =>
+      res.json({ status: 200, data: discount, message: "success" })
+    )
+    .catch(next);
+};
+
 router
   .post("/", create)
   .get("/", usersAtPage, getAll)
@@ -94,6 +103,7 @@ router
   .post("/getDiscountList", getDiscountList)
   .post("/addbyScan", AddbyScan)
   .post("/getWithPagination", getAllWithPagination)
+  .post("/resetDiscountById/:id", resetDiscountById)
   .use(notFound);
 
 module.exports = router;

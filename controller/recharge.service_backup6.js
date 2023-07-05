@@ -14,9 +14,8 @@ const {
 
 var priorityCount = 1;
 
-const createNewRecharge = async (req, res) => {
+const createNewRecharge = async (params) => {
   try {
-    const params = req.body;
     if (params.requiredFields) {
       for (let i = 0; i < params.requiredFields.length; i++) {
         if (
@@ -31,31 +30,21 @@ const createNewRecharge = async (req, res) => {
       }
     }
     if (!params.transactionPin) {
-      res
-        .status(400)
-        .json({ status: 400, data: "", message: "transaction pin not found" });
+      throw "Transaction pin not found!";
     } else {
       const account = await db.Account.findOne({ _id: params.userId });
       if (
         account &&
         !bcrypt.compareSync(params.transactionPin, account.transactionPin)
       ) {
-        res.status(400).json({
-          status: 400,
-          data: "",
-          message: "your transaction pin not matched!",
-        });
+        throw "Your transaction pin not matched!";
       } else {
         if (
           account &&
           (account.walletBalance <= 0 ||
             account.walletBalance - params.amount < 0)
         ) {
-          res.status(400).json({
-            status: 400,
-            data: "",
-            message: "your wallet balance is not enough!",
-          });
+          throw "Your wallet balance is not enough!";
         } else {
           let operator = await getOperatorById(params);
           if (operator) {
@@ -64,7 +53,7 @@ const createNewRecharge = async (req, res) => {
             priorityCount = 1;
 
             if (finalRechargeData) {
-              params.rechargeData = finalRechargeData;
+              params.responseData = finalRechargeData;
               params.rechargeByOperator =
                 finalRechargeData.operatorConfig.operatorData;
               params.rechargeByApi = finalRechargeData.operatorConfig.apiData;
@@ -88,11 +77,7 @@ const createNewRecharge = async (req, res) => {
                 });
                 await rechargeResult.save();
                 await updateUserData(params);
-                res.status(200).json({
-                  status: 200,
-                  data: rechargeData,
-                  message: "Recharge successful",
-                });
+                return rechargeResult;
               } else {
                 console.log("========== if fail =================");
                 Object.assign(rechargeResult, {
@@ -105,12 +90,9 @@ const createNewRecharge = async (req, res) => {
                   finalRechargeData,
                   rechargeResult
                 );
-                res.status(403).json({
-                  status: 403,
-                  data: rechargeData,
-                  message: "Recharge can not be proceed!",
-                });
               }
+
+              return rechargeResult;
             } else {
               throw "Recharge can not be proceed!";
             }
@@ -165,9 +147,8 @@ const updateReferalUserDiscount = async (
 
 const addDiscountAmount = async (account, params, userType, rechargeResult) => {
   let discountData = await getDiscountData(params);
-  console.log("line no -- 168 --", { discountData });
   let disAmount = 0;
-  if (rechargeResult && discountData) {
+  if (rechargeResult) {
     if (userType === "referral") {
       const { referalDiscount, referalDiscountType } = discountData;
       if (referalDiscountType === "percentage") {
@@ -275,7 +256,7 @@ const updateTransactionData = async (
       payload.customerNo = params.mobileNo || params.customerNo;
       payload.operatorName = "";
       payload.operatorId = rechargeResult.operatorId;
-      payload.rechargeData = rechargeResult.rechargeData;
+      payload.rechargeData = rechargeResult.responseData;
       payload.amount = roundOfNumber(params.amount) || 0;
       payload.userBalance =
         roundOfNumber(accountDetail.walletBalance) -
@@ -286,7 +267,7 @@ const updateTransactionData = async (
       payload.userFinalBalance = roundOfNumber(userFinalBalance);
       payload.apiProvider = rechargeResult.apiId;
       payload.serviceType =
-        rechargeResult.rechargeData.operatorConfig.serviceId;
+        rechargeResult.responseData.operatorConfig.serviceId;
     } else {
       payload.amount = 0;
       payload.userBalance =
@@ -438,24 +419,25 @@ const updateTransactionData2 = async (
       rechargeAmount: 0,
       cashBackAmount: 0,
       type: "credit",
-      status: CONSTANT_STATUS.FAILED,
+      customerNo: "",
+      status: CONSTANT_STATUS.PENDING,
     };
 
     if (rechargeData) {
       if (
-        (rechargeData.TRNSTATUS && rechargeData.TRNSTATUS == 4) ||
+        (rechargeData.TRNSTATUS && rechargeData.TRNSTATUS !== 4) ||
         (rechargeData.TRNSTATUSDESC &&
-          rechargeData.TRNSTATUSDESC == CONSTANT_STATUS.PENDING) ||
-        (rechargeData.status && rechargeData.status == 4)
+          rechargeData.TRNSTATUSDESC !== CONSTANT_STATUS.PENDING) ||
+        (rechargeData.status && rechargeData.status !== 4)
       ) {
-        payload.status = CONSTANT_STATUS.PENDING;
+        payload.status = CONSTANT_STATUS.FAILED;
       }
     }
 
     payload.slipNo = params.slipNo || "";
     payload.remark = params.remark || "";
     payload.description = params.description || {};
-    payload.customerNo = params.mobileNo || params.customerNo || "";
+    payload.customerNo = params.mobileNo || params.customerNo;
     payload.operatorName = "";
     payload.operatorId = rechargeResult.operatorId;
     payload.rechargeData = rechargeData;
@@ -466,7 +448,7 @@ const updateTransactionData2 = async (
     payload.cashBackAmount = 0;
     payload.userFinalBalance = roundOfNumber(accountDetail.walletBalance);
     payload.apiProvider = rechargeResult.apiId;
-    payload.serviceType = rechargeResult.rechargeData.operatorConfig.serviceId;
+    payload.serviceType = rechargeResult.responseData.operatorConfig.serviceId;
 
     payload.rechargeId = rechargeResult._id;
     payload.transactionId = (await db.Transactions.countDocuments()) + 1;
@@ -491,7 +473,6 @@ const recursiveFunction = async (params, operator) => {
           operatorConfigList
         );
         priorityCount++;
-        console.log({ filteredOperator });
         if (filteredOperator) {
           let apiRes = await rechargeFunction(
             params,
@@ -519,8 +500,6 @@ const recursiveFunction = async (params, operator) => {
               return apiRes;
             }
           }
-        } else {
-          throw "operator not found!";
         }
       }
     }
@@ -558,12 +537,8 @@ const rechargeFunction = async (params, operator, filteredOperatorConfig) => {
       }
     }
 
-    console.log("filteredOperatorConfig--560----", filteredOperatorConfig);
     let rechargeRes = await doRecharge(filteredOperatorConfig, payload);
-    console.log("rechargeRes--566----", rechargeRes);
-    if (rechargeRes) {
-      rechargeRes.operatorConfig = filteredOperatorConfig;
-    }
+    rechargeRes.operatorConfig = filteredOperatorConfig;
     // let rechargeRes = rechargeWaleRechargeData;
 
     return rechargeRes;
@@ -577,7 +552,7 @@ const doRecharge = async (filterOperatorConfig, payload) => {
   try {
     const { apiName } = filterOperatorConfig.apiData;
 
-    if (apiName == "rechargewale") {
+    if (apiName == "RechargeWale") {
       return await RecharegeWaleRecharge(payload);
     }
 
@@ -623,7 +598,6 @@ const ambikaRecharge = async (params) => {
       });
   } catch (err) {
     console.error(err);
-    throw err;
   }
 };
 
@@ -643,10 +617,7 @@ const RecharegeWaleRecharge = async (params) => {
     let stv = 0;
 
     let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
-    console.log(
-      "service url recharge wale ---------------------------",
-      serviceUrl
-    );
+    console.log("service url recharge ---------------------------", serviceUrl);
 
     return await axios
       .get(serviceUrl)
@@ -658,7 +629,6 @@ const RecharegeWaleRecharge = async (params) => {
       });
   } catch (err) {
     console.error(err);
-    throw err;
   }
 };
 
@@ -672,11 +642,11 @@ const getOperatorById = async (params) => {
 
 const updateRechargeById = async (id, params) => {
   try {
-    const result = await getRecharge(id);
+    const rechargeData = await getRecharge(id);
 
-    Object.assign(result, params);
-    result.updated = Date.now();
-    await result.save();
+    Object.assign(rechargeData, params);
+    rechargeData.updated = Date.now();
+    await rechargeData.save();
 
     let transaction = await db.Transactions.findOne({ rechargeId: id });
 
@@ -684,7 +654,7 @@ const updateRechargeById = async (id, params) => {
 
     await updateTransactionById(transactionId, params);
 
-    return result;
+    return rechargeData;
   } catch (err) {
     console.error(err);
   }
@@ -692,8 +662,8 @@ const updateRechargeById = async (id, params) => {
 
 const getById = async (id) => {
   try {
-    const result = await getRecharge(id);
-    return result;
+    const rechargeData = await getRecharge(id);
+    return rechargeData;
   } catch (err) {
     console.error(err);
   }
@@ -701,8 +671,8 @@ const getById = async (id) => {
 
 const getAll = async () => {
   try {
-    const result = await db.Recharge.find();
-    return result;
+    const rechargeData = await db.Recharge.find();
+    return rechargeData;
   } catch (err) {
     console.error(err);
   }
@@ -710,8 +680,8 @@ const getAll = async () => {
 
 const _delete = async (id) => {
   try {
-    const result = await getRecharge(id);
-    await result.remove();
+    const rechargeData = await getRecharge(id);
+    await rechargeData.remove();
   } catch (err) {
     console.error(err);
   }
@@ -720,9 +690,9 @@ const _delete = async (id) => {
 const getRecharge = async (id) => {
   try {
     if (!db.isValidId(id)) throw "Recharge not found";
-    const result = await db.Recharge.findById(id);
-    if (!result) throw "Recharge not found";
-    return result;
+    const rechargeData = await db.Recharge.findById(id);
+    if (!rechargeData) throw "Recharge not found";
+    return rechargeData;
   } catch (err) {
     console.error(err);
   }
@@ -737,12 +707,15 @@ const rechargeListWithPagination = async (req, res, next) => {
     let searchKeyword = params.search;
     if (searchKeyword) {
       match = {
-        $or: [{ customerNo: { $regex: searchKeyword, $options: "i" } }],
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
       };
     }
 
     if (params.services) {
-      match.serviceId = mongoose.Types.ObjectId(params.services);
+      match.operatorId = mongoose.Types.ObjectId(params.services);
     }
 
     if (params.api) {
@@ -765,18 +738,27 @@ const rechargeListWithPagination = async (req, res, next) => {
     }
 
     if (params.startDate && params.endDate) {
-      var start = new Date(params.startDate);
-      start.setHours(0, 0, 0, 0);
+      let startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
 
-      var end = new Date(params.endDate);
-      end.setHours(23, 59, 59, 999);
+      // startDate.setSeconds(0);
+      // startDate.setHours(0);
+      // startDate.setMinutes(0);
 
+      let endDate = new Date(params.endDate);
+
+      // endDate.setHours(23);
+      // endDate.setMinutes(59);
+      // endDate.setSeconds(59);
       let created = {
-        $gte: start,
-        $lte: end,
+        // $gte: new ISODate(startDate),
+        // $lte: new ISODate(endDate),
+        $gte: moment.utc(startDate).toDate(),
+        $lte: moment.utc(endDate).endOf("day").toDate(),
       };
       match.created = created;
     }
+
+    console.log(JSON.stringify(match));
 
     const total = await db.Recharge.find().countDocuments(match);
     const page = parseInt(params.page) || 1;

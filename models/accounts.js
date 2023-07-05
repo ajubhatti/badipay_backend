@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
-  userName: { type: String, unique: true, required: true },
+  userName: { type: String, required: true },
   phoneNumber: { type: String, unique: true, required: true },
   email: { type: String, trim: true, unique: true, required: true },
   passwordHash: { type: String, required: true },
@@ -36,11 +36,7 @@ const schema = new Schema({
 
   isFromAdmin: { type: Boolean, default: false },
 
-  // referralId: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: "Referral",
-  //   // default: "",
-  // },
+  referralId: { type: mongoose.Schema.Types.ObjectId, ref: "Referral" },
   lastDiscount: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: Date,

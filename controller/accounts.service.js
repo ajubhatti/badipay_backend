@@ -12,50 +12,53 @@ const {
 } = require("../_helpers/send-sms");
 
 const register = async (params, origin) => {
-  let userExist = await db.Account.findOne({
-    $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
-  });
-  if (userExist) {
-    throw "User already exist with User name or Number or Email!";
-  }
-
-  // create account object
-  const account = new db.Account(params);
-
-  // first registered account is an admin
-  const isFirstAccount = (await db.Account.countDocuments({})) === 0;
-  account.role = Role.User;
-  account.verificationToken = randomTokenString();
-  account.otp = randomOTPGenerate();
-  account.otpDate = new Date();
-
-  // hash password
-  account.passwordHash = hash(params.password);
-  account.pswdString = params.password;
-  // save account
-  await account.save().then(async (res) => {
-    if (params.referralId) {
-      addReferalId(params, res);
+  try {
+    let userExist = await db.Account.findOne({
+      $or: [{ email: params.email }, { phoneNumber: params.phoneNumber }],
+    });
+    if (userExist) {
+      throw "User already exist with User name or Number or Email!";
     }
 
-    await sendRegisterSms(account.phoneNumber, account.otp)
-      .then((smsResult) => {
-        if (smsResult.status == 200) {
-          const jsnRes = strToObj(smsResult.data);
+    // create account object
+    const account = new db.Account(params);
 
-          if (jsnRes && jsnRes.code === 200) {
-            throw "We have sent OTP on your registered phone number";
+    // first registered account is an admin
+    const isFirstAccount = (await db.Account.countDocuments({})) === 0;
+    account.role = Role.User;
+    account.verificationToken = randomTokenString();
+    account.otp = randomOTPGenerate();
+    account.otpDate = new Date();
+
+    // hash password
+    account.passwordHash = hash(params.password);
+    account.pswdString = params.password;
+    // save account
+    await account.save().then(async (res) => {
+      if (params.referenceUserId) {
+        addReferalId(params, res);
+      }
+      await sendRegisterSms(account.phoneNumber, account.otp)
+        .then((smsResult) => {
+          if (smsResult.status == 200) {
+            const jsnRes = strToObj(smsResult.data);
+
+            if (jsnRes && jsnRes.code === 200) {
+              throw "We have sent OTP on your registered phone number";
+            } else {
+              throw jsnRes.cause;
+            }
           } else {
-            throw jsnRes.cause;
+            throw "something went wrong";
           }
-        } else {
+        })
+        .catch((err) => {
           throw "something went wrong";
-        }
-      })
-      .catch((err) => {
-        throw "something went wrong";
-      });
-  });
+        });
+    });
+  } catch (err) {
+    throw err;
+  }
 };
 
 const userRegister = async (req, res, next) => {
@@ -65,27 +68,24 @@ const userRegister = async (req, res, next) => {
     let MobileNoExist = await db.Account.findOne({
       phoneNumber: params.phoneNumber,
     });
-    let emailExist = await db.Account.findOne({
-      email: params.email,
-    });
     if (MobileNoExist) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 400,
         message: "User already exist with Mobile Number!",
         data: "",
       });
-      return;
     }
+    let emailExist = await db.Account.findOne({
+      email: params.email,
+    });
     if (emailExist) {
-      res.status(400).json({
+      return res.status(400).json({
         status: 400,
         message: "User already exist with Email!",
         data: "",
       });
-      return;
     }
 
-    console.log({ params });
     // create account object
     const account = new db.Account(params);
     account.role = Role.User;
@@ -94,12 +94,14 @@ const userRegister = async (req, res, next) => {
     account.otpDate = new Date();
     account.passwordHash = hash(params.password);
     account.pswdString = params.password;
-    // save account
 
-    const userSave = await account.save();
-    if (userSave) {
-      if (params.referralId) {
-        addReferalId(params, result);
+    let referralResult = await generateReferralCode(account._id);
+    account.referralId = referralResult._id;
+
+    const userSaveResult = await account.save();
+    if (userSaveResult) {
+      if (params.referenceUserId) {
+        await addReferalId(params, userSaveResult);
       }
       await sendRegisterSms(account.phoneNumber, account.otp);
       res.status(200).json({
@@ -114,96 +116,39 @@ const userRegister = async (req, res, next) => {
         data: null,
       });
     }
-
-    // await account.save().then(async (result) => {
-    //   console.log("check prams ---", result, params.referralId);
-    //   if (params.referralId) {
-    //     addReferalId(params, result);
-    //   }
-    //   await sendRegisterSms(account.phoneNumber, account.otp)
-    //     .then((smsResult) => {
-    //       console.log({ smsResult }, smsResult.data);
-    //       if (smsResult.status == 200) {
-    //         const jsnRes = strToObj(smsResult.data);
-    //         console.log({ jsnRes });
-    //         if (jsnRes && (jsnRes.code == 200 || jsnRes.code == 1300)) {
-    //           res.status(200).json({
-    //             status: 200,
-    //             message: "We have sent OTP on your registered phone number",
-    //             data: "",
-    //           });
-    //         } else {
-    //           if (
-    //             smsResult.data[0].code == 1300 ||
-    //             smsResult.data[0].code == 200
-    //           ) {
-    //             res.status(200).json({
-    //               status: 200,
-    //               message: "success",
-    //               data: smsResult.data[0],
-    //             });
-    //           } else {
-    //             res.status(400).json({
-    //               status: 400,
-    //               message: "fail",
-    //               data: "",
-    //             });
-    //           }
-    //         }
-    //       } else {
-    //         res.status(400).json({
-    //           status: 400,
-    //           message: "something went wrong",
-    //           data: smsResult,
-    //         });
-    //       }
-    //     })
-    //     .catch((err) => {
-    //       res.status(400).json({
-    //         status: 400,
-    //         message: "something went wrong",
-    //         data: err,
-    //       });
-    //     });
-
-    //   if (result) {
-    //     res.status(200).json({
-    //       status: 200,
-    //       message: "We have sent OTP on your registered phone number",
-    //       data: null,
-    //     });
-    //   }
-    // });
   } catch (err) {
-    console.log({ err });
+    console.log(err);
     res.status(400).json({
       status: 400,
-      message: err,
+      message: "Something went wrong",
       data: err,
     });
   }
 };
 
 const addReferalId = async (params, result) => {
-  const referralData = await db.Referral.findOne({
-    referralCode: params.referralId,
-  });
-  if (referralData) {
-    referralData.referredUser = [...referralData.referredUser, result._id];
-    referralData.updated = Date.now();
-    await referralData.save();
+  console.log({ params });
+  const referanceUserData = await db.Referral.findOne({
+    referralCode: params.referenceUserId,
+  }); //123
 
-    const referalUser = await db.Referral.findOne({
-      userId: params.userId,
-    });
+  const referalUser = await db.Referral.findOne({
+    userId: result._id,
+  }); // 456
 
-    if (referalUser) {
-      referalUser.referredBy = [...referalUser.referredBy, referralData.userId];
-      referalUser.updated = Date.now();
-      await referalUser.save();
-    }
-  } else {
-    throw new Error("Could not find");
+  if (referanceUserData) {
+    referanceUserData.referredBy = [
+      ...referanceUserData.referredBy,
+      result._id,
+    ];
+    referanceUserData.updated = Date.now();
+    await referanceUserData.save();
+  }
+
+  if (referalUser) {
+    referalUser.referredUser = referanceUserData.userId;
+    referalUser.updated = Date.now();
+    await referalUser.save();
   }
 };
 
@@ -248,139 +193,151 @@ const authenticate = async ({ mobileNo, password, ipAddress }) => {
 };
 
 const authenticate2 = async (req, res, next) => {
-  const { mobileNo, password } = req.body;
-  const ipAddress = req.ip;
+  try {
+    const { mobileNo, password } = req.body;
+    const ipAddress = req.ip;
 
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
-  if (!account) {
-    res
-      .status(400)
-      .json({ status: 400, message: "Account not available!", data: "" });
-  } else {
-    if (!bcrypt.compareSync(password, account.passwordHash)) {
-      res.status(400).json({
-        status: 400,
-        messae: "Your email or password not matched",
-        data: "",
-      });
-      return;
+    if (!account) {
+      res
+        .status(400)
+        .json({ status: 400, message: "Account not available!", data: "" });
     } else {
-      if (!account.isVerified) {
-        const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
-        if (account.otpDate <= aMinuteAgo) {
-          let userOtp = randomOTPGenerate();
-          account.otp = userOtp;
-          account.otpDate = new Date();
-          updateUserData(account);
-
-          sendRegisterSms(account.phoneNumber, userOtp);
-        }
-        res.status(203).json({
-          status: 203,
-          message:
-            "Your account not verified!, please verify by OTP verification., We have sent OTP on your registered Mobile No.",
+      if (!bcrypt.compareSync(password, account.passwordHash)) {
+        res.status(400).json({
+          status: 400,
+          messae: "Your email or password not matched",
           data: "",
         });
+        return;
       } else {
-        // authentication successful so generate jwt and refresh tokens
-        const token = generateJwtToken(account);
-        const refreshToken = generateRefreshToken(account, ipAddress);
+        if (!account.isVerified) {
+          const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
+          if (account.otpDate <= aMinuteAgo) {
+            let userOtp = randomOTPGenerate();
+            account.otp = userOtp;
+            account.otpDate = new Date();
+            updateUserData(account);
 
-        // save refresh token
-        await refreshToken.save();
+            sendRegisterSms(account.phoneNumber, userOtp);
+          }
+          res.status(203).json({
+            status: 203,
+            message:
+              "Your account not verified!, please verify by OTP verification., We have sent OTP on your registered Mobile No.",
+            data: "",
+          });
+        } else {
+          // authentication successful so generate jwt and refresh tokens
+          const token = generateJwtToken(account);
+          const refreshToken = generateRefreshToken(account, ipAddress);
 
-        // return basic details and tokens
-        res.status(200).json({
-          status: 200,
-          message: "Success",
-          data: {
-            ...basicDetails(account),
-            token,
-            refreshToken: refreshToken.token,
-          },
-        });
+          // save refresh token
+          await refreshToken.save();
+
+          // return basic details and tokens
+          res.status(200).json({
+            status: 200,
+            message: "Success",
+            data: {
+              ...basicDetails(account),
+              token,
+              refreshToken: refreshToken.token,
+            },
+          });
+        }
       }
     }
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
   }
 };
 
 const authenticateAdmin = async ({ mobileNo, password, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  try {
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
-  if (!account || (account && account.role !== "admin")) {
-    throw "Account not available";
+    if (!account || (account && account.role !== "admin")) {
+      throw "Account not available";
+    }
+
+    if (!bcrypt.compareSync(password, account.passwordHash)) {
+      throw "Your email or password not matched";
+    }
+
+    // authentication successful so generate jwt and refresh tokens
+    const token = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
+
+    // save refresh token
+    await refreshToken.save();
+
+    // return basic details and tokens
+    return {
+      ...basicDetails(account),
+      token,
+      refreshToken: refreshToken.token,
+    };
+  } catch (err) {
+    throw err;
   }
-
-  if (!bcrypt.compareSync(password, account.passwordHash)) {
-    throw "Your email or password not matched";
-  }
-
-  // authentication successful so generate jwt and refresh tokens
-  const token = generateJwtToken(account);
-  const refreshToken = generateRefreshToken(account, ipAddress);
-
-  // save refresh token
-  await refreshToken.save();
-
-  // return basic details and tokens
-  return {
-    ...basicDetails(account),
-    token,
-    refreshToken: refreshToken.token,
-  };
 };
 
 const resendOtp = async (req, res, next) => {
-  const { mobileNo } = req.body;
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
-  if (!account) {
-    res
-      .status(400)
-      .json({ status: 400, message: "Account not available", data: "" });
-  }
-  let userOtp = randomOTPGenerate();
-  account.otp = userOtp;
-  account.otpDate = new Date();
-  const userSaveRes = await account.save();
-  if (userSaveRes) {
-    await sendForgotPasswordSms(account.phoneNumber, account.otp)
-      .then(async (smsResult) => {
-        if (smsResult.status == 200) {
-          console.log("smsResult ---", smsResult.data);
-          let jsnRes = smsResult.data[0];
-          if (typeof smsResult.data == "string") {
-            jsnRes = strToObj(smsResult.data);
-          }
-          console.log("jsnRes----", jsnRes);
-          if (jsnRes && jsnRes.code == 1300) {
-            res.status(200).json({
-              status: 200,
-              message: `OTP send succefully to mobile no ${jsnRes.destination}`,
-              data: "",
-            });
+  try {
+    const { mobileNo } = req.body;
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
+    if (!account) {
+      res
+        .status(400)
+        .json({ status: 400, message: "Account not available", data: "" });
+    }
+    let userOtp = randomOTPGenerate();
+    account.otp = userOtp;
+    account.otpDate = new Date();
+    const userSaveRes = await account.save();
+    if (userSaveRes) {
+      await sendForgotPasswordSms(account.phoneNumber, account.otp)
+        .then(async (smsResult) => {
+          if (smsResult.status == 200) {
+            console.log("smsResult ---", smsResult.data);
+            let jsnRes = smsResult.data[0];
+            if (typeof smsResult.data == "string") {
+              jsnRes = strToObj(smsResult.data);
+            }
+            console.log("jsnRes----", jsnRes);
+            if (jsnRes && jsnRes.code == 1300) {
+              res.status(200).json({
+                status: 200,
+                message: `OTP send succefully to mobile no ${jsnRes.destination}`,
+                data: "",
+              });
+            } else {
+              res.status(jsnRes.code).json({
+                status: jsnRes.code,
+                message: jsnRes.cause,
+                data: jsnRes,
+              });
+            }
           } else {
-            res.status(jsnRes.code).json({
-              status: jsnRes.code,
-              message: jsnRes.cause,
-              data: jsnRes,
+            res.status(400).json({
+              status: 400,
+              message: "something went wrong",
+              data: smsResult,
             });
           }
-        } else {
+        })
+        .catch((err) => {
           res.status(400).json({
             status: 400,
             message: "something went wrong",
-            data: smsResult,
+            data: err,
           });
-        }
-      })
-      .catch((err) => {
-        res.status(400).json({
-          status: 400,
-          message: "something went wrong",
-          data: err,
         });
-      });
+    }
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
   }
 };
 
@@ -419,10 +376,10 @@ const revokeToken = async ({ token, ipAddress }) => {
 const verifyEmail = async ({ token }) => {
   const account = await db.Account.findOne({ verificationToken: token });
   if (!account) throw "Verification failed";
-  const referralData = await generateReferralCode(account._id);
+  const referralResult = await generateReferralCode(account._id);
 
-  // account.referralId = referralData._id;
-  // account.referrelCode = referralData.referralCode;
+  // account.referralId = referralResult._id;
+  // account.referrelCode = referralResult.referralCode;
   account.verifiedDate = Date.now();
   account.verificationToken = undefined;
   account.verificationStatus = true;
@@ -430,66 +387,74 @@ const verifyEmail = async ({ token }) => {
 };
 
 const verifyMobileNo = async ({ mobileNo, otp, ipAddress }) => {
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  try {
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
-  if (!account || account.otp != otp) throw "Verification failed";
-  const referralData = await generateReferralCode(account._id);
+    if (!account || account.otp != otp) throw "Verification failed";
+    // const referralResult = await generateReferralCode(account._id);
 
-  // account.referralId = referralData._id;
-  // account.referrelCode = referralData.referralCode;
-  account.verifiedDate = Date.now();
-  account.otp = undefined;
-  account.verificationToken = undefined;
-  account.verificationStatus = true;
-  account.isVerified = true;
-  await account.save();
-  // return account;
+    // // account.referralId = referralResult._id;
+    // account.referrelCode = referralResult.referralCode;
+    account.verifiedDate = Date.now();
+    account.otp = undefined;
+    account.verificationToken = undefined;
+    account.verificationStatus = true;
+    account.isVerified = true;
+    await account.save();
+    // return account;
 
-  // authentication successful so generate jwt and refresh tokens
-  const token = generateJwtToken(account);
-  const refreshToken = generateRefreshToken(account, ipAddress);
+    // authentication successful so generate jwt and refresh tokens
+    const token = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
 
-  // save refresh token
-  await refreshToken.save();
+    // save refresh token
+    await refreshToken.save();
 
-  // return basic details and tokens
-  return {
-    ...basicDetails(account),
-    token,
-    refreshToken: refreshToken.token,
-  };
+    // return basic details and tokens
+    return {
+      ...basicDetails(account),
+      token,
+      refreshToken: refreshToken.token,
+    };
+  } catch (err) {
+    throw err;
+  }
 };
 
 const verifyPhoneNoOtp = async (req, res, next) => {
-  const { mobileNo, otp } = req.body;
-  const ipAddress = req.ip;
-  const account = await db.Account.findOne({ phoneNumber: mobileNo });
+  try {
+    const { mobileNo, otp } = req.body;
+    const ipAddress = req.ip;
+    const account = await db.Account.findOne({ phoneNumber: mobileNo });
 
-  if (!account || account.otp != otp) {
-    res
-      .status(400)
-      .json({ status: 400, message: "Verification failed", data: "" });
-  } else {
-    const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
-    if (account.otpDate <= aMinuteAgo) {
-      res.status(400).json({
-        status: 400,
-        message: "OTP expired!, please resend OTP",
-        data: "",
-      });
+    if (!account || account.otp != otp) {
+      res
+        .status(400)
+        .json({ status: 400, message: "Verification failed", data: "" });
     } else {
-      account.otp = undefined;
-      await account.save();
+      const aMinuteAgo = new Date(Date.now() - 1000 * 60 * 30);
+      if (account.otpDate <= aMinuteAgo) {
+        res.status(400).json({
+          status: 400,
+          message: "OTP expired!, please resend OTP",
+          data: "",
+        });
+      } else {
+        account.otp = undefined;
+        await account.save();
 
-      const token = generateJwtToken(account);
-      const refreshToken = generateRefreshToken(account, ipAddress);
+        const token = generateJwtToken(account);
+        const refreshToken = generateRefreshToken(account, ipAddress);
 
-      res.status(200).json({
-        status: 200,
-        message: "OTP verified successfully.",
-        data: "",
-      });
+        res.status(200).json({
+          status: 200,
+          message: "OTP verified successfully.",
+          data: "",
+        });
+      }
     }
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
   }
 };
 
@@ -663,24 +628,28 @@ const validateResetToken = async ({ token }) => {
 };
 
 const resetPassword = async ({ token, password, phoneNumber }) => {
-  let account = await db.Account.findOne({
-    phoneNumber: phoneNumber,
-  });
+  try {
+    let account = await db.Account.findOne({
+      phoneNumber: phoneNumber,
+    });
 
-  if (!account) throw "Invalid user!";
-  if (
-    account.resetToken.token === token &&
-    account.resetToken.expires > Date.now()
-  ) {
-    // update password and remove reset token
-    account.passwordHash = hash(password);
-    account.pswdString = password;
-    account.passwordResetDate = Date.now();
-    account.resetToken = undefined;
-    account.otp = undefined;
-    await account.save();
-  } else {
-    throw "OTP not valid!";
+    if (!account) throw "Invalid user!";
+    if (
+      account.resetToken.token === token &&
+      account.resetToken.expires > Date.now()
+    ) {
+      // update password and remove reset token
+      account.passwordHash = hash(password);
+      account.pswdString = password;
+      account.passwordResetDate = Date.now();
+      account.resetToken = undefined;
+      account.otp = undefined;
+      await account.save();
+    } else {
+      throw "OTP not valid!";
+    }
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -791,9 +760,8 @@ const getAll2 = async (req, res, next) => {
     let totalBalance = 0;
     let match = {};
     let match2 = {};
-    console.log({ params });
 
-    let searchKeyword = params.searchParams;
+    let searchKeyword = params.search;
     if (searchKeyword) {
       match = {
         $or: [
@@ -803,7 +771,7 @@ const getAll2 = async (req, res, next) => {
       };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "createdAt";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
@@ -811,9 +779,9 @@ const getAll2 = async (req, res, next) => {
       sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
-    if (params.status) {
-      match.statusOfWalletRequest = params.status;
-    }
+    // if (params.status) {
+    //   match.statusOfWalletRequest = params.status;
+    // }
 
     if (params.startDate && params.endDate) {
       var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
@@ -836,12 +804,14 @@ const getAll2 = async (req, res, next) => {
       match2.createdAt = created;
     }
 
-    console.log({ match });
-
     await db.Account.aggregate([
       { $match: match2 },
       { $group: { _id: null, sum: { $sum: "$walletBalance" } } },
-    ]).then((res) => (totalBalance = res[0].sum));
+    ]).then((res) => {
+      if (res.length) {
+        totalBalance = res[0].sum;
+      }
+    });
 
     const total = await db.Account.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
@@ -867,9 +837,16 @@ const getAll2 = async (req, res, next) => {
         },
       },
       { $unwind: "$stateDetail" },
+      {
+        $lookup: {
+          from: "referrals",
+          localField: "referralId",
+          foreignField: "_id",
+          as: "referralDetails",
+        },
+      },
+      { $unwind: "$referralDetails" },
     ];
-
-    console.log(JSON.stringify(aggregateRules));
 
     let userListData = await db.Account.aggregate(aggregateRules);
 
@@ -916,22 +893,26 @@ const getAll2 = async (req, res, next) => {
 };
 
 const getUserById = async (id, ipAddress) => {
-  const account = await db.Account.findOne({ _id: id });
+  try {
+    const account = await db.Account.findOne({ _id: id });
 
-  const token = generateJwtToken(account);
-  const refreshToken = generateRefreshToken(account, ipAddress);
+    const token = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
 
-  // save refresh token
-  await refreshToken.save();
+    // save refresh token
+    await refreshToken.save();
 
-  // return basic details and tokens
-  return {
-    ...basicDetails(account),
-    token,
-    refreshToken: refreshToken.token,
-  };
-  // return basicDetails(account);
-  return account;
+    // return basic details and tokens
+    return {
+      ...basicDetails(account),
+      token,
+      refreshToken: refreshToken.token,
+    };
+    // return basicDetails(account);
+    return account;
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
+  }
 };
 
 const create = async (params) => {
@@ -939,24 +920,17 @@ const create = async (params) => {
     if (await db.Account.findOne({ email: params.email })) {
       throw 'Email "' + params.email + '" is already registered';
     }
-    console.log({ params });
-
     const account = new db.Account(params);
     account.verifiedDate = Date.now();
-
     // hash password
     account.passwordHash = hash(params.password);
     account.pswdString = params.password;
-    console.log({ account });
     // save account
-    // await account.save();
     await account.save().then(async (res) => {
-      console.log({ res });
-      if (params.referralId) {
+      if (params.referenceUserId) {
         await addReferalId(params, res);
       }
     });
-
     return basicDetails(account);
   } catch (err) {
     return err;
@@ -964,32 +938,61 @@ const create = async (params) => {
 };
 
 const update = async (id, params) => {
-  const account = await getAccount(id);
+  try {
+    const account = await getAccount(id);
 
-  // validate (if email was changed)
-  if (
-    params.email &&
-    account.email !== params.email &&
-    (await db.Account.findOne({ email: params.email }))
-  ) {
-    throw 'Email "' + params.email + '" is already taken';
+    // validate (if email was changed)
+    if (
+      params.email &&
+      account.email !== params.email &&
+      (await db.Account.findOne({ email: params.email }))
+    ) {
+      throw 'Email "' + params.email + '" is already taken';
+    }
+
+    // hash password if it was entered
+    if (params.password) {
+      params.passwordHash = hash(params.password);
+      params.pswdString = params.password;
+    }
+    // if (params.transactionPin) {
+    //   params.transactionPin = hash(params.transactionPin);
+    // }
+    // copy params to account and save
+    account.updated = Date.now();
+
+    delete account.referralId;
+    Object.assign(account, params);
+    await account.save();
+
+    return basicDetails(account);
+  } catch (err) {
+    throw err;
   }
+};
 
-  // hash password if it was entered
-  if (params.password) {
-    params.passwordHash = hash(params.password);
-    params.pswdString = params.password;
+const changeStatus = async (id, params) => {
+  try {
+    const account = await getAccount(id);
+    if (params.isActive) {
+      // copy params to account and save
+      account.isActive = true;
+      account.verifiedDate = Date.now();
+      account.otp = undefined;
+      account.verificationToken = undefined;
+      account.verificationStatus = true;
+      account.isVerified = true;
+    }
+    account.updated = Date.now();
+
+    // delete account.referralId;
+    Object.assign(account, params);
+    await account.save();
+
+    return basicDetails(account);
+  } catch (err) {
+    throw err;
   }
-  // if (params.transactionPin) {
-  //   params.transactionPin = hash(params.transactionPin);
-  // }
-
-  // copy params to account and save
-  account.updated = Date.now();
-  Object.assign(account, params);
-  await account.save();
-
-  return basicDetails(account);
 };
 
 const transactionPinUpdate2 = async (req, res, next) => {
@@ -1012,8 +1015,6 @@ const transactionPinUpdate2 = async (req, res, next) => {
           hasTransactionPin: true,
           updated: Date.now(),
         };
-
-        console.log({ payload });
 
         Object.assign(account, payload);
         await account.save().then((result) => {
@@ -1068,7 +1069,7 @@ const transactionPinUpdate2 = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(400).json({
       status: 400,
       message: "something went wrong",
@@ -1154,7 +1155,7 @@ const passwordUpdate2 = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     res.status(400).json({
       status: 400,
       message: "Something went wrong",
@@ -1175,24 +1176,32 @@ const checkPassword = async (params) => {
 };
 
 const updateUserData = async (account) => {
-  account.updated = Date.now();
-  await account.save();
+  try {
+    account.updated = Date.now();
+    await account.save();
 
-  return basicDetails(account);
+    return basicDetails(account);
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
+  }
 };
 
 const _delete = async (id) => {
-  const account = await getAccount(id);
-  await account.remove();
+  try {
+    const account = await getAccount(id);
+    await account.remove();
+  } catch (err) {
+    res.status(400).json({ status: 400, message: "", data: err });
+  }
 };
 
 const getuserFromReferralCode = async (code) => {
   try {
-    const referralData = await db.Referral.findOne({ referralCode: code });
+    const referalResult = await db.Referral.findOne({ referralCode: code });
 
-    if (referralData) {
+    if (referalResult) {
       const account = await db.Account.findOne({
-        _id: referralData.userId,
+        _id: referalResult.userId,
       });
       if (!account) {
         throw "user not found";
@@ -1321,7 +1330,7 @@ const sendVerificationEmail = async (account, origin) => {
 
 const sendPasswordResetPhone = async (account, origin) => {
   let message;
-  console.log("account in send", account);
+
   if (origin) {
     const resetUrl = `${origin}/auth/reset-password?token=${account.resetToken.token}`;
     message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
@@ -1337,10 +1346,6 @@ const sendPasswordResetPhone = async (account, origin) => {
     html: `<h4>Reset Password Email</h4>
                ${message}`,
   });
-};
-
-const getPincode = async (data) => {
-  console.log("data`", data);
 };
 
 const getUserIsFirstLogin = async (id) => {
@@ -1393,7 +1398,6 @@ module.exports = {
   create,
   update,
   delete: _delete,
-  getPincode,
   resendOtp,
 
   getUserIsFirstLogin,
@@ -1402,4 +1406,5 @@ module.exports = {
   passwordUpdate,
   authenticateAdmin,
   passwordUpdate2, // updated
+  changeStatus,
 };

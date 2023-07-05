@@ -363,6 +363,15 @@ const changeTransactionPin = (req, res, next) => {
     .catch(next);
 };
 
+const changeStatus = (req, res, next) => {
+  accountService
+    .changeStatus(req.params.id, req.body)
+    .then((account) =>
+      res.json({ status: 200, data: account, message: "success" })
+    )
+    .catch(next);
+};
+
 const me = (req, res, next) => {
   if (req.headers && req.headers.authorization) {
     var authorization = req.headers.authorization.split(" ")[1],
@@ -429,5 +438,6 @@ router.post("/changeTransactionPin", accountService.transactionPinUpdate2);
 
 router.post("/adminLogin", adminLogin);
 router.get("/me", me);
+router.post("/changeStatus/:id", changeStatus);
 
 module.exports = router;

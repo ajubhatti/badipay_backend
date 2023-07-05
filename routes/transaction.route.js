@@ -7,14 +7,12 @@ const transactionService = require("../controller/transaction.service");
 
 const getAll = (req, res, next) => {
   transactionService
-    .getAll2(req.body)
+    .getAll(req.body)
     .then((transactions) =>
       res.status(200).json({
         type: "success",
         message: "transactions get successfully",
-        data: {
-          transactions,
-        },
+        data: transactions,
       })
     )
     .catch(next);
@@ -46,7 +44,7 @@ const getById = (req, res, next) => {
 
 const getByUserId = (req, res, next) => {
   transactionService
-    .getTransctionByUserId(req.body.userId)
+    .transactionListWithPagination(req.body)
     .then((transactions) =>
       res.json({ status: 200, data: transactions, message: "success" })
     )
@@ -81,12 +79,11 @@ const deleteById = (req, res, next) => {
     .catch(next);
 };
 
-router.post("/getAll", transactionService.getAll);
+router.post("/getAll", getAll);
 router.post("/", create);
-// router.post("/", transactionService.createTransactions);
 router.get("/:id", getById);
-// router.post("/getByUserId", getByUserId);
-router.post("/getByUserId", transactionService.transactionListWithPagination);
+router.post("/getByUserId", getByUserId);
+// router.post("/getByUserId", transactionService.transactionListWithPagination);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
 

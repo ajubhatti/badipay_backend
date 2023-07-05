@@ -1275,10 +1275,6 @@ const sendPasswordResetPhone = async (account, origin) => {
   });
 };
 
-const getPincode = async (data) => {
-  console.log("data`", data);
-};
-
 const getUserIsFirstLogin = async (id) => {
   const account = await getAccount(id);
   let message = "User first time login";
@@ -1329,7 +1325,6 @@ module.exports = {
   create,
   update,
   delete: _delete,
-  getPincode,
   resendOtp,
 
   getUserIsFirstLogin,

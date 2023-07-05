@@ -57,8 +57,8 @@ const getAll = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/:id", getById);
-router.post("/", create);
-// router.post("/", rechargeController.createRecharge);
+// router.post("/", create);
+router.post("/", rechargeController.createNewRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/getRecharges", rechargeController.rechargeListWithPagination);

@@ -130,10 +130,10 @@ const operatorConfigDataPageWise = async (params) => {
       sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
     if (params.apis) {
-      match.serviceApiId = mongoose.Types.ObjectId(params.apis);
+      match.apiId = mongoose.Types.ObjectId(params.apis);
     }
-    if (params.providerType) {
-      match.serviceId = mongoose.Types.ObjectId(params.providerType);
+    if (params.service) {
+      match.serviceId = mongoose.Types.ObjectId(params.service);
     }
     if (params.operator) {
       match.operatorId = mongoose.Types.ObjectId(params.operator);
@@ -186,7 +186,7 @@ const operatorConfigDataPageWise = async (params) => {
       { $unwind: "$operatorData" },
     ];
 
-    if (params.limit) {
+    if (params.limits) {
       aggregateRules.push({ $limit: params.limits });
     }
 
@@ -208,7 +208,7 @@ const operatorConfigDataPageWise = async (params) => {
   }
 };
 
-const scanAndAdd = async () => {
+const addOperatorConfigByScan = async () => {
   try {
     const apis = await db.Apis.find();
     const operator = await db.Operator.find();
@@ -255,5 +255,5 @@ module.exports = {
   delete: _delete,
   getListByType,
   operatorConfigDataPageWise,
-  scanAndAdd,
+  addOperatorConfigByScan,
 };

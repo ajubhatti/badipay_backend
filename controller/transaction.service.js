@@ -6,11 +6,11 @@ const { getBankAccountById } = require("../controller/bankAccounts.service");
 const { fetchAllData } = require("../_middleware/fetchingData");
 const generateRandomNumber = require("../_helpers/randomNumber");
 const { CONSTANT_STATUS } = require("../_helpers/constant");
+const moment = require("moment");
 
-const getAll = async (req, res, next) => {
+const getAll = async (params) => {
   try {
-    const params = req.body;
-    const filter = req.body;
+    const filter = params;
     let match = {};
 
     let searchKeyword = params.search;
@@ -21,6 +21,10 @@ const getAll = async (req, res, next) => {
           { customerNo: { $regex: searchKeyword, $options: "i" } },
         ],
       };
+    }
+
+    if (params.userId) {
+      match.userId = mongoose.Types.ObjectId(params.userId);
     }
 
     if (params.services) {
@@ -44,20 +48,27 @@ const getAll = async (req, res, next) => {
     }
 
     if (params.startDate && params.endDate) {
-      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+      // var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
 
-      startDate.setSeconds(0);
-      startDate.setHours(0);
-      startDate.setMinutes(0);
+      // startDate.setSeconds(0);
+      // startDate.setHours(0);
+      // startDate.setMinutes(0);
 
-      var endDate = new Date(params.endDate);
+      // var endDate = new Date(params.endDate);
 
-      endDate.setHours(23);
-      endDate.setMinutes(59);
-      endDate.setSeconds(59);
+      // endDate.setHours(23);
+      // endDate.setMinutes(59);
+      // endDate.setSeconds(59);
+
+      var start = new Date(params.startDate);
+      start.setHours(0, 0, 0, 0);
+
+      var end = new Date(params.endDate);
+      end.setHours(23, 59, 59, 999);
+
       let created = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: start,
+        $lte: end,
       };
       match.created = created;
     }
@@ -76,7 +87,7 @@ const getAll = async (req, res, next) => {
         $sort: sort,
       },
       { $skip: skipNo },
-      { $limit: params.limits },
+
       {
         $lookup: {
           from: "accounts",
@@ -87,6 +98,12 @@ const getAll = async (req, res, next) => {
       },
       { $unwind: "$userDetail" },
     ];
+
+    if (params.limits) {
+      aggregateRules.push({ $limit: params.limits });
+    }
+
+    console.log(JSON.stringify(aggregateRules));
 
     let walletResult = await db.Transactions.aggregate(aggregateRules).then(
       async (result) => {
@@ -104,26 +121,18 @@ const getAll = async (req, res, next) => {
       }
     );
 
-    res.status(200).json({
-      status: 200,
-      message: "success",
-      data: {
-        sort,
-        filter,
-        count: walletResult.length,
-        page,
-        pages,
-        data: walletResult,
-        total,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: 500,
-      message: "Server Error",
-      data: error,
-    });
+    return {
+      sort,
+      filter,
+      count: walletResult.length,
+      page,
+      pages,
+      data: walletResult,
+      total,
+    };
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
 };
 
@@ -462,10 +471,9 @@ const createTransactions = async (req, res, next) => {
   }
 };
 
-const transactionListWithPagination = async (req, res, next) => {
+const transactionListWithPagination = async (params) => {
   try {
-    const params = req.body;
-    const filter = req.body;
+    const filter = params;
     let match = {};
 
     let searchKeyword = params.search;
@@ -525,7 +533,7 @@ const transactionListWithPagination = async (req, res, next) => {
         $sort: sort,
       },
       { $skip: skipNo },
-      { $limit: params.limits },
+
       // {
       //   $lookup: {
       //     from: "accounts",
@@ -546,28 +554,23 @@ const transactionListWithPagination = async (req, res, next) => {
       // { $unwind: "$paymentMode" },
     ];
 
-    await db.Transactions.aggregate(aggregateRules).then((result) => {
-      res.status(200).json({
-        status: 200,
-        message: "success",
-        data: {
-          sort,
-          filter,
-          count: result.length,
-          page,
-          pages,
-          data: result,
-          total,
-        },
-      });
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: 500,
-      message: "Server Error",
-      data: error,
-    });
+    if (params.limits) {
+      aggregateRules.push({ $limit: params.limits });
+    }
+
+    let result = await db.Transactions.aggregate(aggregateRules);
+    return {
+      sort,
+      filter,
+      count: result.length,
+      page,
+      pages,
+      data: result,
+      total,
+    };
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
 };
 

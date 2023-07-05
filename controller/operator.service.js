@@ -1,5 +1,6 @@
 const db = require("../_helpers/db");
 const mongoose = require("mongoose");
+const { addOperatorConfigByScan } = require("./operatorConfig.services");
 
 const create = async (params) => {
   try {
@@ -10,7 +11,9 @@ const create = async (params) => {
       throw `${params.operatorName} is already added`;
     }
     const operator = new db.Operator(params);
-    return await operator.save();
+    let newOperator = await operator.save();
+    await addOperatorConfigByScan();
+    return newOperator;
   } catch (err) {
     throw err;
   }
@@ -188,7 +191,7 @@ const getOperatorWithPagination = async (params) => {
         $sort: sort,
       },
       { $skip: skipNo },
-      { $limit: params.limits },
+
       // {
       //   $lookup: {
       //     from: "accounts",
@@ -199,6 +202,10 @@ const getOperatorWithPagination = async (params) => {
       // },
       // { $unwind: "$userDetail" },
     ];
+
+    if (params.limits) {
+      aggregateRules.push({ $limit: params.limits });
+    }
 
     const result = await db.Operator.aggregate(aggregateRules);
 
@@ -221,7 +228,14 @@ const _delete = async (id) => {
   try {
     const operator = await getOperator(id);
     await operator.remove();
-    return operator;
+    await db.OperatorConfig.deleteMany({
+      operatorId: mongoose.Types.ObjectId(id),
+    });
+    await db.ServiceDiscount.deleteMany({
+      operatorId: mongoose.Types.ObjectId(id),
+    });
+
+    return "Success";
   } catch (err) {
     throw err;
   }

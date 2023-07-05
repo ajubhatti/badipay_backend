@@ -76,11 +76,11 @@ const getDiscountList = async (params) => {
 const AddbyScan = async () => {
   let opConf = await db.OperatorConfig.find();
   for (let i = 0; i < opConf.length; i++) {
-    let getConfig = await db.ServiceDiscount.findOne({
+    let configData = await db.ServiceDiscount.findOne({
       operatorConfigId: opConf[i]._id,
     });
-    console.log({ getConfig });
-    if (!getConfig) {
+    console.log({ configData });
+    if (!configData) {
       let payload = {
         apiId: opConf[i].apiId,
         serviceId: opConf[i].serviceId,
@@ -92,6 +92,28 @@ const AddbyScan = async () => {
     }
   }
   return await db.ServiceDiscount.find();
+};
+
+const resetDiscountById = async (id) => {
+  try {
+    let configData = await db.ServiceDiscount.findById(id);
+    let payload = {
+      userDiscount: 0,
+      userDiscountType: "number",
+      userDiscountLimit: 1,
+      referalDiscount: 0,
+      referalDiscountType: "number",
+      referalDiscountLimit: 1,
+      adminDiscount: 0,
+      adminDiscountType: "number",
+    };
+
+    Object.assign(configData, payload);
+    configData.updated = Date.now();
+    await configData.save();
+  } catch (err) {
+    throw err;
+  }
 };
 
 const discountListPageWise = async (params) => {
@@ -161,7 +183,7 @@ const discountListPageWise = async (params) => {
       { $unwind: "$operatorData" },
     ];
 
-    if (params.limit) {
+    if (params.limits) {
       aggregateRules.push({ $limit: params.limits });
     }
 
@@ -194,4 +216,5 @@ module.exports = {
   _delete,
   AddbyScan,
   discountListPageWise,
+  resetDiscountById,
 };
