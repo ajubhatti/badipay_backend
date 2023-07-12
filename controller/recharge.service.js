@@ -793,6 +793,14 @@ const rechargeListWithPagination = async (req, res, next) => {
       },
       { $skip: skipNo },
       { $limit: params.limits },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
     ];
 
     const rechargeResult = await db.Recharge.aggregate(aggregateRules);
@@ -812,8 +820,8 @@ const rechargeListWithPagination = async (req, res, next) => {
         transactionRslt.serviceTypeName = serviceType.serviceName || "";
         rechargeResult[i].transactionData = transactionRslt;
       }
-      let userDetail = await db.Account.findById(rechargeResult[i].userId);
-      rechargeResult[i].userDetail = userDetail;
+      // let userDetail = await db.Account.findById(rechargeResult[i].userId);
+      // rechargeResult[i].userDetail = userDetail;
     }
 
     res.status(200).json({

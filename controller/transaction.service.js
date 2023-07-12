@@ -7,6 +7,7 @@ const { fetchAllData } = require("../_middleware/fetchingData");
 const generateRandomNumber = require("../_helpers/randomNumber");
 const { CONSTANT_STATUS } = require("../_helpers/constant");
 const moment = require("moment");
+const { roundOfNumber } = require("../_middleware/middleware");
 
 const getAll = async (params) => {
   try {
@@ -170,6 +171,12 @@ const updateTransactionById = async (id, params) => {
     });
 
     console.log({ transactionData });
+    console.log(
+      "api id --",
+      transactionData[0].apiProvider,
+      "operator ID ---",
+      transactionData[0].operatorId
+    );
 
     //  get user and referal user transaction data
     if (transactionData) {
@@ -177,7 +184,12 @@ const updateTransactionById = async (id, params) => {
         let usrTrscn = transactionData[i];
 
         const accountData = await db.Account.findById(usrTrscn.userId);
-
+        console.log(
+          params.status,
+          usrTrscn.status,
+          params.status != usrTrscn.status,
+          params.status != "success"
+        );
         if (
           params.status &&
           params.status != usrTrscn.status &&
@@ -208,17 +220,28 @@ const updateTransactionById = async (id, params) => {
             await accountData.save();
 
             let transactionPayload = {
-              userBalance: roundOfNumber(usrTrscn.userBalance) || 0,
-              requestAmount: roundOfNumber(usrTrscn.requestAmount) || 0,
+              userBalance: roundOfNumber(
+                usrTrscn.userBalance ? usrTrscn.userBalance : 0
+              ),
+              requestAmount: roundOfNumber(
+                usrTrscn.requestAmount ? usrTrscn.requestAmount : 0
+              ),
               rechargeAmount: 0,
               cashBackAmount: 0,
-              userFinalBalance:
-                roundOfNumber(
-                  usrTrscn.userFinalBalance + usrTrscn.rechargeAmount
-                ) || 0,
-              requestAmountBack: roundOfNumber(usrTrscn.requestAmount) || 0,
-              cashBackAmountBack: roundOfNumber(usrTrscn.cashBackAmount) || 0,
-              rechargeAmountBack: roundOfNumber(usrTrscn.rechargeAmount) || 0,
+              userFinalBalance: roundOfNumber(
+                usrTrscn.userFinalBalance && usrTrscn.rechargeAmount
+                  ? usrTrscn.userFinalBalance + usrTrscn.rechargeAmount
+                  : 0
+              ),
+              requestAmountBack: roundOfNumber(
+                usrTrscn.requestAmount ? usrTrscn.requestAmount : 0
+              ),
+              cashBackAmountBack: roundOfNumber(
+                usrTrscn.cashBackAmount ? usrTrscn.cashBackAmount : 0
+              ),
+              rechargeAmountBack: roundOfNumber(
+                usrTrscn.rechargeAmount ? usrTrscn.rechargeAmount : 0
+              ),
               status: params.status,
               isPendingOrFail: true,
             };
@@ -233,33 +256,33 @@ const updateTransactionById = async (id, params) => {
             });
 
             console.log({ cashBackData });
+            if (cashBackData) {
+              let pyld = {
+                requestAmount: 0,
+                rechargeAmount: 0,
+                cashBackReceive: 0,
+                userCashBack: 0,
+                referralCashBack: 0,
+                netCashBack: 0,
+                requestAmountBckup: cashBackData.requestAmount || 0,
+                rechargeAmountBckup: cashBackData.rechargeAmount || 0,
+                cashBackReceiveBckup: cashBackData.cashBackReceive || 0,
+                userCashBackBckup: cashBackData.userCashBack || 0,
+                referralCashBackBckup: cashBackData.referralCashBack || 0,
+                netCashBackBckup: cashBackData.netCashBack || 0,
+              };
+              if (params.status == CONSTANT_STATUS.PENDING) {
+                pyld.status = params.status;
+              } else {
+                pyld.status = params.status;
+              }
 
-            let pyld = {
-              requestAmount: 0,
-              rechargeAmount: 0,
-              cashBackReceive: 0,
-              userCashBack: 0,
-              referralCashBack: 0,
-              netCashBack: 0,
+              console.log({ pyld });
 
-              // ===========================================
-              requestAmountBckup: cashBackData.requestAmount || 0,
-              rechargeAmountBckup: cashBackData.rechargeAmount || 0,
-              cashBackReceiveBckup: cashBackData.cashBackReceive || 0,
-              userCashBackBckup: cashBackData.userCashBack || 0,
-              referralCashBackBckup: cashBackData.referralCashBack || 0,
-              netCashBackBckup: cashBackData.netCashBack || 0,
-            };
-
-            if (params.status == CONSTANT_STATUS.PENDING) {
-              pyld.status = params.status;
-            } else {
-              pyld.status = params.status;
+              Object.assign(cashBackData, pyld);
+              cashBackData.updated = Date.now();
+              await cashBackData.save();
             }
-
-            Object.assign(cashBackData, pyld);
-            cashBackData.updated = Date.now();
-            await cashBackData.save();
 
             // await db.Cashback.find({}).then((result) => {
             //   console.log(result);
@@ -313,56 +336,148 @@ const updateTransactionById = async (id, params) => {
               transactionId: usrTrscn._id,
             });
 
-            let pyld = { status: CONSTANT_STATUS.REFUND };
+            if (cashBackData) {
+              let pyld = { status: CONSTANT_STATUS.REFUND };
 
-            if (params.status == CONSTANT_STATUS.PENDING) {
-              pyld.status = CONSTANT_STATUS.PENDING;
+              if (params.status == CONSTANT_STATUS.PENDING) {
+                pyld.status = CONSTANT_STATUS.PENDING;
+              }
+
+              Object.assign(cashBackData, pyld);
+              cashBackData.updated = Date.now();
+              await cashBackData.save();
             }
-
-            Object.assign(cashBackData, pyld);
-            cashBackData.updated = Date.now();
-            await cashBackData.save();
           }
         } else if (
           params.status &&
           params.status != usrTrscn.status &&
           params.status == "success"
         ) {
+          console.log({ usrTrscn, accountData });
+
+          let discountData = await db.ServiceDiscount.findOne({
+            apiId: mongoose.Types.ObjectId(usrTrscn.apiProvider),
+            operatorId: mongoose.Types.ObjectId(usrTrscn.operatorId),
+          });
+
+          console.log("check discount data -----", discountData);
+          // -------------------------------------------------------------------------
+          let disAmount = 0;
+          let adminDiscnt = 0;
+          if (discountData) {
+            if (usrTrscn.amount === 0) {
+              const { referalDiscount, referalDiscountType } = discountData;
+              if (referalDiscountType === "percentage") {
+                let percentageAmount = referalDiscount / 100;
+                disAmount = roundOfNumber(
+                  Number(transactionData[0].amount) * percentageAmount
+                );
+              } else {
+                disAmount = roundOfNumber(referalDiscount);
+              }
+            } else {
+              const { userDiscount, userDiscountType } = discountData;
+              if (userDiscountType === "percentage") {
+                let percentageAmount = userDiscount / 100;
+                disAmount = roundOfNumber(
+                  Number(usrTrscn.amount) * percentageAmount
+                );
+              } else {
+                disAmount = roundOfNumber(userDiscount);
+              }
+            }
+
+            const { adminDiscount, adminDiscountType } = discountData;
+            if (adminDiscountType === "percentage") {
+              let percentageAmount = adminDiscount / 100;
+              adminDiscnt = roundOfNumber(
+                Number(params.amount) * percentageAmount
+              );
+            } else {
+              adminDiscnt = roundOfNumber(adminDiscount);
+            }
+          }
+
+          console.log("disAmount ==============>", disAmount);
+          // ---------------------------------------------------------------------------------
+
           let blnc = accountData.walletBalance;
           let dscnt = accountData.rewardedBalance;
 
-          if (usrTrscn.requestAmount) {
-            blnc = blnc != 0 ? blnc - usrTrscn.requestAmount : 0;
-          }
+          console.log("usrTrscn.requestAmount ---", usrTrscn.requestAmount);
 
-          if (usrTrscn.cashBackAmount) {
-            blnc = blnc + usrTrscn.cashBackAmount;
-          }
+          blnc =
+            usrTrscn.requestAmount != 0
+              ? blnc - usrTrscn.requestAmount
+              : blnc - usrTrscn.amount;
 
-          let userDisAmount = usrTrscn.cashBackAmount + dscnt;
+          blnc =
+            usrTrscn.cashBackAmount != 0
+              ? blnc + usrTrscn.cashBackAmount
+              : blnc + disAmount;
+
+          let userDisAmount =
+            usrTrscn.cashBackAmount != 0
+              ? usrTrscn.cashBackAmount + dscnt
+              : disAmount + dscnt;
 
           let userPayload = {
-            discount: userDisAmount,
-            rewardedBalance: userDisAmount,
-            walletBalance: blnc,
+            discount: roundOfNumber(userDisAmount),
+            rewardedBalance: roundOfNumber(userDisAmount),
+            walletBalance: roundOfNumber(blnc),
           };
+
+          console.log("userPayload ----", userPayload);
 
           Object.assign(accountData, userPayload);
           await accountData.save();
 
           let transactionPayload = {
-            userBalance: roundOfNumber(usrTrscn.userBalance) || null,
-            requestAmount: roundOfNumber(usrTrscn.requestAmountBack) || null,
-            rechargeAmount: roundOfNumber(usrTrscn.rechargeAmountBack),
-            cashBackAmount: roundOfNumber(usrTrscn.cashBackAmountBack),
-            userFinalBalance:
-              usrTrscn.userFinalBalance - usrTrscn.rechargeAmountBack,
+            userBalance: roundOfNumber(blnc),
+
+            requestAmount: roundOfNumber(
+              usrTrscn.requestAmountBack
+                ? usrTrscn.requestAmountBack
+                : usrTrscn.requestAmount
+            ),
+
+            rechargeAmount: roundOfNumber(
+              usrTrscn.rechargeAmountBack
+                ? usrTrscn.rechargeAmountBack
+                : usrTrscn.rechargeAmount
+                ? usrTrscn.rechargeAmount
+                : usrTrscn.amount - disAmount
+            ),
+            cashBackAmount: roundOfNumber(
+              usrTrscn.cashBackAmountBack
+                ? usrTrscn.cashBackAmountBack
+                : usrTrscn.cashBackAmount
+                ? usrTrscn.cashBackAmount
+                : disAmount
+            ),
+            userFinalBalance: roundOfNumber(
+              usrTrscn.rechargeAmountBack
+                ? blnc - usrTrscn.rechargeAmountBack
+                : blnc - usrTrscn.rechargeAmount
+            ),
+
+            userFinalBalance: roundOfNumber(blnc),
+
+            // userBalance: roundOfNumber(usrTrscn.userBalance) || null,
+            // requestAmount: roundOfNumber(usrTrscn.requestAmountBack) || null,
+            // rechargeAmount: roundOfNumber(usrTrscn.rechargeAmountBack),
+            // cashBackAmount: roundOfNumber(usrTrscn.cashBackAmountBack),
+            // userFinalBalance:
+            //   usrTrscn.userFinalBalance - usrTrscn.rechargeAmountBack,
+
             requestAmountBack: 0,
             cashBackAmountBack: 0,
             rechargeAmountBack: 0,
             status: params.status,
             isPendingOrFail: false,
           };
+
+          console.log({ transactionPayload });
 
           Object.assign(usrTrscn, transactionPayload);
           await usrTrscn.save();
@@ -371,45 +486,76 @@ const updateTransactionById = async (id, params) => {
             transactionId: usrTrscn._id,
           });
 
-          console.log(
-            { cashBackData },
-            typeof cashBackData.requestAmount,
-            typeof cashBackData.requestAmountBckup
-          );
+          console.log({ cashBackData });
 
-          let pyld = {
-            requestAmount:
-              cashBackData.requestAmount +
-              (cashBackData.requestAmountBckup || 0),
-            rechargeAmount:
-              cashBackData.rechargeAmount +
-              (cashBackData.rechargeAmountBckup || 0),
-            cashBackReceive:
-              cashBackData.cashBackReceive +
-              (cashBackData.cashBackReceiveBckup || 0),
-            userCashBack:
-              cashBackData.userCashBack + (cashBackData.userCashBackBckup || 0),
-            referralCashBack:
-              cashBackData.referralCashBack +
-              (cashBackData.referralCashBackBckup || 0),
-            netCashBack:
-              cashBackData.netCashBack + (cashBackData.netCashBackBckup || 0),
+          if (cashBackData) {
+            let pyld = {
+              requestAmount:
+                (cashBackData.requestAmount || 0) +
+                (cashBackData.requestAmountBckup || 0),
+              rechargeAmount:
+                (cashBackData.rechargeAmount || 0) +
+                (cashBackData.rechargeAmountBckup || 0),
+              cashBackReceive:
+                (cashBackData.cashBackReceive || 0) +
+                (cashBackData.cashBackReceiveBckup || 0),
+              userCashBack:
+                (cashBackData.userCashBack || 0) +
+                (cashBackData.userCashBackBckup || 0),
+              referralCashBack:
+                (cashBackData.referralCashBack || 0) +
+                (cashBackData.referralCashBackBckup || 0),
+              netCashBack:
+                (cashBackData.netCashBack || 0) +
+                (cashBackData.netCashBackBckup || 0),
 
-            // ===========================================
-            requestAmountBckup: 0,
-            rechargeAmountBckup: 0,
-            cashBackReceiveBckup: 0,
-            userCashBackBckup: 0,
-            referralCashBackBckup: 0,
-            netCashBackBckup: 0,
-            status: params.status,
-          };
+              // ===========================================
+              requestAmountBckup: 0,
+              rechargeAmountBckup: 0,
+              cashBackReceiveBckup: 0,
+              userCashBackBckup: 0,
+              referralCashBackBckup: 0,
+              netCashBackBckup: 0,
+              status: params.status,
+            };
 
-          console.log(pyld);
+            console.log({ pyld });
 
-          Object.assign(cashBackData, pyld);
-          cashBackData.updated = Date.now();
-          await cashBackData.save();
+            Object.assign(cashBackData, pyld);
+            cashBackData.updated = Date.now();
+            await cashBackData.save();
+          } else {
+            let cashBackPayload = {
+              requestAmount: usrTrscn.requestAmount,
+              rechargeId: usrTrscn.rechargeId,
+              userId: usrTrscn.userId,
+              transactionId: usrTrscn._id,
+              rechargeAmount:
+                roundOfNumber(
+                  usrTrscn.rechargeAmountBack
+                    ? usrTrscn.rechargeAmountBack
+                    : usrTrscn.rechargeAmount
+                    ? usrTrscn.rechargeAmount
+                    : usrTrscn.amount - disAmount
+                ) || 0,
+              cashBackReceive: roundOfNumber(
+                usrTrscn.cashBackAmountBack
+                  ? usrTrscn.cashBackAmountBack
+                  : usrTrscn.cashBackAmount
+                  ? usrTrscn.cashBackAmount
+                  : disAmount
+              ),
+              userCashBack: roundOfNumber(disAmount),
+              referralCashBack: 0,
+              netCashBack:
+                roundOfNumber(adminDiscnt) - roundOfNumber(disAmount),
+              status: params.status,
+              apiId: usrTrscn.apiProvider,
+              operatorId: usrTrscn.operatorId,
+            };
+
+            const cashBackData = await new db.Cashback(cashBackPayload);
+          }
         }
       }
     }

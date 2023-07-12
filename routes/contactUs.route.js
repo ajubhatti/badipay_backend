@@ -45,6 +45,14 @@ const getAll = (req, res, next) => {
     .catch(next);
 };
 
+const getAllWithPagination = (req, res, next) => {
+  contactUsServices
+    .getWithPagination(req.body)
+    .then((data) => res.json({ status: 200, data: data, message: "success" }))
+    .catch(next);
+};
+
+router.post("/getWithPagination", getAllWithPagination);
 router.get("/", getAll);
 router.get("/:id", authorize(), getById);
 router.post("/", create);
