@@ -4,7 +4,6 @@ const { getBankAccountById } = require("../controller/bankAccounts.service");
 const { getModeById } = require("../controller/paymentModes.service");
 const { getTrasactionById } = require("../controller/transaction.service");
 const transaction = require("../controller/transaction.service");
-const generateRandomNumber = require("../_helpers/randomNumber");
 const mongoose = require("mongoose");
 const { roundOfNumber } = require("../_middleware/middleware");
 
@@ -1037,6 +1036,14 @@ const getwalletListData = async (req, res, next) => {
         },
       },
       { $unwind: "$paymentMode" },
+      // {
+      //   $lookup: {
+      //     from: "bankaccounts",
+      //     localField: "creditAccount",
+      //     foreignField: "_id",
+      //     as: "bankData",
+      //   },
+      // },
     ];
 
     let walletData = await db.WalletTransaction.aggregate(aggregateRules);
@@ -1044,10 +1051,6 @@ const getwalletListData = async (req, res, next) => {
     for (let i = 0; i < walletData.length; i++) {
       let bankData = await getBankAccountById(walletData[i].creditAccount);
       walletData[i].bankData = bankData || {};
-      if (walletData[i].paymentType) {
-        let paymnetModeData = await getModeById(walletData[i].paymentType);
-        walletData[i].paymnetModeData = paymnetModeData || {};
-      }
     }
 
     res.status(200).json({

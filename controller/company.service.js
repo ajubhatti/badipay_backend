@@ -71,15 +71,6 @@ const getAll = async (params) => {
       .limit(limit)
       .exec();
 
-    // const apiRes = await apisService.getAll({});
-    // console.log(apiRes.data);
-    // if (apiRes.data) {
-    //   for (let k = 0; k < apiRes.data.length; k++) {
-    //     for (let i = 0; i < companyResult.length; i++) {
-    //       addDiscountKey(apiRes.data[k], companyResult[i]);
-    //     }
-    //   }
-    // }
 
     result.data = companyResult;
 

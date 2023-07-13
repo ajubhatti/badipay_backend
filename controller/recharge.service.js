@@ -801,6 +801,7 @@ const rechargeListWithPagination = async (req, res, next) => {
           as: "userDetail",
         },
       },
+      { $unwind: "$userDetail" },
     ];
 
     const rechargeResult = await db.Recharge.aggregate(aggregateRules);
