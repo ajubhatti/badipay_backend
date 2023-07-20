@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/files", express.static("./public/files"));
-app.use("/uploads", express.static("./uploads"));
+app.use("/uploads", express.static("./uploads"));''
 
 app.use(bodyParser.json());
 app.use(helmet());

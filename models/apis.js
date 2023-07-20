@@ -18,6 +18,7 @@ const schema = new Schema({
   responseMessage: { type: String, required: false },
   successValue: { type: String, required: false },
   failureValue: { type: String, required: false },
+  pendingValue: { type: String, required: false },
   balanceApiURL: { type: String, required: false },
   balanceResponseValue: { type: String, required: false },
   checkStatusURL: { type: String, required: false },

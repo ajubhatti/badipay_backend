@@ -5,7 +5,6 @@ const { updateTransactionById } = require("./transaction.service");
 const { CONSTANT_STATUS } = require("../_helpers/constant");
 const mongoose = require("mongoose");
 const { roundOfNumber } = require("../_middleware/middleware");
-const moment = require("moment");
 const { operatorConfigDataPageWise } = require("./operatorConfig.services");
 const {
   successResponseByRechargeWale,
@@ -558,7 +557,6 @@ const rechargeFunction = async (params, operator, filteredOperatorConfig) => {
       }
     }
 
-    console.log("filteredOperatorConfig--560----", filteredOperatorConfig);
     let rechargeRes = await doRecharge(filteredOperatorConfig, payload);
     console.log("rechargeRes--566----", rechargeRes);
     if (rechargeRes) {
@@ -573,45 +571,19 @@ const rechargeFunction = async (params, operator, filteredOperatorConfig) => {
   }
 };
 
-const doRecharge = async (filterOperatorConfig, payload) => {
-  try {
-    const { apiName } = filterOperatorConfig.apiData;
-
-    if (apiName == "rechargewale") {
-      return await RecharegeWaleRecharge(payload);
-    }
-
-    if (apiName == "Ambika") {
-      return await ambikaRecharge(payload);
-    }
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-const ambikaRecharge = async (params) => {
+const doRecharge = async (apiData, params) => {
   try {
     const { amount, operatorCode, regMobileNumber } = params;
 
-    let longitude = 72.8399872;
-    let latitude = 21.1910656;
-    let areaPincode = 395002;
-    let optional1 = "";
-    let optional2 = "";
-    let optional3 = "";
-    let optional4 = "";
-    let AMBIKA_TOKEN = "759f6d09ef62ec7c86da53e986151519";
-    let AMBIKA_USERID = 16900;
-    let AMBIKA_CUSTOMERNO = 7227062486;
-
-    let token = process.env.AMBIKA_TOKEN || AMBIKA_TOKEN;
-    let userID = process.env.AMBIKA_USERID || AMBIKA_USERID;
-    let cutomerNo = process.env.AMBIKA_CUSTOMERNO || AMBIKA_CUSTOMERNO;
     let timeStamp = Math.round(new Date().getTime() / 1000);
+    let serviceUrl = apiData.apiData.requestURL;
+    serviceUrl = serviceUrl.replace("_amount", amount);
+    serviceUrl = serviceUrl.replace("_spkey", operatorCode);
+    serviceUrl = serviceUrl.replace("_account", regMobileNumber);
+    serviceUrl = serviceUrl.replace("_apirequestid", timeStamp);
+    serviceUrl = serviceUrl.replace("_apikey", apiData.apiData.token);
 
-    let serviceUrl = `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${regMobileNumber}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${timeStamp}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${cutomerNo}&Pincode=${areaPincode}&Format=1`;
-
-    console.log("service url ambika ---------------------------", serviceUrl);
+    console.log("service url ---------------------------", serviceUrl);
 
     return await axios
       .get(serviceUrl)
@@ -623,30 +595,23 @@ const ambikaRecharge = async (params) => {
       });
   } catch (err) {
     console.error(err);
-    throw err;
   }
 };
 
-const RecharegeWaleRecharge = async (params) => {
+const newRechargeFn = async (apiData, params) => {
+  console.log({ apiData, params });
   try {
     const { amount, operatorCode, regMobileNumber } = params;
 
     let timeStamp = Math.round(new Date().getTime() / 1000);
-    let mobileNo = 8200717122;
-    let apiKey = "QfnXHtK9ehMwULqzwY9PimddkEGksbLKBpr";
-    let refNo = timeStamp;
-    let reqType = "RECH";
-    let serviceCode = operatorCode;
-    let customerNo = regMobileNumber;
-    let refMobileNo = "";
-    let amounts = amount;
-    let stv = 0;
+    let serviceUrl = apiData.apiData.requestURL;
+    serviceUrl = serviceUrl.replace("_amount", amount);
+    serviceUrl = serviceUrl.replace("_spkey", operatorCode);
+    serviceUrl = serviceUrl.replace("_account", regMobileNumber);
+    serviceUrl = serviceUrl.replace("_apirequestid", timeStamp);
+    serviceUrl = serviceUrl.replace("_apikey", apiData.apiData.token);
 
-    let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
-    console.log(
-      "service url recharge wale ---------------------------",
-      serviceUrl
-    );
+    console.log("service url ---------------------------", serviceUrl);
 
     return await axios
       .get(serviceUrl)

@@ -109,11 +109,13 @@ const createWallet = async (req, res, next) => {
     }
 
     let accountDetail = await db.Account.findById({ _id: params.userId });
-    console.log("account detail ---------------", accountDetail);
+
     let pyld = {
-      pendingBalance: accountDetail.pendingBalance + params.requestAmount,
+      pendingBalance:
+        roundOfNumber(accountDetail.pendingBalance || 0) +
+        roundOfNumber(params.requestAmount || 0),
     };
-    console.log({ pyld });
+
     Object.assign(accountDetail, pyld);
     await accountDetail.save();
     let payload = {
@@ -175,7 +177,7 @@ const createWallet = async (req, res, next) => {
       });
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     return res.status(500).json({
       status: 500,
       message: "server error",
@@ -249,10 +251,7 @@ const update = async (id, params) => {
 
 const updateExistingBalance = async (params) => {
   try {
-    console.log({ params });
     let accountDetail = await db.Account.findOne({ _id: params.userId });
-    // let accountDetail = await accountsService.getById(params.userId);
-    console.log({ accountDetail });
 
     let calBalance = 0;
 
@@ -272,8 +271,6 @@ const updateExistingBalance = async (params) => {
       // });
 
       // let userWalletData = walletTransactionData;
-
-      // console.log({ userWalletData });
 
       // let requestPayload = {
       //   userId: params.userId,
@@ -325,9 +322,9 @@ const updateExistingBalance = async (params) => {
     } else {
       throw "user not found";
     }
-  } catch (e) {
-    console.log(e);
-    return e;
+  } catch (err) {
+    console.error(err);
+    return err;
   }
 };
 
@@ -356,7 +353,6 @@ const getTransctionByUserId = async (userId) => {
 
 const updateWalletStatus = async (params) => {
   try {
-    console.log({ params });
     // if (params.password) {
     //   const account = await db.Account.findOne({ _id: userId });
     //   if (!bcrypt.compareSync(password, account.passwordHash)) {
@@ -365,7 +361,6 @@ const updateWalletStatus = async (params) => {
     // }
 
     const walletTransactionData = await getWalletTransactionById(params.id);
-    console.log({ walletTransactionData });
 
     delete params.id;
     delete params.userId;
@@ -374,13 +369,14 @@ const updateWalletStatus = async (params) => {
 
     // for deduction amount by admin
     if (params.amount) {
-      approveAmount =
-        approveAmount > 0 ? approveAmount - params.amount : approveAmount;
-      params.debitAmount = params.amount;
+      approveAmount = roundOfNumber(
+        approveAmount > 0 ? approveAmount - params.amount : approveAmount
+      );
+      params.debitAmount = roundOfNumber(params.amount);
     }
 
-    params.approveAmount = approveAmount;
-    params.finalWalletAmount = approveAmount;
+    params.approveAmount = roundOfNumber(approveAmount);
+    params.finalWalletAmount = roundOfNumber(approveAmount);
     params.statusChangeDate = new Date();
 
     Object.assign(walletTransactionData, params);
@@ -389,166 +385,42 @@ const updateWalletStatus = async (params) => {
     if (walletRes) {
       if (params.statusOfWalletRequest === "approve") {
         var account = await db.Account.findOne({
-          _id: walletTransactionData.userId,
+          _id: walletRes.userId,
         });
+
         let walletCount =
           roundOfNumber(account.walletBalance || 0) +
-          roundOfNumber(walletTransactionData.approveAmount || 0);
+          roundOfNumber(walletRes.approveAmount || 0);
 
         let userPayload = {
-          walletBalance: walletCount,
+          walletBalance: roundOfNumber(walletCount || 0),
           pendingBalance:
             roundOfNumber(account.pendingBalance || 0) -
-            roundOfNumber(params.amount || 0),
+            roundOfNumber(walletRes.requestAmount || 0),
         };
+
         Object.assign(account, userPayload);
         await account.save();
 
         let transactionData = await getTrasactionById(walletRes.transactionId);
 
         let transactionPayload = {
-          userId: walletTransactionData.userId,
-          amount: walletCount || "",
-          type: "debit",
+          userId: walletRes.userId,
+          amount: roundOfNumber(walletCount || 0),
           status: "success",
           description: params.reason || "",
-          userBalance: roundOfNumber(transactionData.userBalance || 0) || 0,
-          userFinalBalance: walletCount,
-          requestAmount: roundOfNumber(
-            walletTransactionData.requestAmount || 0
-          ),
+          userBalance: roundOfNumber(transactionData.userBalance || 0),
+          userFinalBalance: roundOfNumber(walletCount),
+          requestAmount: roundOfNumber(walletRes.requestAmount || 0),
         };
         Object.assign(transactionData, transactionPayload);
+
         await transactionData.save();
       }
       return walletRes;
     }
   } catch (err) {
     return err;
-  }
-};
-
-const getWalletWithPagination2 = async (params) => {
-  let perPage = 3;
-  let page = params.page || 1;
-  let searchKeyword = params.search;
-
-  let searchObj = {};
-  if (searchKeyword) {
-    searchObj = /^(?:\d*\.\d{1,2}|\d+)$/.test(searchKeyword)
-      ? {
-          $or: [{ discount: searchKeyword }, { price: searchKeyword }],
-        }
-      : { name: new RegExp(`${searchKeyword.toString().trim()}`, "i") };
-  }
-  // tmpSearch = { name: new RegExp(search, 'i') }
-
-  products
-    .find(searchObj)
-    .sort({ name: 1 })
-    .skip(perPage * page - perPage)
-    .limit(perPage)
-    .exec(function (err, docs) {
-      products.count(searchObj).exec(function (err, count) {
-        return {
-          search: searchKeyword,
-          quotes: docs,
-          current: page,
-          pages: Math.ceil(count / perPage),
-        };
-      });
-    });
-};
-
-const getWalletWithPagination3 = async (req, res, next) => {
-  const params = req.body;
-  const { userId } = params;
-  const orderByColumn = params.order_by_column || "created";
-  const orderByDirection = params.order_by_direction || "DESC";
-  const page = params.page || 1;
-  const limit = params.limit || 20;
-  const where = {};
-
-  if (params.status) {
-    where.status = params.status;
-  }
-  if (params.userId) {
-    where.userId = params.userId;
-  }
-  const images = await db.WalletTransaction.find()
-    .where(where)
-    .orderBy(orderByColumn, orderByDirection)
-    .limit(limit)
-    .offset((page - 1) * limit);
-
-  res.status(200).json({ status: 200, data: images, message: suuccss });
-};
-
-const getAllData2 = async (req, res, next) => {
-  //const _ispublished = req.body.published;
-  const { userId } = req.body;
-  const match = {};
-  const sort = {};
-
-  if (req.body.sortBy && req.body.orderBy) {
-    sort[req.body.sortBy] = req.body.orderBy == "DESC" ? -1 : 1;
-  }
-
-  try {
-    await db.WalletTransaction.find({ userId })
-      .sort(sort)
-      .skip(parseInt(req.body.skip))
-      .limit(parseInt(req.body.limit))
-      .then((result) => {
-        res.status(200).json({ status: 200, data: result, message: "success" });
-      });
-  } catch (error) {
-    res.status(500).send(error);
-  }
-};
-
-// exaple for sorting and pagination
-//
-//input : {
-//   "query":{"name":"jo"}
-//   "page":1,
-//   "limit":3
-// }
-
-const getDataExample = async (req, res) => {
-  try {
-    const filter = req.body.query;
-    let where = {};
-    if (filter.name) {
-      where.name = { $regex: filter.name, $options: "i" };
-    }
-    let query = User.find(where);
-    const page = parseInt(req.body.page) || 1;
-    const pageSize = parseInt(req.body.limit) || 10;
-    const skip = (page - 1) * pageSize;
-    const total = await User.countDocuments(where);
-    const pages = Math.ceil(total / pageSize);
-
-    if (page > pages) {
-      return res.status(404).json({
-        status: "fail",
-        message: "No page found",
-      });
-    }
-    result = await query.skip(skip).limit(pageSize);
-    res.json({
-      status: "success",
-      filter,
-      count: result.length,
-      page,
-      pages,
-      data: result,
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: "Server Error",
-    });
   }
 };
 
@@ -1086,8 +958,6 @@ module.exports = {
   getTransctionByUserId,
   updateWalletStatus,
   getAllData,
-  getAllData2,
-  getWalletWithPagination3,
 
   newGetData,
   queryBlogPostsByUser,

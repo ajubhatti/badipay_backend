@@ -10,6 +10,7 @@ const {
   sendForgotPasswordSms,
   sendRegisterSms,
 } = require("../_helpers/send-sms");
+const { roundOfNumber } = require("../_middleware/middleware");
 
 const register = async (params, origin) => {
   try {
@@ -809,7 +810,7 @@ const getAll2 = async (req, res, next) => {
       { $group: { _id: null, sum: { $sum: "$walletBalance" } } },
     ]).then((res) => {
       if (res.length) {
-        totalBalance = res[0].sum;
+        totalBalance = roundOfNumber(res[0].sum);
       }
     });
 
