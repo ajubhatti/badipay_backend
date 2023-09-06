@@ -44,6 +44,9 @@ const testRouter = require("./test.route");
 const operatorConfigRouter = require("./operatorConfig.route");
 const uploadRouter = require("./upload.route");
 const operatorRouter = require("./operator.route");
+const PaymentGatewayRouter = require("./paymentGateways.route");
+const rechargeComplaintsRouter = require("./rechargeComplaints.route");
+const callBackRouter = require("./callBack.route");
 
 // ==========================================================================
 
@@ -117,6 +120,10 @@ router.use("/operatorConfig", operatorConfigRouter);
 
 router.use("/file", uploadRouter);
 router.use("/operator", operatorRouter);
+router.use("/paymentGateway", PaymentGatewayRouter);
+router.use("/callBack", callBackRouter);
+router.use("/rechargeComplaint", rechargeComplaintsRouter);
+
 // =================================================================
 
 module.exports = router;

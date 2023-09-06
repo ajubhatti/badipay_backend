@@ -55,6 +55,24 @@ const getAll = (req, res, next) => {
     .catch(next);
 };
 
+const rechargeCallBack = (req, res, next) => {
+  rechargeController
+    .rechargeCallBack(req)
+    .then((rechargeData) =>
+      res.json({ status: 200, data: rechargeData, message: "success" })
+    )
+    .catch(next);
+};
+
+const updateComplaintsStatus = (req, res, next) => {
+  rechargeController
+    .updateComplaintsStatus(req)
+    .then((rechargeData) =>
+      res.json({ status: 200, data: rechargeData, message: "success" })
+    )
+    .catch(next);
+};
+
 router.get("/", getAll);
 router.get("/:id", getById);
 // router.post("/", create);
@@ -62,5 +80,7 @@ router.post("/", rechargeController.createNewRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/getRecharges", rechargeController.rechargeListWithPagination);
+router.post("/rechargeCallBack", rechargeCallBack);
+router.post("/updateComplaintsStatus", updateComplaintsStatus);
 
 module.exports = router;

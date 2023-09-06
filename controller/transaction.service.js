@@ -8,6 +8,7 @@ const generateRandomNumber = require("../_helpers/randomNumber");
 const { CONSTANT_STATUS } = require("../_helpers/constant");
 const moment = require("moment");
 const { roundOfNumber } = require("../_middleware/middleware");
+const dayjs = require("dayjs");
 
 const getAll = async (params) => {
   try {
@@ -649,21 +650,23 @@ const transactionListWithPagination = async (params) => {
     if (params.startDate && params.endDate) {
       var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
 
-      startDate.setSeconds(0);
-      startDate.setHours(0);
-      startDate.setMinutes(0);
+      var start = new Date(params.startDate);
+      start.setHours(0, 0, 0, 0);
 
-      var endDate = new Date(params.endDate);
+      var end = new Date(params.endDate);
+      end.setHours(23, 59, 59, 999);
 
-      endDate.setHours(23);
-      endDate.setMinutes(59);
-      endDate.setSeconds(59);
+      const start1 = dayjs().startOf("day"); // set to 12:00 am today
+      const end1 = dayjs().endOf("day"); // set to 23:59 pm today
+
       let created = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: start1,
+        $lte: end1,
       };
-      match.created = created;
+      match.createdAt = created;
     }
+
+    console.log({ match });
 
     const total = await db.Transactions.find().countDocuments(match);
     const page = parseInt(params.page) || 1;

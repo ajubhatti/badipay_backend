@@ -14,7 +14,12 @@ const schema = new Schema({
   status: {
     type: String,
     enum: ["pending", "failed", "success", "refund"],
-    default: "failed",
+    default: "pending",
+  },
+  complainStatus: {
+    type: String,
+    enum: ["", "pending", "failed", "success", "refund"],
+    default: "",
   },
   created: { type: Date, default: Date.now },
   rechargeData: { type: Object, default: {} },

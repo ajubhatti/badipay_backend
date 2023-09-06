@@ -100,6 +100,34 @@ const changeWalletStatus = (req, res, next) => {
     .catch(next);
 };
 
+const addByPaymentGateway = (req, res, next) => {
+  console.log("check----", req.user.id);
+  walletTransaction
+    .addByPaymentGateway(req.user.id, req.body)
+    .then((wallet) => {
+      res.status(200).json({ status: 200, message: "success", data: wallet });
+    })
+    .catch(next);
+};
+
+const checkPaymentGatewayStatus = (req, res, next) => {
+  walletTransaction
+    .checkPaymentGatewayStatus(req.body)
+    .then((wallet) => {
+      res.status(200).json({ status: 200, message: "success", data: wallet });
+    })
+    .catch(next);
+};
+
+const paymentGatewayCallback = (req, res, next) => {
+  walletTransaction
+    .paymentGatewayCallback(req.body)
+    .then((wallet) => {
+      res.status(200).json({ status: 200, message: "success", data: wallet });
+    })
+    .catch(next);
+};
+
 router.post("/getAll", getAll);
 router.post("/", walletService.createWallet);
 router.get("/:id", getById);
@@ -110,5 +138,8 @@ router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);
 router.post("/updateWalletStatus", changeWalletStatus);
 router.post("/getWallet", walletService.getwalletListData);
+router.post("/addByPaymentGateway", authorize(), addByPaymentGateway);
+router.post("/checkPaymentGatewayStatus", checkPaymentGatewayStatus);
+router.post("/paymentGatewayCallback", paymentGatewayCallback);
 
 module.exports = router;

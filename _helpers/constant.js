@@ -10,4 +10,21 @@ module.exports = Object.freeze({
     SUCCESS: "success",
     REFUND: "refund",
   },
+
+  AMBIKA_STATUS: {
+    1: "Pending",
+    2: "Sucess",
+    3: "Failed",
+    4: "Refund",
+  },
+
+  RECHARGEWALE_STATUS: {
+    0: "Pending/Request Accepted",
+    1: "Success",
+    2: "Operator Failed",
+    3: "System Failed",
+    4: "On Hold",
+    5: "Refunded",
+    6: "In Process",
+  },
 });

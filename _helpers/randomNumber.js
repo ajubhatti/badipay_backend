@@ -3,7 +3,7 @@ function generateRandomNumber(n) {
     max = 12 - add; // 12 is the min safe number Math.random() can generate without it starting to pad the end with zeros.
 
   if (n > max) {
-    return generate(max) + generate(n - max);
+    return generateRandomNumber(max) + generateRandomNumber(n - max);
   }
 
   max = Math.pow(10, n + add);

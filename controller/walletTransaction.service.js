@@ -6,6 +6,9 @@ const { getTrasactionById } = require("../controller/transaction.service");
 const transaction = require("../controller/transaction.service");
 const mongoose = require("mongoose");
 const { roundOfNumber } = require("../_middleware/middleware");
+const { default: axios } = require("axios");
+const generateRandomNumber = require("../_helpers/randomNumber");
+const { CONSTANT_STATUS } = require("../_helpers/constant");
 
 const getAll = async (params) => {
   let walletTransactionData = await db.WalletTransaction.aggregate([
@@ -407,7 +410,7 @@ const updateWalletStatus = async (params) => {
         let transactionPayload = {
           userId: walletRes.userId,
           amount: roundOfNumber(walletCount || 0),
-          status: "success",
+          status: CONSTANT_STATUS.SUCCESS,
           description: params.reason || "",
           userBalance: roundOfNumber(transactionData.userBalance || 0),
           userFinalBalance: roundOfNumber(walletCount),
@@ -947,6 +950,156 @@ const getwalletListData = async (req, res, next) => {
   }
 };
 
+const addByPaymentGateway = async (userId, params) => {
+  try {
+    console.log({ userId, params });
+    let payload = {
+      key: "feadb15b-971e-47d2-bd45-a1b5c8050bfa",
+      client_txn_id: await generateRandomNumber(12),
+      amount: params.amount,
+      p_info: "Badipay",
+      customer_name: "Badipay",
+      customer_email: "badipayservice@gmail.com",
+      customer_mobile: "8200717122",
+      redirect_url: "http://badipay.co.in",
+      udf1: "user defined field 1 (max 25 char)",
+      udf2: "user defined field 2 (max 25 char)",
+      udf3: "user defined field 3 (max 25 char)",
+    };
+    console.log({ payload });
+    return await axios
+      .post("https://merchant.upigateway.com/api/create_order", payload)
+      .then(async (res) => {
+        console.log("res check status data --------", res.data);
+        let pyld = {
+          userId: userId,
+          orderId: res.data.data.order_id,
+          amount: params.amount,
+          clientTxnId: payload.client_txn_id,
+        };
+
+        const transactionData = new db.paymentGatewayTxn(pyld);
+        await transactionData.save();
+
+        return res.data;
+      })
+      .catch((err) => {
+        console.error({ err });
+        return err;
+      });
+  } catch (err) {
+    console.error({ err });
+    throw err;
+  }
+};
+
+const checkPaymentGatewayStatus = async (params) => {
+  try {
+    let txnData = await db.paymentGatewayTxn.findOne({
+      orderId: params.txnId,
+    });
+
+    let payload = {
+      key: "feadb15b-971e-47d2-bd45-a1b5c8050bfa",
+      client_txn_id: txnData.clientTxnId,
+      txn_date: params.txnDate,
+    };
+    return await axios
+      .post("https://merchant.upigateway.com/api/check_order_status", payload)
+      .then((res) => {
+        console.log("res check status data --------", res.data);
+        return res.data;
+      })
+      .catch((err) => {
+        throw err;
+      });
+  } catch (err) {
+    throw err;
+  }
+};
+
+const paymentGatewayCallback = async (params) => {
+  try {
+    console.log({ params });
+    let txnData = await db.paymentGatewayTxn.findOne({ orderId: params.id });
+    console.log({ txnData });
+    let accountDetail = await db.Account.findOne({ _id: txnData.userId });
+    console.log({ accountDetail });
+    if (params.status === "success") {
+      let pyld = {
+        walletBalance:
+          roundOfNumber(accountDetail.walletBalance || 0) +
+          roundOfNumber(params.amount || 0),
+      };
+
+      console.log({ pyld });
+
+      Object.assign(accountDetail, pyld);
+      await accountDetail.save();
+    }
+
+    let payload = {
+      userId: txnData.userId,
+      amount: roundOfNumber(params.amount) || null,
+      slipNo: params.client_txn_id || "",
+      remark: params.remark || "",
+      type: "credit",
+      status:
+        params.status === "success"
+          ? CONSTANT_STATUS.SUCCESS
+          : CONSTANT_STATUS.FAILED,
+      description: params.description || {},
+      transactionId: (await db.Transactions.countDocuments()) + 1,
+      totalAmount: null,
+      customerNo: "",
+      operatorName: "",
+      userBalance: roundOfNumber(accountDetail.walletBalance) || null,
+      requestAmount: roundOfNumber(params.amount) || null,
+      cashBackAmount: null,
+      rechargeAmount: null,
+      userFinalBalance:
+        roundOfNumber(accountDetail.walletBalance + params.amount) || null,
+    };
+
+    console.log({ payload });
+
+    const transactionData = new db.Transactions(payload);
+    let transactionSave = await transactionData.save();
+
+    if (transactionSave) {
+      let lastCount = await db.WalletTransaction.countDocuments();
+
+      let temp = JSON.stringify(params);
+      let paramsResult = JSON.parse(temp);
+
+      if (transactionSave) {
+        let wltPyld = {
+          userId: txnData.userId,
+          requestAmount: roundOfNumber(params.amount) || null,
+          slipNo: params.client_txn_id || "",
+          remark: params.remark || "",
+          creditAccount: "64d9255163cb1e6b344bc075",
+          walletTransactionId: lastCount + 1,
+          transactionId: transactionSave._id,
+          amountType: "credit",
+          finalWalletAmount: roundOfNumber(transactionSave.userFinalBalance),
+          approveAmount: roundOfNumber(params.amount),
+          approveDate: new Date(),
+          statusChangeDate: new Date(),
+          statusOfWalletRequest: "approve",
+          paymentType: "6365039cf2c7df71df2579fa",
+        };
+        console.log({ wltPyld });
+        const walletTransactionData = new db.WalletTransaction(wltPyld);
+        let walletSave = await walletTransactionData.save();
+      }
+    }
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
+};
+
 module.exports = {
   createWallet,
   create2,
@@ -966,4 +1119,7 @@ module.exports = {
 
   walletListDataPageWise,
   getwalletListData,
+  addByPaymentGateway,
+  checkPaymentGatewayStatus,
+  paymentGatewayCallback,
 };

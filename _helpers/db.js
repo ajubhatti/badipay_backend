@@ -73,5 +73,9 @@ module.exports = {
   Test: require("../models/test"),
   OperatorConfig: require("../models/operatorConfig"),
   Operator: require("../models/operator"),
+  PaymentGateway: require("../models/paymentGateways"),
+  paymentGatewayTxn: require("../models/paymentGatewayTxn"),
+  CallBack: require("../models/callBack"),
+  RechargeComplaints: require("../models/rechargeComplaints"),
   isValidId,
 };
