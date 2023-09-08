@@ -912,6 +912,7 @@ const getOperatorById = async (params) => {
 
 const updateRechargeById = async (id, params) => {
   try {
+    console.log({ id, params });
     const result = await getRecharge(id);
 
     Object.assign(result, params);
@@ -957,6 +958,7 @@ const _delete = async (id) => {
 
 const getRecharge = async (id) => {
   try {
+    console.log({ id });
     if (!db.isValidId(id)) throw "Recharge not found";
     const result = await db.Recharge.findById(id);
     if (!result) throw "Recharge not found";
@@ -1103,11 +1105,15 @@ const getRechargeData = async (params) => {
 const rechargeCallBack = async (req) => {
   try {
     let params = req.query;
+    console.log({ params });
     let resource = params;
     await create({ resource });
 
     let rechargeData = await getRechargeData(params);
-    if (rechargeData.rechargeByApi) {
+    if (
+      rechargeData.rechargeByApi &&
+      rechargeData.complaintStatus !== CONSTANT_STATUS.SUCCESS
+    ) {
       if (
         rechargeData.rechargeByApi.refundedValue ==
         (params.status || params.Status)

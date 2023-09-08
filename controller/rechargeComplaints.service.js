@@ -89,7 +89,7 @@ const createRechargeComplaints = async (params) => {
           let rechargeResult = await db.Recharge.findById(params._id);
 
           Object.assign(rechargeResult, {
-            complainStatus: CONSTANT_STATUS.PENDING,
+            complaintStatus: CONSTANT_STATUS.PENDING,
           });
 
           await rechargeResult.save();

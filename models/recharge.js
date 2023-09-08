@@ -16,7 +16,7 @@ const schema = new Schema({
     enum: ["pending", "failed", "success", "refund"],
     default: "pending",
   },
-  complainStatus: {
+  complaintStatus: {
     type: String,
     enum: ["", "pending", "failed", "success", "refund"],
     default: "",
