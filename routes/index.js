@@ -1,20 +1,5 @@
 const router = require("express").Router();
 
-// const authRoutes = require("./auth");
-// const userRoutes = require("./user");
-// const addressRoutes = require("./address");
-// const newsletterRoutes = require("./newsletter");
-// const productRoutes = require("./product");
-// const categoryRoutes = require("./category");
-// const brandRoutes = require("./brand");
-// const contactRoutes = require("./contact");
-// const merchantRoutes = require("./merchant");
-// const cartRoutes = require("./cart");
-// const orderRoutes = require("./order");
-// const reviewRoutes = require("./review");
-// const wishlistRoutes = require("./wishlist");
-
-// ==========================================================================
 const usersRouter = require("./user.route");
 const accountRouter = require("./accounts.route");
 const servicesRouter = require("./services.route");
@@ -47,49 +32,8 @@ const operatorRouter = require("./operator.route");
 const PaymentGatewayRouter = require("./paymentGateways.route");
 const rechargeComplaintsRouter = require("./rechargeComplaints.route");
 const callBackRouter = require("./callBack.route");
+const utilityRouter = require("./utility.route");
 
-// ==========================================================================
-
-// // auth routes
-// router.use("/auth", authRoutes);
-
-// // user routes
-// router.use("/user", userRoutes);
-
-// // address routes
-// router.use("/address", addressRoutes);
-
-// // newsletter routes
-// router.use("/newsletter", newsletterRoutes);
-
-// // product routes
-// router.use("/product", productRoutes);
-
-// // category routes
-// router.use("/category", categoryRoutes);
-
-// // brand routes
-// router.use("/brand", brandRoutes);
-
-// // contact routes
-// router.use("/contact", contactRoutes);
-
-// // merchant routes
-// router.use("/merchant", merchantRoutes);
-
-// // cart routes
-// router.use("/cart", cartRoutes);
-
-// // order routes
-// router.use("/order", orderRoutes);
-
-// // Review routes
-// router.use("/review", reviewRoutes);
-
-// // Wishlist routes
-// router.use("/wishlist", wishlistRoutes);
-
-// =================================================================
 router.use("/users", usersRouter);
 router.use("/auth", accountRouter);
 router.use("/service", servicesRouter);
@@ -117,12 +61,12 @@ router.use("/cashback", cashbackRouter);
 router.use("/adminLoyalty", adminLoyaltyRouter);
 router.use("/test", testRouter);
 router.use("/operatorConfig", operatorConfigRouter);
-
 router.use("/file", uploadRouter);
 router.use("/operator", operatorRouter);
 router.use("/paymentGateway", PaymentGatewayRouter);
 router.use("/callBack", callBackRouter);
 router.use("/rechargeComplaint", rechargeComplaintsRouter);
+router.use("/utility", utilityRouter);
 
 // =================================================================
 

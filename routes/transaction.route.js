@@ -86,5 +86,6 @@ router.post("/getByUserId", getByUserId);
 // router.post("/getByUserId", transactionService.transactionListWithPagination);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
+router.post("/scanAndUpdate", transactionService.scanAndUpdate);
 
 module.exports = router;

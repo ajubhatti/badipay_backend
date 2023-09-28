@@ -9,7 +9,18 @@ const create = async (params) => {
 };
 
 const update = async (id, params) => {
+  console.log(id, params);
   const data = await getComplaints(id);
+  Object.assign(data, params);
+  data.updated = Date.now();
+  return await data.save();
+};
+
+const updateByRechargeId = async (id, params) => {
+  console.log(id, params);
+  const data = await db.RechargeComplaints.findOne({ rechargeId: id });
+
+  console.log("complaints data ----", data);
   Object.assign(data, params);
   data.updated = Date.now();
   return await data.save();
@@ -20,7 +31,18 @@ const getById = async (id) => {
 };
 
 const getAll = async () => {
+  const orderByColumn = "createdAt";
+  const orderByDirection = "DESC";
+  const sort = {};
+
+  if (orderByColumn && orderByDirection) {
+    sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+  }
+
   const aggregateRules = [
+    {
+      $sort: sort,
+    },
     {
       $lookup: {
         from: "recharges",
@@ -119,4 +141,5 @@ module.exports = {
   getAll,
   delete: _delete,
   createRechargeComplaints,
+  updateByRechargeId,
 };

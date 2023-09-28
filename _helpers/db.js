@@ -77,5 +77,6 @@ module.exports = {
   paymentGatewayTxn: require("../models/paymentGatewayTxn"),
   CallBack: require("../models/callBack"),
   RechargeComplaints: require("../models/rechargeComplaints"),
+  Utility: require("../models/utility"),
   isValidId,
 };

@@ -12,6 +12,7 @@ const dayjs = require("dayjs");
 
 const getAll = async (params) => {
   try {
+    console.log({ params });
     const filter = params;
     let match = {};
 
@@ -21,6 +22,9 @@ const getAll = async (params) => {
         $or: [
           { transactionId: { $regex: searchKeyword, $options: "i" } },
           { customerNo: { $regex: searchKeyword, $options: "i" } },
+          {
+            "userDetail.phoneNumber": { $regex: searchKeyword, $options: "i" },
+          },
         ],
       };
     }
@@ -37,7 +41,7 @@ const getAll = async (params) => {
       match.apiProvider = { $regex: params.api, $options: "i" };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "updated";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
@@ -68,11 +72,11 @@ const getAll = async (params) => {
       var end = new Date(params.endDate);
       end.setHours(23, 59, 59, 999);
 
-      let created = {
+      let updated = {
         $gte: start,
         $lte: end,
       };
-      match.created = created;
+      match.updated = updated;
     }
 
     const total = await db.Transactions.find().countDocuments(match);
@@ -83,13 +87,9 @@ const getAll = async (params) => {
 
     const aggregateRules = [
       {
-        $match: match,
-      },
-      {
         $sort: sort,
       },
       { $skip: skipNo },
-
       {
         $lookup: {
           from: "accounts",
@@ -99,6 +99,9 @@ const getAll = async (params) => {
         },
       },
       { $unwind: "$userDetail" },
+      {
+        $match: match,
+      },
     ];
 
     if (params.limits) {
@@ -629,11 +632,14 @@ const transactionListWithPagination = async (params) => {
         $or: [
           { transactionId: { $regex: searchKeyword, $options: "i" } },
           { customerNo: { $regex: searchKeyword, $options: "i" } },
+          {
+            "userDetail.phoneNumber": { $regex: searchKeyword, $options: "i" },
+          },
         ],
       };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "updated";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
@@ -659,11 +665,11 @@ const transactionListWithPagination = async (params) => {
       const start1 = dayjs().startOf("day"); // set to 12:00 am today
       const end1 = dayjs().endOf("day"); // set to 23:59 pm today
 
-      let created = {
+      let updated = {
         $gte: start1,
         $lte: end1,
       };
-      match.createdAt = created;
+      match.updated = updated;
     }
 
     console.log({ match });
@@ -723,6 +729,17 @@ const transactionListWithPagination = async (params) => {
   }
 };
 
+const scanAndUpdate = async () => {
+  console.log("----scanAndUpdate----");
+  const transaction = await db.Transactions.find({});
+  console.log({ transaction });
+  for (let i = 0; i < transaction.length; i++) {
+    transaction[i].updated = transaction[i].created;
+    await transaction[i].save();
+  }
+  return transaction;
+};
+
 module.exports = {
   create,
   createTransactions,
@@ -733,4 +750,5 @@ module.exports = {
   delete: _delete,
   getTransctionByUserId,
   transactionListWithPagination,
+  scanAndUpdate,
 };

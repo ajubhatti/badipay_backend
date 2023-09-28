@@ -40,12 +40,9 @@ const transactionSchema = new Schema(
     serviceType: { type: String, default: "" },
     isPendingOrFail: { type: Boolean, default: false },
     created: { type: Date, default: Date.now },
-
-    updated: Date,
+    updated: { type: Date, default: Date.now },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true, versionKey: false }
 );
 
 module.exports = mongoose.model("Transaction", transactionSchema);

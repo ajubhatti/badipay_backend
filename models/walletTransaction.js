@@ -39,9 +39,7 @@ const walletTransactionSchema = new Schema(
     created: { type: Date, default: Date.now },
     updated: Date,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true, versionKey: false }
 );
 
 walletTransactionSchema.plugin(mongoosePaginate);

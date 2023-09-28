@@ -18,7 +18,7 @@ const getById = async (id) => {
 };
 
 const getAll = async () => {
-  return await db.CallBack.find();
+  return await db.CallBack.find({}).sort({ createdAt: -1 });
 };
 
 const _delete = async (id) => {
@@ -27,7 +27,7 @@ const _delete = async (id) => {
 };
 
 const getCallbacks = async (id) => {
-  if (!db.isValidId(id)) throw "Bank not found";
+  if (!db.isValidId(id)) throw "Bank not found";  
   const data = await db.CallBack.findById(id);
   if (!data) throw "call back data not found";
   return data;

@@ -839,6 +839,9 @@ const getwalletListData = async (req, res, next) => {
         $or: [
           { walletTransactionId: { $regex: searchKeyword, $options: "i" } },
           { slipNo: { $regex: searchKeyword, $options: "i" } },
+          {
+            "userDetail.phoneNumber": { $regex: searchKeyword, $options: "i" },
+          },
         ],
       };
     }
@@ -886,9 +889,6 @@ const getwalletListData = async (req, res, next) => {
 
     const aggregateRules = [
       {
-        $match: match,
-      },
-      {
         $sort: sort,
       },
       { $skip: skipNo },
@@ -911,6 +911,9 @@ const getwalletListData = async (req, res, next) => {
         },
       },
       { $unwind: "$paymentMode" },
+      {
+        $match: match,
+      },
       // {
       //   $lookup: {
       //     from: "bankaccounts",

@@ -73,6 +73,15 @@ const updateComplaintsStatus = (req, res, next) => {
     .catch(next);
 };
 
+const checkTransactionRecursion = (req, res, next) => {
+  rechargeController
+    .checkTransactionRecursion(req)
+    .then((rechargeData) =>
+      res.json({ status: 200, data: rechargeData, message: "success" })
+    )
+    .catch(next);
+};
+
 router.get("/", getAll);
 router.get("/getById", getById);
 // router.post("/", create);
@@ -82,5 +91,7 @@ router.delete("/:id", _delete);
 router.post("/getRecharges", rechargeController.rechargeListWithPagination);
 router.get("/rechargeCallBack", rechargeCallBack);
 router.post("/updateComplaintsStatus", updateComplaintsStatus);
+router.post("/updateComplaints", checkTransactionRecursion);
+router.post("/scanAndUpdate", rechargeController.scanAndUpdate);
 
 module.exports = router;

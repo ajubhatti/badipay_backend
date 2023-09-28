@@ -106,12 +106,9 @@ const userSchema = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "Account",
     },
-    
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
-
-
 
 userSchema.virtual("emailOrMobilePhone").set(function (emailOrPhone) {
   console.log(">>>>>>>>>>>emailOrMobilePhone>>>>>>this >>>>>>>>>>", this);

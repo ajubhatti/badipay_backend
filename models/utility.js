@@ -3,9 +3,10 @@ const Schema = mongoose.Schema;
 
 const schema = new Schema(
   {
-    timeOutFrame: { type: String },
+    timeLimit: { type: String },
+    timeType: { type: String },
   },
-  { timeStamp: true }
+  { timestamps: true, versionKey: false }
 );
 
 module.exports = mongoose.model("Utility", schema);

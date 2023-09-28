@@ -1,16 +1,19 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const schema = new Schema({
-  account: { type: Schema.Types.ObjectId, ref: "Account" },
-  token: String,
-  expires: Date,
-  created: { type: Date, default: Date.now },
-  createdByIp: String,
-  revoked: Date,
-  revokedByIp: String,
-  replacedByToken: String,
-});
+const schema = new Schema(
+  {
+    account: { type: Schema.Types.ObjectId, ref: "Account" },
+    token: String,
+    expires: Date,
+    created: { type: Date, default: Date.now },
+    createdByIp: String,
+    revoked: Date,
+    revokedByIp: String,
+    replacedByToken: String,
+  },
+  { timestamps: true, versionKey: false }
+);
 
 schema.virtual("isExpired").get(() => {
   return Date.now() >= this.expires;
