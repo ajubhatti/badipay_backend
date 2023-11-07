@@ -2,7 +2,6 @@ const db = require("../_helpers/db");
 
 const fetchAllData = async (params) => {
   try {
-    console.log(params);
     const pageNumber = parseInt(params.page) || 0;
     const limit = parseInt(params.perPage) || 12;
     const result = {};
@@ -31,20 +30,18 @@ const fetchAllData = async (params) => {
     result.rowsPerPage = limit;
     return result;
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ msg: "Sorry, something went wrong" });
   }
 };
 
 const fetchDataById = async (params) => {
   try {
-    console.log({ params });
     if (!db.isValidId(params.id)) throw "Not found";
     const data = await params.dataBase.findById(params.id);
     if (!data) throw "Not found";
     return data;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 };
 

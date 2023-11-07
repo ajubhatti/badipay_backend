@@ -32,12 +32,10 @@ const walletTransactionSchema = new Schema(
 
     statusOfWalletRequest: {
       type: String,
-      enum: ["pending", "reject", "approve"],
+      enum: ["pending", "rejected", "approved"],
       default: "pending",
     },
     reason: { type: String },
-    created: { type: Date, default: Date.now },
-    updated: Date,
   },
   { timestamps: true, versionKey: false }
 );

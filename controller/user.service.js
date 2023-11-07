@@ -1,7 +1,6 @@
 const db = require("../_helpers/db");
 
 const userById = async (req, res, next, id) => {
-  console.log(">>in userById: ", id);
   await db.User.findById(id).exec((err, user) => {
     if (err) {
       return res.status(400).json({
@@ -14,7 +13,7 @@ const userById = async (req, res, next, id) => {
       });
     }
     req.profile = user;
-    console.log("found ", user);
+
     next();
   });
 };
@@ -61,14 +60,12 @@ const userFromJwtFull = (req, res) => {
         });
       }
       req.profile = user;
-      console.log("found ", user);
+
       next();
     });
 };
 
 const userFromJwt = (req, res, next) => {
-  console.log(">>in userFromJwt: w req.auth=", req.auth);
-
   if (!(req.auth && req.auth._id)) {
     return res.json({
       status: false,
@@ -88,13 +85,12 @@ const userFromJwt = (req, res, next) => {
       });
     }
     req.profile = user;
-    console.log("found ", user);
+
     next();
   });
 };
 
 const userByIdPrivate = (req, res, next, id) => {
-  console.log("in userByIdPrivate: ", id);
   db.User.findById(id)
     .populate("accountId") //  populate
     .exec((err, user) => {
@@ -110,7 +106,7 @@ const userByIdPrivate = (req, res, next, id) => {
         });
       }
       req.profile = user;
-      console.log("found ", user);
+
       next();
     });
 };
@@ -122,7 +118,6 @@ const readUser = (req, res) => {
 };
 
 const updateUser = (req, res) => {
-  // console.log(">>>> in updateUser req.body=", req?.body);
   db.User.findOneAndUpdate(
     { _id: req.prodile._id },
     { $set: req.body },
@@ -130,7 +125,7 @@ const updateUser = (req, res) => {
     (err, user) => {
       if (err) {
         let r = errorHandlerDetail(err);
-        console.log(">>>r=", r);
+
         if (r.dupe) {
           let msg = r.value + " already exists. Please change and try again.";
           return res.json({ status: false, error: msg, field: r.field });
@@ -148,9 +143,7 @@ const updateUser = (req, res) => {
 };
 
 const getUsersAll = (req, res) => {
-  console.log(" getUsersAll  dump......");
   db.User.find().exec((err, result) => {
-    console.log("exiting in getUsers err=", err);
     if (err) {
       return res.status(400).json({
         error: "System error searching for All Eventix ",

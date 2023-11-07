@@ -212,11 +212,8 @@ const getById = (req, res, next) => {
     // users can get their own account and admins can get any account
     const usertoken = req.headers.authorization;
     const token = usertoken.split(" ");
-    // const decoded1 = jwt.verify(token[1], secret);
-    // console.log(decoded1);
     try {
       decoded = jwt.verify(authorization, secret);
-      console.log("decoded.id", decoded.id);
     } catch (e) {
       return res.status(401).send("unauthorized");
     }
@@ -348,7 +345,6 @@ const changePassword = (req, res, next) => {
   accountService
     .passwordUpdate(req.body)
     .then((account) => {
-      console.log({ account });
       res.json({ status: 200, data: account, message: "success" });
     })
     .catch(next);
@@ -432,7 +428,7 @@ router.post(
 router.post("/getByReferralCode", getuserByReferralCode);
 router.post("/resendOtp", accountService.resendOtp);
 router.get("/getUserIsFirstLogin/:id", getUserIsFirstLogin);
-
+// router.post("/changePassword", changePassword);
 router.post("/changePassword", accountService.passwordUpdate2);
 router.post("/changeTransactionPin", accountService.transactionPinUpdate2);
 

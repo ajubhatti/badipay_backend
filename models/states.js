@@ -8,7 +8,7 @@ const schema = new Schema(
     stateKey: { type: String, required: false },
     isActive: { type: Boolean, default: true },
     created: { type: Date, default: Date.now },
-    updated: Date,
+    updated: { type: Date, default: Date.now },
   },
   { timestamps: true, versionKey: false }
 );

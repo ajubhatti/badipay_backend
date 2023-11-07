@@ -65,8 +65,6 @@ const getDiscountList = async (params) => {
       companyData[i].apiData = apiData;
     }
 
-    console.log({ companyData });
-
     return companyData;
   } catch (err) {
     throw err;
@@ -79,7 +77,7 @@ const AddbyScan = async () => {
     let configData = await db.ServiceDiscount.findOne({
       operatorConfigId: opConf[i]._id,
     });
-    console.log({ configData });
+
     if (!configData) {
       let payload = {
         apiId: opConf[i].apiId,
@@ -144,8 +142,6 @@ const discountListPageWise = async (params) => {
     const skipNo = (page - 1) * pageSize;
     const pages = Math.ceil(total / pageSize);
 
-    console.log({ match });
-
     const aggregateRules = [
       {
         $match: match,
@@ -187,8 +183,6 @@ const discountListPageWise = async (params) => {
       aggregateRules.push({ $limit: params.limits });
     }
 
-    console.log({ aggregateRules });
-
     let aggrResult = await db.ServiceDiscount.aggregate(aggregateRules);
     let resultData = {
       sort,
@@ -202,7 +196,7 @@ const discountListPageWise = async (params) => {
 
     return resultData;
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };

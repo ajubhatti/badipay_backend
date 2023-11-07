@@ -59,5 +59,6 @@ router.post("/", create);
 router.put("/:id", update);
 router.delete("/:id", authorize(), _delete);
 router.post("/getAll", cashBackService.getAll2);
+router.post("/getForReport", cashBackService.getForReport);
 router.post("/getReports", cashBackService.getTotalReports);
 module.exports = router;

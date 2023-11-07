@@ -208,7 +208,7 @@ const getById = (req, res, next) => {
   if (req.headers && req.headers.authorization) {
     var authorization = req.headers.authorization.split(" ")[1],
       decoded;
-    console.log("authorization", authorization);
+
     // users can get their own account and admins can get any account
 
     try {
@@ -232,10 +232,8 @@ const me = (req, res, next) => {
     var authorization = req.headers.authorization.split(" ")[1],
       decoded;
 
-    console.log("req --", req.user);
     try {
       decoded = jwt.verify(authorization, process.env.JWT_SECRET);
-      console.log({ decoded });
     } catch (e) {
       return res.status(401).send("unauthorized!!!!");
     }
@@ -366,7 +364,6 @@ const changePassword = (req, res, next) => {
   testAccountService
     .passwordUpdate(req.body)
     .then((account) => {
-      console.log({ account });
       res.json({ status: 200, data: account, message: "success" });
     })
     .catch(next);

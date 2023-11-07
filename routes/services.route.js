@@ -73,15 +73,12 @@ const getAll = (req, res, next) => {
 };
 
 const getPlan = (req, res, next) => {
-  console.log("gete");
   servicesService.getPlan(req.body).then((service) => {
-    console.log({ service });
     res.json({ status: 200, data: service, message: "success" });
   });
 };
 
 const ambikaRecharge = (req, res, next) => {
-  console.log("ambika recharge");
   servicesService
     .ambikaRecharge(req.body)
     .then((service) => {

@@ -51,13 +51,11 @@ function encrypt2(text) {
 
 function decrypt2(text) {
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  console.log("text ---", text);
 
   let decryptedData = decipher.update(text, "hex", "utf-8");
 
   decryptedData += decipher.final("utf8");
 
-  console.log("decipher----", decipher);
   var dec = decipher.update(text, "hex", "utf8");
   dec += decipher.final("utf8");
   return dec;

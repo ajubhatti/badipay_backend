@@ -5,6 +5,7 @@ const authorize = require("../_middleware/authorize");
 const validateRequest = require("../_middleware/validate-request");
 const walletTransaction = require("../controller/walletTransaction.service");
 const walletService = require("../controller/walletTransaction.service");
+const { roundOfNumber } = require("../_middleware/middleware");
 
 const getAll = (req, res, next) => {
   walletTransaction
@@ -101,7 +102,6 @@ const changeWalletStatus = (req, res, next) => {
 };
 
 const addByPaymentGateway = (req, res, next) => {
-  console.log("check----", req.user.id);
   walletTransaction
     .addByPaymentGateway(req.user.id, req.body)
     .then((wallet) => {
@@ -128,6 +128,18 @@ const paymentGatewayCallback = (req, res, next) => {
     .catch(next);
 };
 
+const checkType = (req, res, next) => {
+  let params = req.body;
+  let data1 = roundOfNumber(params.amount);
+  let dataType = typeof data1;
+  let datas = params.amount;
+  res.status(200).json({
+    status: 200,
+    message: "success",
+    data: { dataType, data1, datas },
+  });
+};
+
 router.post("/getAll", getAll);
 router.post("/", walletService.createWallet);
 router.get("/:id", getById);
@@ -138,8 +150,11 @@ router.delete("/:id", deleteById);
 router.post("/updateBalance", updateExistingBalance);
 router.post("/updateWalletStatus", changeWalletStatus);
 router.post("/getWallet", walletService.getwalletListData);
+router.post("/getwalletReports", walletService.getwalletListReports);
 router.post("/addByPaymentGateway", authorize(), addByPaymentGateway);
 router.post("/checkPaymentGatewayStatus", checkPaymentGatewayStatus);
 router.post("/paymentGatewayCallback", paymentGatewayCallback);
+
+router.post("/checkType", checkType);
 
 module.exports = router;

@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 
 const getMplan = (req, res, next) => {
-  console.log("req---", req.body);
   mplanService
     .getMplanPlan(req.body)
     .then((service) => {

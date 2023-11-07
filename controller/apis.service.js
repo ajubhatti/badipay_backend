@@ -1,5 +1,8 @@
 const db = require("../_helpers/db");
-const { addOperatorConfigByScan } = require("./operatorConfig.services");
+const {
+  addOperatorConfigByScan,
+  updateConfigByApiId,
+} = require("./operatorConfig.services");
 const mongoose = require("mongoose");
 
 const create = async (params) => {
@@ -36,6 +39,7 @@ const update = async (id, params) => {
     apiService.updated = Date.now();
     await apiService.save();
 
+    await updateConfigByApiId(id, params);
     return apiService;
   } catch (err) {
     throw err;
@@ -74,7 +78,6 @@ const _delete = async (id) => {
 
 const getApiService = async (id) => {
   try {
-    console.log("Getting API Service", id);
     if (!db.isValidId(id)) throw "Service not found";
     const apiService = await db.Apis.findById(id);
     if (!apiService) throw "Service not found";

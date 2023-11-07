@@ -34,20 +34,18 @@ const register = async (params, origin) => {
     // hash password
     account.passwordHash = hash(params.password);
     let encrpt = await encrypt(params.password);
-    console.log({ encrpt });
+
     account.passwordEncrpt = encrpt;
     account.isVerified = true;
     account.verificationStatus = true;
     // save account
     await account.save().then(async (res) => {
-      console.log({ res });
       if (params.referralId) {
         addReferalId(params, res);
       }
       return res;
     });
   } catch (err) {
-    console.log({ err });
     throw err;
   }
 };
@@ -287,12 +285,11 @@ const resendOtp = async (req, res, next) => {
     await sendForgotPasswordSms(account.phoneNumber, account.otp)
       .then(async (smsResult) => {
         if (smsResult.status == 200) {
-          console.log("smsResult ---", smsResult.data);
           let jsnRes = smsResult.data[0];
           if (typeof smsResult.data == "string") {
             jsnRes = strToObj(smsResult.data);
           }
-          console.log("jsnRes----", jsnRes);
+
           if (jsnRes && jsnRes.code == 1300) {
             res.status(200).json({
               status: 200,
@@ -473,12 +470,11 @@ const forgotPassword2 = async (req, res, next) => {
             await sendForgotPasswordSms(account.phoneNumber, account.otp)
               .then(async (smsResult) => {
                 if (smsResult.status == 200) {
-                  console.log("smsResult ---", smsResult.data);
                   let jsnRes = smsResult.data[0];
                   if (typeof smsResult.data == "string") {
                     jsnRes = strToObj(smsResult.data);
                   }
-                  console.log("jsnRes----", jsnRes);
+
                   if (jsnRes && jsnRes.code == 1300) {
                     res.status(200).json({
                       status: 200,
@@ -544,12 +540,11 @@ const forgotTransactionPin = async (req, res, next) => {
             await sendForgotPasswordSms(account.phoneNumber, account.otp)
               .then(async (smsResult) => {
                 if (smsResult.status == 200) {
-                  console.log("smsResult ---", smsResult.data);
                   let jsnRes = smsResult.data[0];
                   if (typeof smsResult.data == "string") {
                     jsnRes = strToObj(smsResult.data);
                   }
-                  console.log("jsnRes----", jsnRes);
+
                   if (jsnRes && jsnRes.code == 1300) {
                     res.status(200).json({
                       status: 200,
@@ -727,7 +722,6 @@ const getAll2 = async (req, res, next) => {
     const filter = req.body;
     let match = {};
     let match2 = {};
-    console.log({ params });
 
     let searchKeyword = params.searchParams;
     if (searchKeyword) {
@@ -772,8 +766,6 @@ const getAll2 = async (req, res, next) => {
       match2.createdAt = created;
     }
 
-    console.log({ match });
-
     const total = await db.Test.find().countDocuments(match);
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.limits) || 10;
@@ -790,8 +782,6 @@ const getAll2 = async (req, res, next) => {
       { $skip: skipNo },
       { $limit: params.limits },
     ];
-
-    console.log(JSON.stringify(aggregateRules));
 
     let userListData = await db.Test.aggregate(aggregateRules);
 
@@ -847,9 +837,8 @@ const getUserById = async (id, ipAddress) => {
     const account = await db.Test.findOne({ _id: id });
     // let decrypted;
     if (account && account.passwordEncrpt) {
-      console.log("passwordEncrpt---", account.passwordEncrpt);
       let decrypted = decrypt(account.passwordEncrpt);
-      console.log("decrypted---", { decrypted });
+
       account.decryptedPass = decrypted;
     }
 
@@ -867,7 +856,6 @@ const getUserById = async (id, ipAddress) => {
     };
     // return basicDetails(account);
   } catch (err) {
-    console.log({ err });
     throw err;
   }
 };
@@ -948,8 +936,6 @@ const transactionPinUpdate2 = async (req, res, next) => {
             hasTransactionPin: true,
             updated: Date.now(),
           };
-
-          console.log({ payload });
 
           Object.assign(account, payload);
           await account.save().then((result) => {
@@ -1257,7 +1243,7 @@ const sendVerificationEmail = async (account, origin) => {
 
 const sendPasswordResetPhone = async (account, origin) => {
   let message;
-  console.log("account in send", account);
+
   if (origin) {
     const resetUrl = `${origin}/auth/reset-password?token=${account.resetToken.token}`;
     message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>

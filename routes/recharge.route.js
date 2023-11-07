@@ -7,9 +7,8 @@ const rechargeController = require("../controller/recharge.service");
 
 const create = (req, res, next) => {
   rechargeController
-    .createNewRecharge(req.body)
+    .createNewRecharge(req)
     .then((rechargeData) => {
-      console.log({ rechargeData });
       res.json({ status: 200, data: rechargeData, message: "success" });
     })
     .catch(next);
@@ -84,11 +83,12 @@ const checkTransactionRecursion = (req, res, next) => {
 
 router.get("/", getAll);
 router.get("/getById", getById);
-// router.post("/", create);
-router.post("/", rechargeController.createNewRecharge);
+router.post("/", create);
+// router.post("/", rechargeController.createNewRecharge);
 router.put("/:id", update);
 router.delete("/:id", _delete);
 router.post("/getRecharges", rechargeController.rechargeListWithPagination);
+router.post("/getRechargeReports", rechargeController.rechargeListForReports);
 router.get("/rechargeCallBack", rechargeCallBack);
 router.post("/updateComplaintsStatus", updateComplaintsStatus);
 router.post("/updateComplaints", checkTransactionRecursion);

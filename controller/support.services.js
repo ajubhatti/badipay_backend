@@ -40,21 +40,7 @@ const getAllDetail = async () => {
         as: "subSupportdetail",
       },
     },
-    // { $unwind: "$supportdetail" },
-    // {
-    //   $project: {
-    //     _id: 1,
-    //     accountNo: 1,
-    //     accountName: 1,
-    //     accountDetail: 1,
-    //     ifscCode: 1,
-    //     bankId: 1,
-    //     // bankName: "$supportdetail.bankName",
-    //   },
-    // },
   ]);
-
-  console.log("rtrnData", rtrnData);
 
   return rtrnData;
 };

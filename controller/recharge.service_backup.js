@@ -60,7 +60,7 @@ const createNewRecharge = async (req, res) => {
           let operator = await getOperatorById(params);
           if (operator) {
             let finalRechargeData = await recursiveFunction(params, operator);
-            console.log("line 179 --finalrecharge data->>", finalRechargeData);
+
             priorityCount = 1;
 
             if (finalRechargeData) {
@@ -73,7 +73,6 @@ const createNewRecharge = async (req, res) => {
 
               const rechargeData = new db.Recharge(params);
               const rechargeResult = await rechargeData.save();
-              console.log({ rechargeResult });
 
               if (
                 (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
@@ -81,7 +80,6 @@ const createNewRecharge = async (req, res) => {
                   finalRechargeData.STATUSCODE == 0) ||
                 finalRechargeData.errorcode == 200
               ) {
-                console.log("========== if success =================");
                 await addDiscount(params, rechargeResult);
                 Object.assign(rechargeResult, {
                   status: CONSTANT_STATUS.SUCCESS,
@@ -94,7 +92,6 @@ const createNewRecharge = async (req, res) => {
                   message: "Recharge successful",
                 });
               } else {
-                console.log("========== if fail =================");
                 Object.assign(rechargeResult, {
                   status: CONSTANT_STATUS.FAILED,
                 });
@@ -165,7 +162,6 @@ const updateReferalUserDiscount = async (
 
 const addDiscountAmount = async (account, params, userType, rechargeResult) => {
   let discountData = await getDiscountData(params);
-  console.log("line no -- 168 --", { discountData });
   let disAmount = 0;
   if (rechargeResult && discountData) {
     if (userType === "referral") {
@@ -491,46 +487,31 @@ const recursiveFunction = async (params, operator) => {
           operatorConfigList
         );
         priorityCount++;
-        console.log({ filteredOperator });
+
         if (filteredOperator) {
           let apiRes = await rechargeFunction(
             params,
             operator,
             filteredOperator
           );
-          console.log({ apiRes });
 
           if (filteredOperator && apiRes) {
             let responseStatus =
               apiRes[filteredOperator.apiData.checkStatusResponseValue];
             if (responseStatus == filteredOperator.apiData.successValue) {
-              console.log(
-                "check res sucess--->>>>>>>>>>>>>>>>>>>",
-                responseStatus
-              );
               return apiRes;
             }
             if (responseStatus == filteredOperator.apiData.failureValue) {
-              console.log(
-                "check res fail--->>>>>>>>>>>>>>>>>>>",
-                responseStatus
-              );
               if (
                 operatorConfigList &&
                 operatorConfigList.data.length >= priorityCount
               ) {
-                console.log("-------------- recurse ------------------");
                 return await recursiveFunction(params, operator);
               } else {
-                console.log("-------------- fail ------------------");
                 return apiRes;
               }
             }
             if (responseStatus == filteredOperator.apiData.pendingValue) {
-              console.log(
-                "check res pending--->>>>>>>>>>>>>>>>>>>",
-                responseStatus
-              );
               let pendRes = checkTransactionStatus(
                 filteredOperator.apiData,
                 apiRes
@@ -541,39 +522,15 @@ const recursiveFunction = async (params, operator) => {
               } else if (
                 pendResStatus == filteredOperator.apiData.failureValue
               ) {
-                checkTransactionStatus
+                checkTransactionStatus;
               } else {
+                return apiRes;
               }
-              // return apiRes;
             }
             if (responseStatus == filteredOperator.apiData.refundValue) {
-              console.log(
-                "check res refund--->>>>>>>>>>>>>>>>>>>",
-                responseStatus
-              );
               return apiRes;
             }
           }
-          // if (
-          //   apiRes &&
-          //   ((apiRes && apiRes.TRNSTATUS == 0) ||
-          //     (apiRes.STATUSCODE && apiRes.STATUSCODE == 0) ||
-          //     apiRes.errorcode == 200)
-          // ) {
-          //   console.log("-------------- success ------------------");
-          //   return apiRes;
-          // } else {
-          //   if (
-          //     operatorConfigList &&
-          //     operatorConfigList.data.length >= priorityCount
-          //   ) {
-          //     console.log("-------------- recurse ------------------");
-          //     return await recursiveFunction(params, operator);
-          //   } else {
-          //     console.log("-------------- fail ------------------");
-          //     return apiRes;
-          //   }
-          // }
         } else {
           throw "operator not found!";
         }
@@ -613,11 +570,6 @@ const rechargeFunction = async (params, operator, filteredOperatorConfig) => {
       }
     }
 
-    // let rechargeRes = await doRecharge(filteredOperatorConfig, payload);
-    // console.log("rechargeRes--566----", rechargeRes);
-    // if (rechargeRes) {
-    //   rechargeRes.operatorConfig = filteredOperatorConfig;
-    // }
     let rechargeRes = pendingResponseByRechargeWale;
 
     return rechargeRes;
@@ -629,19 +581,15 @@ const rechargeFunction = async (params, operator, filteredOperatorConfig) => {
 
 const checkTransactionStatus = async (apiData, apiRes) => {
   try {
-    console.log({ apiData });
     let serviceUrl = apiData.checkStatusURL;
-    console.log({ serviceUrl });
+
     serviceUrl = serviceUrl.replace("_apikey", apiData.token);
 
     serviceUrl = serviceUrl.replace("_apirequestid", apiRes[apiData.requestId]);
 
-    console.log("check status url ---------->>>>>>>>>>>>>", serviceUrl);
-
     return await axios
       .get(serviceUrl)
       .then((res) => {
-        console.log("res check status data --------", res.data);
         return res.data;
       })
       .catch((err) => {
@@ -664,8 +612,6 @@ const doRecharge = async (apiData, params) => {
     serviceUrl = serviceUrl.replace("_account", regMobileNumber);
     serviceUrl = serviceUrl.replace("_apirequestid", timeStamp);
     serviceUrl = serviceUrl.replace("_apikey", apiData.apiData.token);
-
-    console.log("service url ---------------------------", serviceUrl);
 
     return await axios
       .get(serviceUrl)

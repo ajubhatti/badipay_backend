@@ -9,7 +9,6 @@ const create = async (params) => {
 };
 
 const update = async (id, params) => {
-  console.log(id, params);
   const data = await getComplaints(id);
   Object.assign(data, params);
   data.updated = Date.now();
@@ -17,10 +16,8 @@ const update = async (id, params) => {
 };
 
 const updateByRechargeId = async (id, params) => {
-  console.log(id, params);
   const data = await db.RechargeComplaints.findOne({ rechargeId: id });
 
-  console.log("complaints data ----", data);
   Object.assign(data, params);
   data.updated = Date.now();
   return await data.save();
@@ -81,10 +78,8 @@ const getComplaints = async (id) => {
 
 const createRechargeComplaints = async (params) => {
   try {
-    console.log({ params });
     let apiData = await db.Apis.findById(params.rechargeByApi._id);
     let serviceUrl = apiData.disputeRequestURL;
-    console.log({ serviceUrl });
 
     serviceUrl = serviceUrl.replace("_apikey", apiData.token);
     if (params.rechargeData.REFNO) {
@@ -101,13 +96,10 @@ const createRechargeComplaints = async (params) => {
       );
     }
 
-    console.log("check status url ---------->>>>>>>>>>>>>", serviceUrl);
-
     return await axios
       .get(serviceUrl)
       .then(async (res) => {
         if (res.data.STATUSCODE == "0" || res.data.status == "2") {
-          console.log("success res ---", res.data);
           let rechargeResult = await db.Recharge.findById(params._id);
 
           Object.assign(rechargeResult, {
@@ -122,7 +114,7 @@ const createRechargeComplaints = async (params) => {
           };
           await create(payload);
         }
-        console.log("res check status data --------", res.data);
+
         return res.data;
       })
       .catch((err) => {

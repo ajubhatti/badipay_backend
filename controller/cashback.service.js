@@ -117,7 +117,119 @@ const getAll2 = async (req, res, next) => {
       { $unwind: "$transactionData" },
     ];
 
-    console.log("aggregateRules -------", JSON.stringify(aggregateRules));
+    let cashbackResult = await db.Cashback.aggregate(aggregateRules);
+    if (cashbackResult) {
+      res.status(200).json({
+        status: 200,
+        message: "success",
+        data: {
+          sort,
+          filter,
+          count: cashbackResult.length,
+          page,
+          pages,
+          data: cashbackResult,
+          total,
+        },
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
+};
+
+const getForReport = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { transactionId: { $regex: searchKeyword, $options: "i" } },
+          { customerNo: { $regex: searchKeyword, $options: "i" } },
+        ],
+      };
+    }
+
+    if (params.services) {
+      match.operatorId = mongoose.Types.ObjectId(params.services);
+    }
+
+    if (params.provider) {
+      match.apiId = mongoose.Types.ObjectId(params.provider);
+    }
+
+    const orderByColumn = params.sortBy || "created";
+    const orderByDirection = params.orderBy || "DESC";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let created = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.created = created;
+    }
+
+    const total = await db.Cashback.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    const aggregateRules = [
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: "$userDetail" },
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transactionId",
+          foreignField: "_id",
+          as: "transactionData",
+        },
+      },
+      { $unwind: "$transactionData" },
+    ];
 
     let cashbackResult = await db.Cashback.aggregate(aggregateRules);
     if (cashbackResult) {
@@ -263,6 +375,7 @@ module.exports = {
   getById,
   getAll,
   getAll2,
+  getForReport,
   getTotalReports,
   delete: _delete,
 };

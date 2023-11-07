@@ -42,8 +42,6 @@ const getAllDetail = async () => {
     },
   ]);
 
-  console.log("rtrnData", rtrnData);
-
   return rtrnData;
 };
 

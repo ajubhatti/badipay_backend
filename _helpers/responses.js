@@ -64,11 +64,11 @@ module.exports = {
     },
   },
   pendingResponseByRechargeWale: {
-    STATUSCODE: "3",
+    STATUSCODE: "0",
     STATUSMSG: "Pending",
     REFNO: "1688381129",
     TRNID: 55703420,
-    TRNSTATUS: 3,
+    TRNSTATUS: 0,
     TRNSTATUSDESC: "Pending",
     OPRID: "1697078723",
     BAL: 666.5855,

@@ -47,7 +47,6 @@ const getById = async (id) => {
 
 const getAll = async (params) => {
   try {
-    console.log({ params });
     const filter = params;
     let match = {};
 
@@ -91,8 +90,6 @@ const getAll = async (params) => {
       };
       match.created = created;
     }
-
-    console.log(JSON.stringify(match));
 
     const total = await db.Recharge.find().countDocuments(match);
 
@@ -174,8 +171,6 @@ const getOperatorWithPagination = async (params) => {
       };
       match.created = created;
     }
-
-    console.log(JSON.stringify(match));
 
     const total = await db.Recharge.find().countDocuments(match);
     const page = parseInt(params.page) || 1;

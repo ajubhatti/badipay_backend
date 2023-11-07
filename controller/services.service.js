@@ -56,15 +56,12 @@ const getService = async (id) => {
 };
 
 const getPlan = async (params) => {
-  console.log("params", params);
   const { operator, tel, offer, apiKey } = params;
   return await axios
     .get(
       `https://www.mplan.in/api/plans.php?apikey=${apiKey}&offer=${offer}&tel=${tel}&operator=${operator}`
     )
     .then((res) => {
-      console.log(`Status: ${res}`);
-      console.log("Body: ", res.data);
       return res.data;
     })
     .catch((err) => {
@@ -73,7 +70,6 @@ const getPlan = async (params) => {
 };
 
 const ambikaRecharge = async (params) => {
-  console.log("params", prams);
   const {
     userID,
     token,
@@ -96,8 +92,6 @@ const ambikaRecharge = async (params) => {
       `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${consumerNo}&Amount=${amount}&SPKey=${operatorCode}&APIRequestID=${uniqueRefNo}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${regMobileNumber}&Pincode=${areaPincode}&Format=${format}`
     )
     .then((res) => {
-      console.log(`Status: ${res}`);
-      console.log("Body: ", res.data);
       return res.data;
     })
     .catch((err) => {

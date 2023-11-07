@@ -71,7 +71,6 @@ const create = async (params) => {
   if (await db.Wallet.findOne({ slipNo: params.slipNo })) {
     throw "slip no " + params.slipNo + " already taken.";
   }
-  console.log("Slip " + params);
 
   const wallet = new db.Wallet(params);
   await wallet.save();

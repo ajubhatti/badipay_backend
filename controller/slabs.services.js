@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 const create = async (req, res, next) => {
   try {
     const params = req.body;
-    console.log({ params });
+
     if (
       params.SPKey &&
       params.serviceId &&
@@ -40,7 +40,6 @@ const create = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.log({ err });
     res.status(500).json({ status: 500, data: err, message: "fail" });
   }
 };
@@ -50,22 +49,8 @@ const update = async (req, res, next) => {
     const params = req.params;
     const body = req.body;
     const id = mongoose.Types.ObjectId(params.id);
-    console.log({ id });
-    const service = await getService(id);
 
-    console.log({ service });
-    // const service = await db.Slabs.findById({ _id: params.id });
-    // if (
-    //   params.serviceProvider &&
-    //   service.serviceProvider !== params.serviceProvider &&
-    //   (await db.Slabs.findOne({ serviceProvider: params.serviceProvider }))
-    // ) {
-    //   return res.status(400).json({
-    //     status: 400,
-    //     message: `Name ${params.serviceProvider} is already taken`,
-    //     data: "",
-    //   });
-    // }
+    const service = await getService(id);
 
     Object.assign(service, body);
     service.updated = Date.now();
@@ -76,16 +61,12 @@ const update = async (req, res, next) => {
         .json({ status: 200, data: result, message: "Updated Succesfully." });
     });
   } catch (err) {
-    console.log({ err });
     res.status(500).json({ status: 500, data: "", message: err });
   }
 };
 
 const getById = async (req, res, next) => {
   const params = req.body;
-  // const service = await getService(id);
-  // return service;
-  console.log("getById", params.id);
   params.dataBase = db.Slabs;
   return await fetchDataById(params);
 };
@@ -100,7 +81,7 @@ const _delete = async (req, res, next) => {
   try {
     const params = req.params;
     const id = mongoose.Types.ObjectId(params.id);
-    console.log({ id });
+
     const service = await getService(id);
     await service.remove();
 
@@ -110,7 +91,6 @@ const _delete = async (req, res, next) => {
         .json({ status: 200, data: "", message: "deleted Succesfully." });
     });
   } catch (err) {
-    console.log({ err });
     res.status(500).json({ status: 500, data: "", message: err });
   }
 };
@@ -123,7 +103,6 @@ const getService = async (id) => {
 };
 
 const getListByType = async (params) => {
-  console.log(params);
   const serviceList = await db.Slabs.find({
     serviceProviderType: params.type,
   });
@@ -180,8 +159,6 @@ const slabListDataPageWise = async (req, res, next) => {
     const skipNo = (page - 1) * pageSize;
     const pages = Math.ceil(total / pageSize);
 
-    console.log({ match });
-
     const aggregateRules = [
       {
         $match: match,
@@ -219,8 +196,6 @@ const slabListDataPageWise = async (req, res, next) => {
       },
       { $unwind: "$companyData" },
     ];
-
-    console.log({ aggregateRules });
 
     await db.Slabs.aggregate(aggregateRules).then((result) => {
       res.status(200).json({

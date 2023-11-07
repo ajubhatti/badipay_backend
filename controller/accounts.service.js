@@ -118,7 +118,6 @@ const userRegister = async (req, res, next) => {
       });
     }
   } catch (err) {
-    console.log(err);
     res.status(400).json({
       status: 400,
       message: "Something went wrong",
@@ -128,7 +127,6 @@ const userRegister = async (req, res, next) => {
 };
 
 const addReferalId = async (params, result) => {
-  console.log({ params });
   const referanceUserData = await db.Referral.findOne({
     referralCode: params.referenceUserId,
   }); //123
@@ -302,12 +300,10 @@ const resendOtp = async (req, res, next) => {
       await sendForgotPasswordSms(account.phoneNumber, account.otp)
         .then(async (smsResult) => {
           if (smsResult.status == 200) {
-            console.log("smsResult ---", smsResult.data);
             let jsnRes = smsResult.data[0];
             if (typeof smsResult.data == "string") {
               jsnRes = strToObj(smsResult.data);
             }
-            console.log("jsnRes----", jsnRes);
             if (jsnRes && jsnRes.code == 1300) {
               res.status(200).json({
                 status: 200,
@@ -499,12 +495,11 @@ const forgotPassword2 = async (req, res, next) => {
             await sendForgotPasswordSms(account.phoneNumber, account.otp)
               .then(async (smsResult) => {
                 if (smsResult.status == 200) {
-                  console.log("smsResult ---", smsResult.data);
                   let jsnRes = smsResult.data[0];
                   if (typeof smsResult.data == "string") {
                     jsnRes = strToObj(smsResult.data);
                   }
-                  console.log("jsnRes----", jsnRes);
+
                   if (jsnRes && jsnRes.code == 1300) {
                     res.status(200).json({
                       status: 200,
@@ -570,12 +565,10 @@ const forgotTransactionPin = async (req, res, next) => {
             await sendForgotPasswordSms(account.phoneNumber, account.otp)
               .then(async (smsResult) => {
                 if (smsResult.status == 200) {
-                  console.log("smsResult ---", smsResult.data);
                   let jsnRes = smsResult.data[0];
                   if (typeof smsResult.data == "string") {
                     jsnRes = strToObj(smsResult.data);
                   }
-                  console.log("jsnRes----", jsnRes);
                   if (jsnRes && jsnRes.code == 1300) {
                     res.status(200).json({
                       status: 200,
@@ -884,7 +877,6 @@ const getAll2 = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({
       status: 500,
       message: "Server Error",
@@ -1070,7 +1062,6 @@ const transactionPinUpdate2 = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.error(err);
     res.status(400).json({
       status: 400,
       message: "something went wrong",
@@ -1131,32 +1122,28 @@ const passwordUpdate2 = async (req, res, next) => {
             data: {},
           });
         } else {
-          if (account.hasTransactionPin) {
-            if (bcrypt.compareSync(body.newPassword, account.transactionPin)) {
-              res.status(400).json({
-                status: 400,
-                message: "Your password and transaction pin can not be same",
-                data: {},
-              });
-            }
+          if (bcrypt.compareSync(body.newPassword, account.transactionPin)) {
+            res.status(400).json({
+              status: 400,
+              message: "Your password and transaction pin can not be same",
+              data: {},
+            });
           } else {
             body.passwordHash = hash(body.newPassword);
             body.pswdString = body.newPassword;
             Object.assign(account, body);
             account.updated = Date.now();
-            await account.save().then((result) => {
-              res.status(200).json({
-                status: 200,
-                message: "Password updated successfully.",
-                data: result,
-              });
+            await account.save();
+            res.status(200).json({
+              status: 200,
+              message: "Password updated successfully.",
+              data: account,
             });
           }
         }
       }
     }
   } catch (err) {
-    console.error({ err });
     res.status(400).json({
       status: 400,
       message: "Something went wrong",

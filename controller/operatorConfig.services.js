@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 
 const create = async (params) => {
   try {
-    console.log({ params });
     if (
       params.apiCode &&
       params.serviceId &&
@@ -28,7 +27,7 @@ const create = async (params) => {
       }
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };
@@ -36,17 +35,14 @@ const create = async (params) => {
 const update = async (id, params) => {
   try {
     id = mongoose.Types.ObjectId(id);
-    console.log({ id });
     const service = await getService(id);
-
-    console.log({ service });
 
     Object.assign(service, params);
     service.updated = Date.now();
 
     return await service.save();
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };
@@ -72,7 +68,6 @@ const getAll = async (req, res, next) => {
 const _delete = async (params) => {
   try {
     const id = mongoose.Types.ObjectId(params.id);
-    console.log({ id });
     const service = await getService(id);
 
     return await service.remove();
@@ -90,7 +85,6 @@ const getService = async (id) => {
 
 const getListByType = async (params) => {
   try {
-    console.log(params);
     const serviceList = await db.OperatorConfig.find({
       serviceProviderType: params.type,
     });
@@ -203,7 +197,7 @@ const operatorConfigDataPageWise = async (params) => {
 
     return resultData;
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };
@@ -213,7 +207,6 @@ const addOperatorConfigByScan = async () => {
     const apis = await db.Apis.find();
     const operator = await db.Operator.find();
 
-    console.log({ apis, operator });
     if (apis.length && operator.length) {
       let priority = 1;
       for (let i = 0; i < apis.length; i++) {
@@ -242,9 +235,22 @@ const addOperatorConfigByScan = async () => {
 
     return await db.OperatorConfig.find();
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
+};
+
+const updateConfigByApiId = async (apiId, params) => {
+  const operatorConfigList = await db.OperatorConfig.find({
+    apiId: apiId,
+  });
+
+  for (let i = 0; i < operatorConfigList.length; i++) {
+    operatorConfigList[i].isActive = params.isActive;
+    await operatorConfigList[i].save();
+  }
+
+  return operatorConfigList;
 };
 
 module.exports = {
@@ -256,4 +262,5 @@ module.exports = {
   getListByType,
   operatorConfigDataPageWise,
   addOperatorConfigByScan,
+  updateConfigByApiId,
 };

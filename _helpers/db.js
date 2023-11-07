@@ -78,5 +78,6 @@ module.exports = {
   CallBack: require("../models/callBack"),
   RechargeComplaints: require("../models/rechargeComplaints"),
   Utility: require("../models/utility"),
+  ApiResponse: require("../models/apiresponses"),
   isValidId,
 };

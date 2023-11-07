@@ -21,12 +21,15 @@ function invalidToken(req, res) {
   return errorRes(res, err, errMsg, 401);
 }
 
-function roundOfNumber(num) {
+function roundOfNumber(value) {
   let decimalPlaces = 2;
-  if (!Number.isNaN(num)) {
-    num = Math.round(num + "e" + decimalPlaces);
-    return Number(num + "e" + -decimalPlaces);
-  }
+  // if (!Number.isNaN(value)) {
+  //   value = Math.round(value + "e" + decimalPlaces);
+  //   return Number(value + "e" + -decimalPlaces);
+  // }
+  return Number(
+    Math.round(parseFloat(value + "e" + decimalPlaces)) + "e-" + decimalPlaces
+  );
 }
 
 module.exports = { notFound, onlyAdmin, notOnlyMember, roundOfNumber };

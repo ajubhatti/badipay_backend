@@ -67,7 +67,6 @@ const _delete = async (id) => {
 
 const getApiService = async (id) => {
   try {
-    console.log("Getting API Service", id);
     if (!db.isValidId(id)) throw "Service not found";
     const paymentGatewayService = await db.PaymentGateway.findById(id);
     if (!paymentGatewayService) throw "Service not found";

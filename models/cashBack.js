@@ -17,6 +17,8 @@ const schema = new Schema(
     referralCashBack: { type: Number, required: false },
     netCashBack: { type: Number, required: false },
 
+    finalAmount: { type: Number, required: false },
+
     // ===========================================
     requestAmountBckup: { type: Number, required: false },
     rechargeAmountBckup: { type: Number, required: false },
@@ -24,6 +26,7 @@ const schema = new Schema(
     userCashBackBckup: { type: Number, required: false },
     referralCashBackBckup: { type: Number, required: false },
     netCashBackBckup: { type: Number, required: false },
+    finalAmountBackup: { type: Number, required: false },
 
     operatorId: { type: Schema.Types.ObjectId, ref: "Operator" },
     apiId: { type: Schema.Types.ObjectId, ref: "Apis" },

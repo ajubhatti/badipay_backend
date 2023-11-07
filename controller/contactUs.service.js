@@ -2,7 +2,7 @@ const db = require("../_helpers/db");
 
 const create = async (params) => {
   const contactUsData = new db.ContactUs(params);
-  console.log("params", params);
+
   await contactUsData.save();
   return contactUsData;
 };
@@ -107,7 +107,7 @@ const getWithPagination = async (params) => {
 
     return resultData;
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };

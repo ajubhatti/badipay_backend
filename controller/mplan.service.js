@@ -29,17 +29,12 @@ const getMlanUrl = (params) => {
 const getMplanPlan = async (params) => {
   try {
     let type = params.type ? params.type : "viewPlan";
-    console.log({ type });
 
     const url = await getMlanUrl(params);
-
-    console.log("url ---", url);
 
     return await axios
       .get(url)
       .then((res) => {
-        console.log(`Status: ${res}`);
-        console.log("Body: ", res.data);
         return res.data;
       })
       .catch((err) => {

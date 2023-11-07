@@ -16,7 +16,6 @@ function newDecrypt(buffer) {
 
 var hw = newEncrypt(new Buffer("hello world", "utf8"));
 // outputs hello world
-console.log(newDecrypt(hw).toString("utf8"));
 
 module.exports = {
   newEncrypt,

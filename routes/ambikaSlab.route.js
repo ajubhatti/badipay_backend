@@ -25,7 +25,6 @@ const create = (req, res, next) => {
 };
 
 const getById = (req, res, next) => {
-  console.log("req------", req.params);
   ambikaSlabService
     .getById(req.params)
     .then((service) =>

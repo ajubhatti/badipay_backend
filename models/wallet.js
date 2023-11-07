@@ -34,7 +34,7 @@ const walletSchema = new Schema(
 
     statusOfWalletRequest: {
       type: String,
-      enum: ["pending", "cancel", "approve"],
+      enum: ["pending", "cancel", "approved"],
       default: "pending",
     },
 

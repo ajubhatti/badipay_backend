@@ -21,7 +21,7 @@ const getAll = async (params) => {
       },
     },
     { $unwind: "$userdetail" },
-    { $sort: { created: -1 } },
+    { $sort: { createdAt: -1 } },
   ]).then(async (result) => {
     result = JSON.parse(JSON.stringify(result));
     for (let i = 0; i < result.length; i++) {
@@ -47,7 +47,7 @@ const getAll = async (params) => {
   let filterData = walletTransactionData;
   if (params.startDate && params.endDate) {
     filterData = filterData.filter((user) => {
-      let date = new Date(user.created);
+      let date = new Date(user.createdAt);
       return date >= startDate && date <= endDate;
     });
   }
@@ -197,7 +197,6 @@ const create2 = async (params) => {
     if (!params.userId) {
       return "userId is required";
     }
-    // let rndmNmbr = await generateRandomNumber(8);
 
     let accountDetail = await accountsService.getUserById(params.userId);
 
@@ -260,42 +259,16 @@ const updateExistingBalance = async (params) => {
 
     if (accountDetail) {
       if (params.type == "add") {
-        calBalance = Number(accountDetail.walletBalance)
-          ? Number(accountDetail.walletBalance) + Number(params.amount)
-          : Number(params.amount);
+        calBalance = roundOfNumber(accountDetail.walletBalance)
+          ? roundOfNumber(accountDetail.walletBalance) +
+            roundOfNumber(params.amount)
+          : roundOfNumber(params.amount);
       } else {
-        calBalance = Number(accountDetail.walletBalance)
-          ? Number(accountDetail.walletBalance) - Number(params.amount)
-          : Number(params.amount);
+        calBalance = roundOfNumber(accountDetail.walletBalance)
+          ? roundOfNumber(accountDetail.walletBalance) -
+            roundOfNumber(params.amount)
+          : roundOfNumber(params.amount);
       }
-
-      // const walletTransactionData = await db.WalletTransaction.find({
-      //   userId: params.userId,
-      // });
-
-      // let userWalletData = walletTransactionData;
-
-      // let requestPayload = {
-      //   userId: params.userId,
-      //   requestAmount: params.amount,
-      //   remark: params.remarks,
-      //   paymentType: "1",
-      //   bank: userWalletData.bank,
-      //   referenceNo: userWalletData.referenceNo,
-      //   depositBank: userWalletData.depositBank,
-      //   depositBranch: userWalletData.depositBranch,
-      //   amount: userWalletData.amount,
-      //   debitAmount: userWalletData.debitAmount,
-      //   creditAmount: userWalletData.creditAmount,
-      //   finalWalletAmount: userWalletData.finalWalletAmount,
-      //   amountType: userWalletData.amountType,
-      //   approveBy: userWalletData.approveBy,
-      // };
-
-      // const walletTransaction = await new db.WalletTransaction(requestPayload);
-
-      // walletTransaction.save();
-      // return walletTransaction;
 
       let payload = {
         userId: params.userId,
@@ -378,7 +351,10 @@ const updateWalletStatus = async (params) => {
       params.debitAmount = roundOfNumber(params.amount);
     }
 
-    params.approveAmount = roundOfNumber(approveAmount);
+    params.approveAmount =
+      params.statusOfWalletRequest === "approved"
+        ? roundOfNumber(approveAmount)
+        : 0;
     params.finalWalletAmount = roundOfNumber(approveAmount);
     params.statusChangeDate = new Date();
 
@@ -386,11 +362,11 @@ const updateWalletStatus = async (params) => {
     let walletRes = await walletTransactionData.save();
 
     if (walletRes) {
-      if (params.statusOfWalletRequest === "approve") {
-        var account = await db.Account.findOne({
-          _id: walletRes.userId,
-        });
+      var account = await db.Account.findOne({
+        _id: walletRes.userId,
+      });
 
+      if (params.statusOfWalletRequest === "approved") {
         let walletCount =
           roundOfNumber(account.walletBalance || 0) +
           roundOfNumber(walletRes.approveAmount || 0);
@@ -411,6 +387,33 @@ const updateWalletStatus = async (params) => {
           userId: walletRes.userId,
           amount: roundOfNumber(walletCount || 0),
           status: CONSTANT_STATUS.SUCCESS,
+          description: params.reason || "",
+          userBalance: roundOfNumber(transactionData.userBalance || 0),
+          userFinalBalance: roundOfNumber(walletCount),
+          requestAmount: roundOfNumber(walletRes.requestAmount || 0),
+        };
+        Object.assign(transactionData, transactionPayload);
+
+        await transactionData.save();
+      } else {
+        let walletCount = roundOfNumber(account.walletBalance || 0);
+
+        let userPayload = {
+          walletBalance: roundOfNumber(walletCount || 0),
+          pendingBalance:
+            roundOfNumber(account.pendingBalance || 0) -
+            roundOfNumber(walletRes.requestAmount || 0),
+        };
+
+        Object.assign(account, userPayload);
+        await account.save();
+
+        let transactionData = await getTrasactionById(walletRes.transactionId);
+
+        let transactionPayload = {
+          userId: walletRes.userId,
+          amount: roundOfNumber(walletCount || 0),
+          status: CONSTANT_STATUS.FAILED,
           description: params.reason || "",
           userBalance: roundOfNumber(transactionData.userBalance || 0),
           userFinalBalance: roundOfNumber(walletCount),
@@ -507,7 +510,7 @@ const newGetData = async (req, res, next) => {
           };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "createdAt";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
     if (orderByColumn && orderByDirection) {
@@ -523,11 +526,11 @@ const newGetData = async (req, res, next) => {
     }
 
     if (params.startDate && params.endDate) {
-      let created = {
+      let createdAt = {
         $gte: new Date(params.startDate),
         $lt: new Date(params.endDate),
       };
-      where.created = created;
+      where.createdAt = createdAt;
     }
 
     const total = await db.WalletTransaction.find(searchObj).countDocuments(
@@ -583,7 +586,7 @@ const walletListDataPageWise = async (req, res, next) => {
       };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "createdAt";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
@@ -609,11 +612,11 @@ const walletListDataPageWise = async (req, res, next) => {
       endDate.setHours(23);
       endDate.setMinutes(59);
       endDate.setSeconds(59);
-      let created = {
+      let createdAt = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       };
-      match.created = created;
+      match.createdAt = createdAt;
     }
 
     const total = await db.WalletTransaction.find().countDocuments(match);
@@ -715,7 +718,7 @@ const queryBlogPostsByUser = async (req, res, next) => {
       // filter the results by our userId
       // { $match: Object.assign({ "user._id": userId }, filter) },
     ];
-    const orderByColumn = sortBy || "created";
+    const orderByColumn = sortBy || "createdAt";
     const orderByDirection = orderBy || "DESC";
     const sort = {};
     if (orderByColumn && orderByDirection) {
@@ -756,7 +759,7 @@ const queryBlogPostsByUser = async (req, res, next) => {
       },
       {
         $sort: {
-          created: -1,
+          createdAt: -1,
         },
       },
       // {
@@ -801,7 +804,7 @@ const getAllDataByPaginate = (req, res, next) => {
 
   var options = {
     populate: ["userId", "approveBy", "creditAccount", "transactionId"],
-    sort: { created: -1 },
+    sort: { createdAt: -1 },
   };
 
   db.WalletTransaction.paginate(query, { offset, limit, options })
@@ -846,7 +849,7 @@ const getwalletListData = async (req, res, next) => {
       };
     }
 
-    const orderByColumn = params.sortBy || "created";
+    const orderByColumn = params.sortBy || "createdAt";
     const orderByDirection = params.orderBy || "DESC";
     const sort = {};
 
@@ -872,11 +875,11 @@ const getwalletListData = async (req, res, next) => {
       endDate.setHours(23);
       endDate.setMinutes(59);
       endDate.setSeconds(59);
-      let created = {
+      let createdAt = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       };
-      match.created = created;
+      match.createdAt = createdAt;
     }
 
     const total = await db.WalletTransaction.find().countDocuments(match);
@@ -884,8 +887,6 @@ const getwalletListData = async (req, res, next) => {
     const pageSize = parseInt(params.limits) || 10;
     const skipNo = (page - 1) * pageSize;
     const pages = Math.ceil(total / pageSize);
-
-    console.log(JSON.stringify(match));
 
     const aggregateRules = [
       {
@@ -953,9 +954,130 @@ const getwalletListData = async (req, res, next) => {
   }
 };
 
+const getwalletListReports = async (req, res, next) => {
+  try {
+    const params = req.body;
+    const filter = req.body;
+    let match = {};
+
+    let searchKeyword = params.search;
+    if (searchKeyword) {
+      match = {
+        $or: [
+          { walletTransactionId: { $regex: searchKeyword, $options: "i" } },
+          { slipNo: { $regex: searchKeyword, $options: "i" } },
+          {
+            "userDetail.phoneNumber": { $regex: searchKeyword, $options: "i" },
+          },
+        ],
+      };
+    }
+
+    const orderByColumn = params.sortBy || "createdAt";
+    const orderByDirection = params.orderBy || "DESC";
+    const sort = {};
+
+    if (orderByColumn && orderByDirection) {
+      sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
+    }
+
+    if (params.status) {
+      match.statusOfWalletRequest = params.status;
+    }
+    if (params.userId) {
+      match.userId = mongoose.Types.ObjectId(params.userId);
+    }
+    if (params.startDate && params.endDate) {
+      var startDate = new Date(params.startDate); // this is the starting date that looks like ISODate("2014-10-03T04:00:00.188Z")
+
+      startDate.setSeconds(0);
+      startDate.setHours(0);
+      startDate.setMinutes(0);
+
+      var endDate = new Date(params.endDate);
+
+      endDate.setHours(23);
+      endDate.setMinutes(59);
+      endDate.setSeconds(59);
+      let createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+      match.createdAt = createdAt;
+    }
+
+    const total = await db.WalletTransaction.find().countDocuments(match);
+    const page = parseInt(params.page) || 1;
+    const pageSize = parseInt(params.limits) || 10;
+    const skipNo = (page - 1) * pageSize;
+    const pages = Math.ceil(total / pageSize);
+
+    const aggregateRules = [
+      {
+        $sort: sort,
+      },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: "$userDetail" },
+      {
+        $lookup: {
+          from: "paymentmodes",
+          localField: "paymentType",
+          foreignField: "_id",
+          as: "paymentMode",
+        },
+      },
+      { $unwind: "$paymentMode" },
+      {
+        $match: match,
+      },
+      // {
+      //   $lookup: {
+      //     from: "bankaccounts",
+      //     localField: "creditAccount",
+      //     foreignField: "_id",
+      //     as: "bankData",
+      //   },
+      // },
+    ];
+
+    let walletData = await db.WalletTransaction.aggregate(aggregateRules);
+
+    for (let i = 0; i < walletData.length; i++) {
+      let bankData = await getBankAccountById(walletData[i].creditAccount);
+      walletData[i].bankData = bankData || {};
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "success",
+      data: {
+        sort,
+        filter,
+        count: walletData.length,
+        page,
+        pages,
+        data: walletData,
+        total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "Server Error",
+      data: error,
+    });
+  }
+};
+
 const addByPaymentGateway = async (userId, params) => {
   try {
-    console.log({ userId, params });
     let payload = {
       key: "feadb15b-971e-47d2-bd45-a1b5c8050bfa",
       client_txn_id: await generateRandomNumber(12),
@@ -969,11 +1091,10 @@ const addByPaymentGateway = async (userId, params) => {
       udf2: "user defined field 2 (max 25 char)",
       udf3: "user defined field 3 (max 25 char)",
     };
-    console.log({ payload });
+
     return await axios
       .post("https://merchant.upigateway.com/api/create_order", payload)
       .then(async (res) => {
-        console.log("res check status data --------", res.data);
         let pyld = {
           userId: userId,
           orderId: res.data.data.order_id,
@@ -1010,7 +1131,6 @@ const checkPaymentGatewayStatus = async (params) => {
     return await axios
       .post("https://merchant.upigateway.com/api/check_order_status", payload)
       .then((res) => {
-        console.log("res check status data --------", res.data);
         return res.data;
       })
       .catch((err) => {
@@ -1023,23 +1143,9 @@ const checkPaymentGatewayStatus = async (params) => {
 
 const paymentGatewayCallback = async (params) => {
   try {
-    console.log({ params });
     let txnData = await db.paymentGatewayTxn.findOne({ orderId: params.id });
-    console.log({ txnData });
+
     let accountDetail = await db.Account.findOne({ _id: txnData.userId });
-    console.log({ accountDetail });
-    if (params.status === "success") {
-      let pyld = {
-        walletBalance:
-          roundOfNumber(accountDetail.walletBalance || 0) +
-          roundOfNumber(params.amount || 0),
-      };
-
-      console.log({ pyld });
-
-      Object.assign(accountDetail, pyld);
-      await accountDetail.save();
-    }
 
     let payload = {
       userId: txnData.userId,
@@ -1061,44 +1167,55 @@ const paymentGatewayCallback = async (params) => {
       cashBackAmount: null,
       rechargeAmount: null,
       userFinalBalance:
-        roundOfNumber(accountDetail.walletBalance + params.amount) || null,
+        params.status === "success"
+          ? roundOfNumber(accountDetail.walletBalance) +
+            roundOfNumber(params.amount)
+          : roundOfNumber(accountDetail.walletBalance),
     };
-
-    console.log({ payload });
 
     const transactionData = new db.Transactions(payload);
     let transactionSave = await transactionData.save();
+
+    if (params.status === "success") {
+      let pyld = {
+        walletBalance:
+          roundOfNumber(accountDetail.walletBalance || 0) +
+          roundOfNumber(params.amount || 0),
+      };
+
+      Object.assign(accountDetail, pyld);
+      await accountDetail.save();
+    }
 
     if (transactionSave) {
       let lastCount = await db.WalletTransaction.countDocuments();
 
       let temp = JSON.stringify(params);
-      let paramsResult = JSON.parse(temp);
 
-      if (transactionSave) {
-        let wltPyld = {
-          userId: txnData.userId,
-          requestAmount: roundOfNumber(params.amount) || null,
-          slipNo: params.client_txn_id || "",
-          remark: params.remark || "",
-          creditAccount: "64d9255163cb1e6b344bc075",
-          walletTransactionId: lastCount + 1,
-          transactionId: transactionSave._id,
-          amountType: "credit",
-          finalWalletAmount: roundOfNumber(transactionSave.userFinalBalance),
-          approveAmount: roundOfNumber(params.amount),
-          approveDate: new Date(),
-          statusChangeDate: new Date(),
-          statusOfWalletRequest: "approve",
-          paymentType: "6365039cf2c7df71df2579fa",
-        };
-        console.log({ wltPyld });
-        const walletTransactionData = new db.WalletTransaction(wltPyld);
-        let walletSave = await walletTransactionData.save();
-      }
+      let wltPyld = {
+        userId: txnData.userId,
+        requestAmount: roundOfNumber(params.amount) || null,
+        slipNo: params.client_txn_id || "",
+        remark: params.remark || "",
+        creditAccount: "64d9255163cb1e6b344bc075",
+        walletTransactionId: lastCount + 1,
+        transactionId: transactionSave._id,
+        amountType: "credit",
+        finalWalletAmount: roundOfNumber(transactionSave.userFinalBalance),
+        approveAmount:
+          params.status === "success" ? roundOfNumber(params.amount) : 0,
+        approveDate: new Date(),
+        statusChangeDate: new Date(),
+        statusOfWalletRequest:
+          params.status === "success" ? "approved" : "rejected",
+        paymentType: "6365039cf2c7df71df2579fa",
+      };
+
+      const walletTransactionData = new db.WalletTransaction(wltPyld);
+      await walletTransactionData.save();
     }
   } catch (err) {
-    console.log({ err });
+    console.error({ err });
     throw err;
   }
 };
@@ -1122,6 +1239,7 @@ module.exports = {
 
   walletListDataPageWise,
   getwalletListData,
+  getwalletListReports,
   addByPaymentGateway,
   checkPaymentGatewayStatus,
   paymentGatewayCallback,

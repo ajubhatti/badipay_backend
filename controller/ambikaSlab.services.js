@@ -43,7 +43,7 @@ const update = async (id, params) => {
 const getById = async (params) => {
   // const service = await getService(id);
   // return service;
-  console.log("getById", params.id);
+
   params.dataBase = db.AmbikaSlab;
   return await fetchDataById(params);
 };
@@ -70,7 +70,6 @@ const getService = async (id) => {
 };
 
 const getListByType = async (params) => {
-  console.log(params);
   const serviceList = await db.AmbikaSlab.find({
     serviceProviderType: params.type,
   });
@@ -78,7 +77,6 @@ const getListByType = async (params) => {
 };
 
 const ambikaRecharge = async (params) => {
-  console.log("params", params);
   const {
     amount,
     operatorCode,
@@ -97,22 +95,17 @@ const ambikaRecharge = async (params) => {
   let cutomerNo = process.env.AMBIKA_CUSTOMERNO || AMBIKA_CUSTOMERNO;
   var timeStamp = Math.round(new Date().getTime() / 1000);
 
-  console.log("params ---", params);
   let serviceUrl = `http://api.ambikamultiservices.com/API/TransactionAPI?UserID=${userID}&Token=${token}&Account=${regMobileNumber}&Amount=${amount}&SPKey=${operatorCode}&ApiRequestID=${timeStamp}&Optional1=${optional1}&Optional2=${optional2}&Optional3=${optional3}&Optional4=${optional4}&GEOCode=${longitude},${latitude}&CustomerNumber=${cutomerNo}&Pincode=${areaPincode}&Format=1`;
-  console.log({ serviceUrl });
 
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      console.log(`Status: ${res}`);
-      console.log("Body: ", res.data);
       if (res.data.errorcode) {
         RecharegeWaleRecharge(params);
       }
       return res.data;
     })
     .catch((err) => {
-      console.log({ err });
       console.error(err);
     });
 };
@@ -134,17 +127,12 @@ const RecharegeWaleRecharge = async (params) => {
 
   let serviceUrl = `http://www.rechargewaleapi.com/RWARechargeAPI/RechargeAPI.aspx?MobileNo=${mobileNo}&APIKey=${apiKey}&REQTYPE=${reqType}&REFNO=${refNo}&SERCODE=${serviceCode}&CUSTNO=${customerNo}&REFMOBILENO=${refMobileNo}&AMT=${amounts}&STV=${stv}&RESPTYPE=JSON`;
 
-  console.log("recharge url -----", serviceUrl);
   return await axios
     .get(serviceUrl)
     .then((res) => {
-      console.log(`recharge wale Status: ${res}`);
-      console.log("recharge walre Body: ", res.data);
-
       return res.data;
     })
     .catch((err) => {
-      console.log({ err });
       console.error(err);
     });
 };
