@@ -1,5 +1,6 @@
 const config = require("../config.json");
 const mongoose = require("mongoose");
+const Grid = require("gridfs-stream");
 
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 
@@ -26,6 +27,14 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
+let gfs;
+
+const conn = mongoose.connection;
+conn.once("open", function () {
+  gfs = Grid(conn.db, mongoose.mongo);
+  gfs.collection("photos");
+});
+
 mongoose.Promise = global.Promise;
 
 const isValidId = (id) => {
@@ -33,28 +42,43 @@ const isValidId = (id) => {
 };
 
 module.exports = {
-  Account: require("../modules/accounts/accounts.model"),
-  RefreshToken: require("../modules/accounts/refresh-token.model"),
-  Services: require("../modules/services/services.model"),
-  AmbikaSlab: require("../modules/services/ambikaSlab.model"),
-  Wallet: require("../modules/wallet/wallet.model"),
-  walletTransaction: require("../modules/walletTransaction/walletTransaction.model"),
-  Banks: require("../modules/banks/banks.model"),
-  BankAccounts: require("../modules/bankAccounts/bankAccounts.model"),
-  Banners: require("../modules/banners/banners.model"),
-  Ticker: require("../modules/ticker/ticker.model"),
-  Referral: require("../modules/referral/referral.model"),
-  ContactUs: require("../modules/contactUs/contactUs.model"),
-  Support: require("../modules/supports/support.model"),
-  SubSupport: require("../modules/subSupports/subSupport.model"),
-  Faqs: require("../modules/faqs/faqs.model"),
-  SubFaqs: require("../modules/faqSubFaqs/subFaqs.model"),
-
-  MyBanner: require("../modules/banner/banner.model"),
-  State: require("../modules/state/states.model"),
-
-  User: require("../modules/user/user.model"),
-  UserAccount: require("../modules/userAccounts/userAccounts.model"),
-
+  Account: require("../models/accounts"),
+  RefreshToken: require("../models/refresh-token"),
+  Services: require("../models/services"),
+  Company: require("../models/company"),
+  AmbikaSlab: require("../models/ambikaSlab"),
+  Wallet: require("../models/wallet"),
+  WalletTransaction: require("../models/walletTransaction"),
+  Banks: require("../models/banks"),
+  BankAccounts: require("../models/bankAccounts"),
+  Banners: require("../models/banners"),
+  Ticker: require("../models/ticker"),
+  Referral: require("../models/referral"),
+  ContactUs: require("../models/contactUs"),
+  Support: require("../models/support"),
+  SubSupport: require("../models/subSupport"),
+  Faqs: require("../models/faqs"),
+  SubFaqs: require("../models/subFaqs"),
+  State: require("../models/states"),
+  User: require("../models/user"),
+  UserAccount: require("../models/userAccounts"),
+  Apis: require("../models/apis"),
+  Recharge: require("../models/recharge"),
+  Transactions: require("../models/transaction"),
+  PaymentMode: require("../models/paymentModes"),
+  ServiceDiscount: require("../models/serviceDiscount"),
+  Slabs: require("../models/slabs"),
+  Cashback: require("../models/cashBack"),
+  AdminLoyalty: require("../models/adminLoyalty"),
+  Test: require("../models/test"),
+  OperatorConfig: require("../models/operatorConfig"),
+  Operator: require("../models/operator"),
+  PaymentGateway: require("../models/paymentGateways"),
+  paymentGatewayTxn: require("../models/paymentGatewayTxn"),
+  CallBack: require("../models/callBack"),
+  RechargeComplaints: require("../models/rechargeComplaints"),
+  Utility: require("../models/utility"),
+  ApiResponse: require("../models/apiresponses"),
+  ServiceCategory : require("../models/serviceCategory"),
   isValidId,
 };

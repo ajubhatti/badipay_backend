@@ -1,84 +1,45 @@
 const axios = require("axios");
-// const request = require('request-promise');
-
-const sendSms = async (mobileNo, otp) => {
-  const payload = {
-    data: [
-      {
-        destination: mobileNo,
-        source: "BadiPe",
-        type: "TEXT",
-        entityId: "1201161207424046279",
-        tempId: "",
-        content: `Thank you for registering with us. Your One Time Password :- ${otp}`,
-      },
-    ],
-  };
-  const headers = {
-    Authorization: "Bearer my-token",
-    "My-Custom-Header": "foobar",
-    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
-  };
-  const response = await axios
-    .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
-      headers,
-    })
-    .then((res) => {
-      console.log(`Status: ${res.status}`);
-      console.log("Body: ", res.data);
-    })
-    .catch((err) => {
-      console.error(err);
-    });
-
-  //         const options = {
-  //     method: 'POST',
-  //     uri: 'https://requestedAPIsource.com/api',
-  //     body: req.body,
-  //     json: true,
-  //     headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': 'bwejjr33333333333'
-  //     }
-  // }
-
-  // request(options).then(function (response){
-  //     res.status(200).json(response);
-  // })
-  // .catch(function (err) {
-  //     console.log(err);
-  // })
-};
+const { sms } = require("../config/keys");
 
 const sendRegisterSms = async (mobileNo, otp) => {
-  const payload = {
-    data: [
-      {
-        destination: mobileNo,
-        source: "BadiPe",
-        type: "TEXT",
-        entityId: "1201161207424046279",
-        tempId: "",
-        content: `Thank you for registering with us. Your One Time Password :- ${otp} BADIPAY`,
-      },
-    ],
-  };
-  const headers = {
-    Authorization: "Bearer my-token",
-    "My-Custom-Header": "foobar",
-    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
-  };
-  const response = await axios
-    .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
-      headers,
-    })
-    .then((res) => {
-      console.log(`Status: ${res.status}`);
-      console.log("Body: ", res.data);
-    })
-    .catch((err) => {
-      console.error(err);
-    });
+  try {
+    const payload = {
+      data: [
+        {
+          destination: mobileNo,
+          source: sms.source,
+          type: sms.type,
+          entityId: sms.entityId,
+          // tempId: "1207165289294413488",
+          content: `Thank you for registering with us. Your One Time Password :- ${otp} BADIPAY`,
+        },
+      ],
+    };
+    const headers = {
+      apiKey: sms.key,
+    };
+    return await axios
+      .post(
+        "http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php",
+        payload,
+        {
+          headers,
+        }
+      )
+      .then((res) => {
+        console.log(`Status: ${res.status}`);
+        console.log("Body: ", res.data);
+        return res;
+      })
+      .catch((err) => {
+        console.error(err);
+        return err;
+      });
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
+  console.log({ mobileNo, otp });
 };
 
 const sendForgotPasswordSms = async (mobileNo, otp) => {
@@ -86,29 +47,28 @@ const sendForgotPasswordSms = async (mobileNo, otp) => {
     data: [
       {
         destination: mobileNo,
-        source: "BadiPe",
-        type: "TEXT",
-        entityId: "1201161207424046279",
-        tempId: "",
-        content: `Your Forgot Password OTP :- ${otp}`,
+        source: sms.source,
+        type: sms.type,
+        entityId: sms.entityId,
+        // tempId: "",
+        content: `Your Forgot Password OTP :- ${otp} BADIPAY`,
       },
     ],
   };
   const headers = {
-    Authorization: "Bearer my-token",
-    "My-Custom-Header": "foobar",
-    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
+    apiKey: sms.key,
   };
-  const response = await axios
+  console.log({ payload, headers });
+  return await axios
     .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
       headers,
     })
     .then((res) => {
-      console.log(`Status: ${res.status}`);
-      console.log("Body: ", res.data);
+      console.log(res.data);
+      return res;
     })
     .catch((err) => {
-      console.error(err);
+      return err;
     });
 };
 
@@ -117,20 +77,18 @@ const sendChangeEPinSms = async (mobileNo, otp) => {
     data: [
       {
         destination: mobileNo,
-        source: "BadiPe",
-        type: "TEXT",
-        entityId: "1201161207424046279",
+        source: sms.source,
+        type: sms.type,
+        entityId: sms.entityId,
         tempId: "",
         content: `Your change ePin OTP :- ${otp} BADIPAY`,
       },
     ],
   };
   const headers = {
-    Authorization: "Bearer my-token",
-    "My-Custom-Header": "foobar",
-    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
+    apiKey: sms.key,
   };
-  const response = await axios
+  return await axios
     .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
       headers,
     })
@@ -148,19 +106,18 @@ const sendResetPasswordSMS = async (mobileNo, message) => {
     data: [
       {
         destination: mobileNo,
-        source: "BadiPe",
-        type: "TEXT",
-        entityId: "1201161207424046279",
+        source: sms.source,
+        type: sms.type,
+        entityId: sms.entityId,
         tempId: "",
         content: message,
       },
     ],
   };
   const headers = {
-    Authorization: "Bearer my-token",
-    apiKey: "YmFkaXBheTowN1gzeUZrcA==",
+    apiKey: sms.key,
   };
-  const response = await axios
+  return await axios
     .post("http://vas.sevenomedia.com/domestic/sendsms/jsonapi.php", payload, {
       headers,
     })
@@ -174,7 +131,6 @@ const sendResetPasswordSMS = async (mobileNo, message) => {
 };
 
 module.exports = {
-  sendSms,
   sendRegisterSms,
   sendForgotPasswordSms,
   sendChangeEPinSms,

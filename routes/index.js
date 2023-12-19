@@ -1,9 +1,77 @@
-var express = require("express");
-var router = express.Router();
+const router = require("express").Router();
 
-/* GET home page. */
-router.get("/", (req, res, next) => {
-  res.render("index", { title: "Express" });
-});
+const usersRouter = require("./user.route");
+const accountRouter = require("./accounts.route");
+const servicesRouter = require("./services.route");
+const walletRouter = require("./wallet.route");
+const walletTransactionRouter = require("./walletTransaction.route");
+const bankRouter = require("./banks.route");
+const bankAccountRouter = require("./bankAccounts.route");
+const bannerRouter = require("./banners.route");
+const tickerRouter = require("./ticker.route");
+const referralRouter = require("./referral.route");
+const contactUsRouter = require("./contactUs.route");
+const supportsRouter = require("./support.route");
+const subSupportRouter = require("./subSupport.route");
+const stateRouter = require("./states.route");
+const ambikaSlabRouter = require("./ambikaSlab.route");
+const mlanRouter = require("./mplan.route");
+const companyRouter = require("./company.route");
+const apisRouter = require("./apis.route");
+const rechargeRouter = require("./recharge.route");
+const transactionRouter = require("./transaction.route");
+const paymentModeRouter = require("./paymentModes.route");
+const serviceDiscountRouter = require("./serviceDiscount.route");
+const spSlabRouter = require("./slabs.route");
+const cashbackRouter = require("./cashback.route");
+const adminLoyaltyRouter = require("./adminLoyalty.route");
+const testRouter = require("./test.route");
+const operatorConfigRouter = require("./operatorConfig.route");
+const uploadRouter = require("./upload.route");
+const operatorRouter = require("./operator.route");
+const PaymentGatewayRouter = require("./paymentGateways.route");
+const rechargeComplaintsRouter = require("./rechargeComplaints.route");
+const callBackRouter = require("./callBack.route");
+const utilityRouter = require("./utility.route");
+const apiResponseRouter = require("./apiResponses.route");
+const serviceCategoryRouter = require("./serviceCategory.route");
+
+router.use("/users", usersRouter);
+router.use("/auth", accountRouter);
+router.use("/service", servicesRouter);
+router.use("/ambikaSlab", ambikaSlabRouter);
+router.use("/wallet", walletRouter);
+router.use("/walletTransaction", walletTransactionRouter);
+router.use("/transaction", transactionRouter);
+router.use("/bank", bankRouter);
+router.use("/bankAccount", bankAccountRouter);
+router.use("/banner", bannerRouter);
+router.use("/ticker", tickerRouter);
+router.use("/referral", referralRouter);
+router.use("/contactUs", contactUsRouter);
+router.use("/support", supportsRouter);
+router.use("/subSupport", subSupportRouter);
+router.use("/mplan", mlanRouter);
+router.use("/company", companyRouter);
+router.use("/state", stateRouter);
+router.use("/apis", apisRouter);
+router.use("/rechargeOrBill", rechargeRouter);
+router.use("/paymentMode", paymentModeRouter);
+router.use("/discount", serviceDiscountRouter);
+router.use("/spslabs", spSlabRouter);
+router.use("/cashback", cashbackRouter);
+router.use("/adminLoyalty", adminLoyaltyRouter);
+router.use("/test", testRouter);
+router.use("/operatorConfig", operatorConfigRouter);
+router.use("/file", uploadRouter);
+router.use("/operator", operatorRouter);
+router.use("/paymentGateway", PaymentGatewayRouter);
+router.use("/callBack", callBackRouter);
+router.use("/rechargeComplaint", rechargeComplaintsRouter);
+router.use("/utility", utilityRouter);
+router.use("/apiResponse", apiResponseRouter);
+router.use("/serviceCategory", serviceCategoryRouter);
+
+// =================================================================
 
 module.exports = router;
