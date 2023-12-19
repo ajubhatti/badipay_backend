@@ -16,11 +16,21 @@ const update = async (id, params) => {
 };
 
 const updateByRechargeId = async (id, params) => {
-  const data = await db.RechargeComplaints.findOne({ rechargeId: id });
-
-  Object.assign(data, params);
-  data.updated = Date.now();
-  return await data.save();
+  try {
+    console.log({ id, params });
+    const data = await db.RechargeComplaints.findOne({ rechargeId: id });
+    if (data) {
+      console.log(data);
+      Object.assign(data, params);
+      data.updated = Date.now();
+      return await data.save();
+    } else {
+      throw "Recharge not found!";
+    }
+  } catch (err) {
+    console.log({ err });
+    throw err;
+  }
 };
 
 const getById = async (id) => {

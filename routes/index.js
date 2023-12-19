@@ -34,6 +34,7 @@ const rechargeComplaintsRouter = require("./rechargeComplaints.route");
 const callBackRouter = require("./callBack.route");
 const utilityRouter = require("./utility.route");
 const apiResponseRouter = require("./apiResponses.route");
+const serviceCategoryRouter = require("./serviceCategory.route");
 
 router.use("/users", usersRouter);
 router.use("/auth", accountRouter);
@@ -69,6 +70,7 @@ router.use("/callBack", callBackRouter);
 router.use("/rechargeComplaint", rechargeComplaintsRouter);
 router.use("/utility", utilityRouter);
 router.use("/apiResponse", apiResponseRouter);
+router.use("/serviceCategory", serviceCategoryRouter);
 
 // =================================================================
 

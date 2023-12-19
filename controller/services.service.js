@@ -38,9 +38,27 @@ const getById = async (id) => {
   return service;
 };
 
+// const getAll = async () => {
+//   const services = await db.Services.find();
+//   return services;
+// };
+
 const getAll = async () => {
-  const services = await db.Services.find();
-  return services;
+  const aggregateRules = [
+    {
+      $lookup: {
+        from: "servicecategories",
+        localField: "serviceCategoryId",
+        foreignField: "_id",
+        as: "categoryData",
+      },
+    },
+    { $unwind: { path: "$categoryData", preserveNullAndEmptyArrays: true } },
+    // { $unwind: "$categoryData" },
+  ];
+
+  const categoryData = await db.Services.aggregate(aggregateRules);
+  return categoryData;
 };
 
 const _delete = async (id) => {

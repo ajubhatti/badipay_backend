@@ -54,6 +54,7 @@ const getAll = (req, res, next) => {
 };
 
 router.get("/", getAll);
+// router.get("/", apisService.getWithPagination);
 router.get("/:id", getById);
 router.post("/", create);
 router.put("/:id", update);

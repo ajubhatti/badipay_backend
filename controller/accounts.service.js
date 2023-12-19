@@ -131,6 +131,8 @@ const addReferalId = async (params, result) => {
     referralCode: params.referenceUserId,
   }); //123
 
+  console.log({ referanceUserData });
+
   const referalUser = await db.Referral.findOne({
     userId: result._id,
   }); // 456

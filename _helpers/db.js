@@ -79,5 +79,6 @@ module.exports = {
   RechargeComplaints: require("../models/rechargeComplaints"),
   Utility: require("../models/utility"),
   ApiResponse: require("../models/apiresponses"),
+  ServiceCategory : require("../models/serviceCategory"),
   isValidId,
 };

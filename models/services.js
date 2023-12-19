@@ -8,9 +8,11 @@ const schema = new Schema(
     title: { type: String, required: true },
     serviceImage: { type: String, required: false },
     isActive: { type: Boolean, default: true },
-    created: { type: Date, default: Date.now },
     icon: { type: String },
-    updated: Date,
+    serviceCategoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceCategory",
+    },
   },
   { timestamps: true, versionKey: false }
 );
