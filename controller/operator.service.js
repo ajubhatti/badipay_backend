@@ -45,6 +45,45 @@ const getById = async (id) => {
   }
 };
 
+
+// const getAll2 = async (params) => {
+//   try {
+//     const pageNumber = parseInt(params.page) || 0;
+//     const limit = parseInt(params.perPage) || 20;
+//     const result = {};
+//     const totalPosts = await db.Company.countDocuments().exec();
+//     let startIndex = pageNumber * limit;
+//     const endIndex = (pageNumber + 1) * limit;
+//     result.totalPosts = totalPosts;
+//     if (startIndex > 0) {
+//       result.previous = {
+//         pageNumber: pageNumber - 1,
+//         limit: limit,
+//       };
+//     }
+//     if (endIndex < (await db.Company.countDocuments().exec())) {
+//       result.next = {
+//         pageNumber: pageNumber + 1,
+//         limit: limit,
+//       };
+//     }
+
+//     var companyResult = await db.Company.find()
+//       .sort("-_id")
+//       .skip(startIndex)
+//       .limit(limit)
+//       .exec();
+
+//     result.data = companyResult;
+
+//     result.rowsPerPage = limit;
+//     return result;
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ msg: "Sorry, something went wrong" });
+//   }
+// };
+
 const getAll = async (params) => {
   try {
     const filter = params;

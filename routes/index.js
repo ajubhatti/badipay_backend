@@ -16,7 +16,6 @@ const subSupportRouter = require("./subSupport.route");
 const stateRouter = require("./states.route");
 const ambikaSlabRouter = require("./ambikaSlab.route");
 const mlanRouter = require("./mplan.route");
-const companyRouter = require("./company.route");
 const apisRouter = require("./apis.route");
 const rechargeRouter = require("./recharge.route");
 const transactionRouter = require("./transaction.route");

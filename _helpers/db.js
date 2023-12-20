@@ -45,7 +45,6 @@ module.exports = {
   Account: require("../models/accounts"),
   RefreshToken: require("../models/refresh-token"),
   Services: require("../models/services"),
-  Company: require("../models/company"),
   AmbikaSlab: require("../models/ambikaSlab"),
   Wallet: require("../models/wallet"),
   WalletTransaction: require("../models/walletTransaction"),
@@ -79,6 +78,6 @@ module.exports = {
   RechargeComplaints: require("../models/rechargeComplaints"),
   Utility: require("../models/utility"),
   ApiResponse: require("../models/apiresponses"),
-  ServiceCategory : require("../models/serviceCategory"),
+  ServiceCategory: require("../models/serviceCategory"),
   isValidId,
 };

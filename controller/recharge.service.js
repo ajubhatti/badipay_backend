@@ -63,6 +63,7 @@ const createNewRecharge = async (req, res) => {
           });
         } else {
           let operator = await getOperatorById(params);
+          console.log({ operator });
           if (operator) {
             lastApiResponse = "";
             let finalRechargeData = await recursiveFunction(params, operator);
