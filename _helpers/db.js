@@ -79,5 +79,6 @@ module.exports = {
   Utility: require("../models/utility"),
   ApiResponse: require("../models/apiresponses"),
   ServiceCategory: require("../models/serviceCategory"),
+  ApiConfig: require("../models/apiConfig"),
   isValidId,
 };

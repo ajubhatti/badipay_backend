@@ -57,18 +57,18 @@ const getById = async (id) => {
 const getAll = async (params) => {
   try {
     const aggregateRules = [
-      // {
-      //   $lookup: {
-      //     from: "accounts",
-      //     localField: "response.userId",
-      //     foreignField: "_id",
-      //     as: "userDetail",
-      //   },
-      // },
-      // { $unwind: "$userDetail" },
-      { 
-        $sort: { createdAt: -1 }, 
-      }, 
+      {
+        $lookup: {
+          from: "apiconfigs",
+          localField: "operatorConfig.apiId",
+          foreignField: "apiId",
+          as: "apiData",
+        },
+      },
+      { $unwind: { path: "$apiData", preserveNullAndEmptyArrays: true } },
+      {
+        $sort: { createdAt: -1 },
+      },
     ];
 
     const services = await db.ApiResponse.aggregate(aggregateRules);

@@ -128,8 +128,11 @@ const userRegister = async (req, res, next) => {
 
 const addReferalId = async (params, result) => {
   const referanceUserData = await db.Referral.findOne({
-    referralCode: params.referenceUserId,
-  }); //123
+    $or: [
+      { userId: params.referenceUserId },
+      { referralCode: params.referenceUserId },
+    ],
+  });
 
   console.log({ referanceUserData });
 
@@ -208,7 +211,7 @@ const authenticate2 = async (req, res, next) => {
       if (!bcrypt.compareSync(password, account.passwordHash)) {
         res.status(400).json({
           status: 400,
-          messae: "Your email or password not matched",
+          message: "Your email or password not matched!",
           data: "",
         });
         return;

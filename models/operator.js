@@ -12,7 +12,6 @@ const schema = new Schema(
     serviceId: { type: Schema.Types.ObjectId, ref: "Services" },
     minAmount: { type: Number, default: 10 },
     maxAmount: { type: Number, default: 500 },
-    referenceApis: { type: Array },
     discountByApi: { type: Array },
     requiredFields: { type: Array },
     mplanCode: { type: String },

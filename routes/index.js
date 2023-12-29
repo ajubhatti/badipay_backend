@@ -34,6 +34,7 @@ const callBackRouter = require("./callBack.route");
 const utilityRouter = require("./utility.route");
 const apiResponseRouter = require("./apiResponses.route");
 const serviceCategoryRouter = require("./serviceCategory.route");
+const apiConfigRouter = require("./apiConfig.route");
 
 router.use("/users", usersRouter);
 router.use("/auth", accountRouter);
@@ -51,7 +52,6 @@ router.use("/contactUs", contactUsRouter);
 router.use("/support", supportsRouter);
 router.use("/subSupport", subSupportRouter);
 router.use("/mplan", mlanRouter);
-router.use("/company", companyRouter);
 router.use("/state", stateRouter);
 router.use("/apis", apisRouter);
 router.use("/rechargeOrBill", rechargeRouter);
@@ -70,6 +70,7 @@ router.use("/rechargeComplaint", rechargeComplaintsRouter);
 router.use("/utility", utilityRouter);
 router.use("/apiResponse", apiResponseRouter);
 router.use("/serviceCategory", serviceCategoryRouter);
+router.use("/apiConfig", apiConfigRouter);
 
 // =================================================================
 
