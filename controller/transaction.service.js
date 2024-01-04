@@ -31,12 +31,16 @@ const getAll = async (params) => {
       match.userId = mongoose.Types.ObjectId(params.userId);
     }
 
+    if (params.category) {
+      match.serviceCategoryId = mongoose.Types.ObjectId(params.category);
+    }
+
     if (params.services) {
-      match.serviceType = { $regex: params.services, $options: "i" };
+      match.serviceId = { $regex: params.services, $options: "i" };
     }
 
     if (params.api) {
-      match.apiProvider = { $regex: params.api, $options: "i" };
+      match.apiId = { $regex: params.api, $options: "i" };
     }
 
     const orderByColumn = params.sortBy || "updatedAt";
@@ -85,10 +89,6 @@ const getAll = async (params) => {
 
     const aggregateRules = [
       {
-        $sort: sort,
-      },
-      { $skip: skipNo },
-      {
         $lookup: {
           from: "accounts",
           localField: "userId",
@@ -96,10 +96,41 @@ const getAll = async (params) => {
           as: "userDetail",
         },
       },
-      { $unwind: "$userDetail" },
+      { $unwind: { path: "$userDetail", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "apis",
+          localField: "apiId",
+          foreignField: "_id",
+          as: "apiData",
+        },
+      },
+      { $unwind: { path: "$apiData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "operators",
+          localField: "operatorId",
+          foreignField: "_id",
+          as: "operatorData",
+        },
+      },
+      { $unwind: { path: "$operatorData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "services",
+          localField: "serviceId",
+          foreignField: "_id",
+          as: "serviceData",
+        },
+      },
+      { $unwind: { path: "$serviceData", preserveNullAndEmptyArrays: true } },
       {
         $match: match,
       },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
     ];
 
     if (params.limits) {
@@ -111,11 +142,11 @@ const getAll = async (params) => {
         result = JSON.parse(JSON.stringify(result));
         for (let i = 0; i < result.length; i++) {
           if (
-            (result[i] && result[i].apiProvider) ||
-            (result[i] && result[i].serviceType)
+            (result[i] && result[i].apiId) ||
+            (result[i] && result[i].serviceId)
           ) {
-            let serviceType = await db.Services.findById(result[i].serviceType);
-            result[i].serviceTypeName = serviceType.serviceName || "";
+            let serviceData = await db.Services.findById(result[i].serviceId);
+            result[i].serviceTypeName = serviceData.serviceName || "";
           }
         }
         return result;
@@ -290,9 +321,9 @@ const updateTransactionById = async (id, params) => {
           params.status == "success"
         ) {
           let discountData = {};
-          if (usrTrscn.apiProvider || usrTrscn.operatorId) {
+          if (usrTrscn.apiId || usrTrscn.operatorId) {
             discountData = await db.ServiceDiscount.findOne({
-              apiId: mongoose.Types.ObjectId(usrTrscn.apiProvider),
+              apiId: mongoose.Types.ObjectId(usrTrscn.apiId),
               operatorId: mongoose.Types.ObjectId(usrTrscn.operatorId),
             });
           }
@@ -473,7 +504,7 @@ const updateTransactionById = async (id, params) => {
               netCashBack:
                 roundOfNumber(adminDiscnt) - roundOfNumber(disAmount),
               status: params.status,
-              apiId: usrTrscn.apiProvider,
+              apiId: usrTrscn.apiId,
               operatorId: usrTrscn.operatorId,
             };
 
@@ -599,14 +630,6 @@ const transactionListWithPagination = async (params) => {
     const pages = Math.ceil(total / pageSize);
 
     const aggregateRules = [
-      {
-        $match: match,
-      },
-      {
-        $sort: sort,
-      },
-      { $skip: skipNo },
-
       // {
       //   $lookup: {
       //     from: "accounts",
@@ -625,6 +648,40 @@ const transactionListWithPagination = async (params) => {
       //   },
       // },
       // { $unwind: "$paymentMode" },
+      {
+        $lookup: {
+          from: "apis",
+          localField: "apiId",
+          foreignField: "_id",
+          as: "apiData",
+        },
+      },
+      { $unwind: { path: "$apiData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "operators",
+          localField: "operatorId",
+          foreignField: "_id",
+          as: "operatorData",
+        },
+      },
+      { $unwind: { path: "$operatorData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "services",
+          localField: "serviceId",
+          foreignField: "_id",
+          as: "serviceData",
+        },
+      },
+      { $unwind: { path: "$serviceData", preserveNullAndEmptyArrays: true } },
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
     ];
 
     if (params.limits) {
@@ -648,12 +705,34 @@ const transactionListWithPagination = async (params) => {
 };
 
 const scanAndUpdate = async () => {
-  const transaction = await db.Transactions.find({});
-  for (let i = 0; i < transaction.length; i++) {
-    transaction[i].updated = transaction[i].created;
-    await transaction[i].save();
+  try {
+    const transaction = await db.Transactions.find({});
+    for (let i = 0; i < transaction.length; i++) {
+      if (!transaction[i].updated)
+        transaction[i].updated = transaction[i].created;
+
+      if (Object.values(transaction[i].rechargeData).length) {
+        if (transaction[i].apiId)
+          transaction[i].apiId = transaction[i].rechargeData.apiId
+            ? transaction[i].rechargeData.apiId
+            : transaction[i].rechargeData.operatorConfig.apiId;
+
+        if (transaction[i].apiId)
+          transaction[i].serviceId = transaction[i].rechargeData.serviceId
+            ? transaction[i].rechargeData.serviceId
+            : transaction[i].rechargeData.operatorConfig.serviceId;
+
+        if (transaction[i].operatorId)
+          transaction[i].operatorId = transaction[i].rechargeData.operatorId
+            ? transaction[i].rechargeData.operatorId
+            : transaction[i].rechargeData.operatorConfig.operatorId;
+      }
+      await transaction[i].save();
+    }
+    return transaction;
+  } catch (err) {
+    console.error(err);
   }
-  return transaction;
 };
 
 module.exports = {

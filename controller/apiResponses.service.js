@@ -60,7 +60,7 @@ const getAll = async (params) => {
       {
         $lookup: {
           from: "apiconfigs",
-          localField: "operatorConfig.apiId",
+          localField: "response.apiId",
           foreignField: "apiId",
           as: "apiData",
         },

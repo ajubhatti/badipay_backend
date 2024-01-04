@@ -10,9 +10,12 @@ const transactionSchema = new Schema(
     slipNo: { type: String, default: "" },
     remark: { type: String, default: "" },
     description: { type: Object, default: {} },
-    operatorId: { type: String, default: "" },
-    apiProvider: { type: String, default: "" },
-    serviceType: { type: String, default: "" },
+
+    rechargeId: { type: Schema.Types.ObjectId, ref: "Recharge" },
+    operatorId: { type: Schema.Types.ObjectId, ref: "Operator" },
+    serviceId: { type: Schema.Types.ObjectId, ref: "Services" },
+    apiId: { type: Schema.Types.ObjectId, ref: "Apis" },
+
     status: {
       type: String,
       enum: ["pending", "failed", "success", "refund"],
@@ -26,7 +29,6 @@ const transactionSchema = new Schema(
     },
     totalAmount: { type: Number, default: null },
     // ===========================================
-    rechargeId: { type: Schema.Types.ObjectId, ref: "Recharge" },
 
     operatorName: { type: String, default: "" },
     userBalance: { type: Number, default: null },

@@ -22,13 +22,13 @@ const create = async (params) => {
 const update = async (id, params) => {
   try {
     const apiConfig = await getApiConfig(id);
-    if (
-      params.apiName &&
-      apiConfig.apiName !== params.apiName &&
-      (await db.ApiConfig.findOne({ apiName: params.apiName }))
-    ) {
-      throw `Name ${params.apiName} is already taken`;
-    }
+    // if (
+    //   params.apiName &&
+    //   apiConfig.apiName !== params.apiName &&
+    //   (await db.ApiConfig.findOne({ apiName: params.apiName }))
+    // ) {
+    //   throw `Name ${params.apiName} is already taken`;
+    // }
 
     Object.assign(apiConfig, params);
     apiConfig.updated = Date.now();

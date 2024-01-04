@@ -71,30 +71,28 @@ const createNewRecharge = async (req, res) => {
             console.log({ finalRechargeData });
             priorityCount = 1;
 
-            if (
-              finalRechargeData &&
-              finalRechargeData.operatorConfig.operatorData
-            ) {
+            if (finalRechargeData) {
               params.rechargeData = finalRechargeData;
-              params.rechargeByOperator =
-                finalRechargeData.operatorConfig.operatorData;
-              params.rechargeByApi = finalRechargeData.operatorConfig.apiData;
-              params.operatorId = finalRechargeData.operatorConfig.operatorId;
-              params.apiId = finalRechargeData.operatorConfig.apiId;
+              params.operatorId = finalRechargeData.operatorId;
+              params.apiId = finalRechargeData.apiId;
+              params.serviceCategoryId = finalRechargeData.serviceCategoryId;
+              params.serviceId = finalRechargeData.serviceId;
 
               const rechargeData = new db.Recharge(params);
               const rechargeResult = await rechargeData.save();
 
-              let responseStatus =
-                finalRechargeData[
-                  finalRechargeData.operatorConfig.apiData
-                    .checkStatusResponseValue
-                ];
+              let getApiConfigData = await db.ApiConfig.findOne({
+                apiId: params.apiId,
+                categoryId: params.serviceCategoryId,
+              });
 
+              let responseStatus =
+                finalRechargeData[getApiConfigData.checkStatusResponseValue];
+
+              console.log({ responseStatus });
               if (
                 (responseStatus &&
-                  responseStatus ==
-                    finalRechargeData.operatorConfig.apiData.successValue) ||
+                  responseStatus == getApiConfigData.successValue) ||
                 (finalRechargeData && finalRechargeData.TRNSTATUS == 0) ||
                 (finalRechargeData.STATUSCODE &&
                   finalRechargeData.STATUSCODE == 1) ||
@@ -112,10 +110,7 @@ const createNewRecharge = async (req, res) => {
                   data: rechargeData,
                   message: "Transaction successful.",
                 });
-              } else if (
-                responseStatus ==
-                finalRechargeData.operatorConfig.apiData.pendingValue
-              ) {
+              } else if (responseStatus == getApiConfigData.pendingValue) {
                 Object.assign(rechargeResult, {
                   status: CONSTANT_STATUS.PENDING,
                 });
@@ -321,6 +316,7 @@ const updateTransactionDataNew = async (
   discountData
 ) => {
   try {
+    console.log({ rechargeResult });
     let accountDetail = await db.Account.findById({ _id: userId });
 
     let payload = {
@@ -366,9 +362,9 @@ const updateTransactionDataNew = async (
         payload.userFinalBalance =
           roundOfNumber(accountDetail.walletBalance) || 0;
 
-        payload.apiProvider = rechargeResult.apiId;
-        payload.serviceType =
-          rechargeResult.rechargeData.operatorConfig.serviceId;
+        payload.apiId = rechargeResult.apiId;
+        payload.serviceId = rechargeResult.serviceId;
+        payload.serviceCategoryId = rechargeResult.serviceCategoryId;
       } else {
         payload.amount = 0;
         payload.userBalance =
@@ -411,7 +407,7 @@ const updateTransactionDataNew = async (
             roundOfNumber(params.amount || 0) -
             roundOfNumber(discountAmount || 0),
           status: payload.status,
-          apiId: rechargeResult.rechargeByApi._id,
+          apiId: rechargeResult.apiId,
           operatorId: rechargeResult.rechargeByOperator.providerType,
         };
 
@@ -441,8 +437,8 @@ const updateTransactionDataNew = async (
       }
     } else {
       console.log(
-        rechargeResult.status,
-        "------------------- transaction failed ---------------------"
+        "------------------- transaction failed ---------------------",
+        rechargeResult.status
       );
       let rechargeAmount = roundOfNumber(params.amount);
 
@@ -461,9 +457,9 @@ const updateTransactionDataNew = async (
         payload.cashBackAmount = 0;
         payload.userFinalBalance =
           roundOfNumber(accountDetail.walletBalance) || 0;
-        payload.apiProvider = rechargeResult.apiId;
-        payload.serviceType =
-          rechargeResult.rechargeData.operatorConfig.serviceId;
+        payload.apiId = rechargeResult.apiId;
+        payload.serviceId = rechargeResult.serviceId;
+        payload.serviceCategoryId = rechargeResult.serviceCategoryId;
       } else {
         payload.amount = 0;
         payload.userBalance = roundOfNumber(accountDetail.walletBalance);
@@ -500,8 +496,8 @@ const updateTransactionDataNew = async (
           netCashBack: 0,
           finalAmount: 0,
           status: payload.status,
-          apiId: rechargeResult.rechargeByApi._id,
-          operatorId: rechargeResult.rechargeByOperator.providerType,
+          apiId: rechargeResult.apiId,
+          operatorId: rechargeResult.operatorId,
           requestAmountBckup: roundOfNumber(params.amount || 0),
           rechargeAmountBckup: roundOfNumber(rechargeAmount) || 0,
           cashBackReceiveBckup: roundOfNumber(adminDiscnt) || 0,
@@ -587,9 +583,9 @@ const updateTransactionData2 = async (
     payload.cashBackAmount = 0;
     payload.userFinalBalance = roundOfNumber(accountDetail.walletBalance) || 0;
 
-    payload.apiProvider = rechargeResult.apiId;
-    payload.serviceType = rechargeResult.rechargeData.operatorConfig.serviceId;
-
+    payload.apiId = rechargeResult.apiId;
+    payload.serviceId = rechargeResult.serviceId;
+    payload.serviceCategoryId = rechargeResult.serviceCategoryId;
     payload.rechargeId = rechargeResult._id;
     payload.transactionId = (await db.Transactions.countDocuments()) + 1;
     const transactionData = new db.Transactions(payload);
@@ -645,9 +641,9 @@ const updateTransactionData3 = async (
       payload.cashBackAmount = roundOfNumber(discountAmount) || 0;
       payload.userFinalBalance =
         roundOfNumber(accountDetail.walletBalance) || 0;
-      payload.apiProvider = rechargeResult.apiId;
-      payload.serviceType =
-        rechargeResult.rechargeData.operatorConfig.serviceId;
+      payload.apiId = rechargeResult.apiId;
+      payload.serviceId = rechargeResult.serviceId;
+      payload.serviceCategoryId = rechargeResult.serviceCategoryId;
     } else {
       payload.amount = 0;
       payload.userBalance =
@@ -687,7 +683,7 @@ const updateTransactionData3 = async (
           roundOfNumber(params.amount || 0) -
           roundOfNumber(discountAmount || 0),
         status: payload.status,
-        apiId: rechargeResult.rechargeByApi._id,
+        apiId: rechargeResult.apiId,
         operatorId: rechargeResult.rechargeByOperator.providerType,
       };
 
@@ -726,6 +722,8 @@ const recursiveFunction = async (params, operator) => {
       operator: params.operator,
     });
 
+    // console.log("config list --", operatorConfigList.data);
+
     if (operatorConfigList && operatorConfigList.data.length >= priorityCount) {
       let filteredOperator = await priorityCheck(
         priorityCount,
@@ -733,36 +731,48 @@ const recursiveFunction = async (params, operator) => {
       );
       priorityCount++;
 
+      console.log({ filteredOperator });
+
       if (filteredOperator) {
-        let apiRes = await rechargeFunction(params, filteredOperator);
+        const { apiData, serviceData, apiId } = filteredOperator;
+
+        let apiConfig = await db.ApiConfig.findOne({
+          apiId: apiId,
+          categoryId: serviceData.serviceCategoryId,
+        });
+
+        console.log({ apiData, apiConfig });
+
+        let apiRes = await rechargeFunction(
+          apiConfig,
+          params,
+          filteredOperator
+        );
+        // apiRes.operatorConfig = filteredOperator;
         lastApiResponse = apiRes;
+        console.log({ apiRes });
         if (filteredOperator && apiRes) {
-          let responseStatus =
-            apiRes[filteredOperator.apiData.checkStatusResponseValue];
+          let responseStatus = apiRes[apiConfig.checkStatusResponseValue];
           /*  ------- check for success and pending value ------ */
           if (
-            responseStatus == filteredOperator.apiData.successValue ||
-            responseStatus == filteredOperator.apiData.pendingValue
+            responseStatus == apiConfig.successValue ||
+            responseStatus == apiConfig.pendingValue
           ) {
-            // return apiRes;
             return lastApiResponse;
             /* -------  check for fail response ------ */
           } else {
-            // await recursiveFunction(params, operator);
             if (
               operatorConfigList &&
               operatorConfigList.data.length >= priorityCount
             ) {
               return await recursiveFunction(params, operator);
             } else {
-              // return apiRes;
               return lastApiResponse;
             }
           }
         }
       } else {
         return await recursiveFunction(params, operator);
-        // return await recursiveFunction(params, operator);
       }
     } else {
       return lastApiResponse;
@@ -773,17 +783,30 @@ const recursiveFunction = async (params, operator) => {
   }
 };
 
-const priorityCheck = async (priority, operatorConfig) => {
-  return await operatorConfig.data.find((x) => {
+const priorityCheck = async (priority, configList) => {
+  return await configList.data.find((x) => {
     return x.priority && x.priority == priority && x.isActive;
   });
 };
 
-const rechargeFunction = async (params, filteredOperatorConfig) => {
+const rechargeFunction = async (
+  apiConfigData,
+  params,
+  filteredOperatorConfig
+) => {
   try {
+    const { apiData, apiCode, serviceData, operatorData } =
+      filteredOperatorConfig;
+    console.log("check type --", {
+      apiData,
+      apiConfigData,
+      params,
+      filteredOperatorConfig,
+    });
+
     let payload = {
       amount: params.amount,
-      operatorCode: filteredOperatorConfig.apiCode,
+      operatorCode: apiCode,
       regMobileNumber: params.customerNo,
     };
 
@@ -801,22 +824,30 @@ const rechargeFunction = async (params, filteredOperatorConfig) => {
       }
     }
 
-    let rechargeRes = await doRecharge(filteredOperatorConfig, payload);
+    console.log({ payload });
 
-    if (rechargeRes) {
-      rechargeRes.operatorConfig = filteredOperatorConfig;
-    }
-    // let rechargeRes = pendingResponseByRechargeWale;
+    let rechargeRes = await doRecharge(apiData, apiConfigData, payload);
+
+    rechargeRes.serviceId = serviceData._id;
+    rechargeRes.operatorId = operatorData._id;
+    rechargeRes.apiId = apiConfigData.apiId;
+    rechargeRes.serviceCategoryId = apiConfigData.categoryId;
+
+    //   // let rechargeRes = pendingResponseByRechargeWale;    //static response set
     rechargeRes.userId = params.userId;
     rechargeRes.mobileNo = payload.regMobileNumber;
     rechargeRes.transactionId = (await db.Transactions.countDocuments()) + 1;
-    const rechargeResponse = new db.ApiResponse({ response: rechargeRes });
-    await rechargeResponse.save();
+    await saveApiResponse(rechargeRes);
 
     return rechargeRes;
   } catch (err) {
     return err;
   }
+};
+
+const saveApiResponse = async (rechargeRes) => {
+  const rechargeResponse = new db.ApiResponse({ response: rechargeRes });
+  await rechargeResponse.save();
 };
 
 const checkTransactionRecursion = async (userId, params, rechargeResult) => {
@@ -926,18 +957,18 @@ const checkTransactionStatus = async (apiData, apiRes) => {
   }
 };
 
-const doRecharge = async (apiData, params) => {
+const doRecharge = async (apiData, apiConfigData, params) => {
   try {
     const { amount, operatorCode, regMobileNumber } = params;
 
     let timeStamp = Math.round(new Date().getTime() / 1000);
-    let serviceUrl = apiData.apiData.requestURL;
+    let serviceUrl = apiConfigData.requestURL;
     serviceUrl = serviceUrl.replace("_number", timeStamp);
     serviceUrl = serviceUrl.replace("_amount", amount);
     serviceUrl = serviceUrl.replace("_spkey", operatorCode);
     serviceUrl = serviceUrl.replace("_account", regMobileNumber);
     serviceUrl = serviceUrl.replace("_apirequestid", timeStamp);
-    serviceUrl = serviceUrl.replace("_apikey", apiData.apiData.token);
+    serviceUrl = serviceUrl.replace("_apikey", apiData.token);
 
     console.log({ serviceUrl });
 
@@ -1037,6 +1068,10 @@ const rechargeListWithPagination = async (req, res, next) => {
       };
     }
 
+    if (params.category) {
+      match.serviceCategoryId = mongoose.Types.ObjectId(params.category);
+    }
+
     if (params.services) {
       match.serviceId = mongoose.Types.ObjectId(params.services);
     }
@@ -1097,7 +1132,34 @@ const rechargeListWithPagination = async (req, res, next) => {
           as: "userDetail",
         },
       },
-      { $unwind: "$userDetail" },
+      { $unwind: { path: "$userDetail", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "apis",
+          localField: "apiId",
+          foreignField: "_id",
+          as: "apiData",
+        },
+      },
+      { $unwind: { path: "$apiData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "operators",
+          localField: "operatorId",
+          foreignField: "_id",
+          as: "operatorData",
+        },
+      },
+      { $unwind: { path: "$operatorData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "services",
+          localField: "serviceId",
+          foreignField: "_id",
+          as: "serviceData",
+        },
+      },
+      { $unwind: { path: "$serviceData", preserveNullAndEmptyArrays: true } },
       {
         $match: match,
       },
@@ -1253,10 +1315,10 @@ const rechargeListWithPagination2 = async (req, res, next) => {
     //       if (transactionRslt) {
     //         transactionRslt = JSON.parse(JSON.stringify(transactionRslt));
 
-    //         let serviceType = await db.Services.findById(
-    //           transactionRslt.serviceType
+    //         let serviceData = await db.Services.findById(
+    //           transactionRslt.serviceId
     //         );
-    //         transactionRslt.serviceTypeName = serviceType.serviceName || "";
+    //         transactionRslt.serviceTypeName = serviceData.serviceName || "";
     //         rslt[i].transactionData = transactionRslt;
     //       }
     //     }
@@ -1444,10 +1506,10 @@ const rechargeListForReports = async (req, res, next) => {
     //     transactionRslt = JSON.parse(JSON.stringify(transactionRslt));
 
     //     // console.log({ transactionRslt });
-    //     let serviceType = await db.Services.findById(
-    //       transactionRslt.serviceType
+    //     let serviceData = await db.Services.findById(
+    //       transactionRslt.serviceId
     //     );
-    //     transactionRslt.serviceTypeName = serviceType.serviceName || "";
+    //     transactionRslt.serviceTypeName = serviceData.serviceName || "";
     //     rechargeResult[i].transactionData = transactionRslt;
     //   }
     // }
@@ -1504,17 +1566,17 @@ const getRechargeData = async (params) => {
 const rechargeCallBack = async (req) => {
   try {
     let params = req.query;
-    let resource = params;
-    // await create({ resource });
 
     let rechargeData = await getRechargeData(params);
     console.log({ rechargeData });
 
-    if (rechargeData.rechargeByApi) {
-      if (
-        rechargeData.rechargeByApi.refundedValue ==
-        (params.status || params.Status)
-      ) {
+    let getApiConfigData = await db.ApiConfig.findOne({
+      apiId: rechargeData.apiId,
+      categoryId: rechargeData.serviceCategoryId,
+    });
+
+    if (getApiConfigData) {
+      if (getApiConfigData.refundedValue == (params.status || params.Status)) {
         updateByRechargeId(rechargeData._id, {
           status: CONSTANT_STATUS.REFUND,
         });
@@ -1522,8 +1584,7 @@ const rechargeCallBack = async (req) => {
           status: CONSTANT_STATUS.REFUND,
         });
       } else if (
-        rechargeData.rechargeByApi.failureValue ==
-        (params.status || params.Status)
+        getApiConfigData.failureValue == (params.status || params.Status)
       ) {
         updateByRechargeId(rechargeData._id, {
           status: CONSTANT_STATUS.FAILED,
@@ -1532,8 +1593,7 @@ const rechargeCallBack = async (req) => {
           status: CONSTANT_STATUS.FAILED,
         });
       } else if (
-        rechargeData.rechargeByApi.successValue ==
-        (params.status || params.Status)
+        getApiConfigData.successValue == (params.status || params.Status)
       ) {
         updateByRechargeId(rechargeData._id, {
           status: CONSTANT_STATUS.SUCCESS,
@@ -1561,7 +1621,23 @@ const updateComplaintsStatus = async (req) => {
 const scanAndUpdate = async () => {
   const recharge = await db.Recharge.find({});
   for (let i = 0; i < recharge.length; i++) {
-    recharge[i].updated = recharge[i].created;
+    if (!recharge[i].updated) {
+      recharge[i].updated = recharge[i].created;
+    }
+
+    if (
+      !recharge[i].serviceCategoryId &&
+      recharge[i].rechargeData.operatorConfig
+    ) {
+      recharge[i].serviceCategoryId =
+        recharge[i].rechargeData.operatorConfig.serviceData.serviceCategoryId;
+    }
+
+    if (!recharge[i].serviceId && recharge[i].rechargeData.operatorConfig) {
+      recharge[i].serviceId =
+        recharge[i].rechargeData.operatorConfig.serviceData._id;
+    }
+
     await recharge[i].save();
   }
   return recharge;

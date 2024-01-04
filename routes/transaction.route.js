@@ -79,6 +79,19 @@ const deleteById = (req, res, next) => {
     .catch(next);
 };
 
+const scanAndUpdate = (req, res, next) => {
+  transactionService
+    .scanAndUpdate()
+    .then((transactions) =>
+      res.status(200).json({
+        data: transactions,
+        status: 200,
+        message: "all data updated successfully",
+      })
+    )
+    .catch(next);
+};
+
 router.post("/getAll", getAll);
 router.post("/", create);
 router.get("/:id", getById);
@@ -86,6 +99,6 @@ router.post("/getByUserId", getByUserId);
 // router.post("/getByUserId", transactionService.transactionListWithPagination);
 router.put("/:id", updateById);
 router.delete("/:id", deleteById);
-router.post("/scanAndUpdate", transactionService.scanAndUpdate);
+router.post("/scanAndUpdate", scanAndUpdate);
 
 module.exports = router;

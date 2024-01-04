@@ -11,6 +11,8 @@ const schema = new Schema(
     rechargeByOperator: { type: Object },
     rechargeByApi: { type: Object },
     operatorId: { type: Schema.Types.ObjectId, ref: "Operator" },
+    serviceCategoryId: { type: Schema.Types.ObjectId, ref: "ServiceCategory" },
+    serviceId: { type: Schema.Types.ObjectId, ref: "Services" },
     apiId: { type: Schema.Types.ObjectId, ref: "Apis" },
     status: {
       type: String,

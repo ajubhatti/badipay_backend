@@ -820,14 +820,6 @@ const getAll2 = async (req, res, next) => {
 
     const aggregateRules = [
       {
-        $match: match,
-      },
-      {
-        $sort: sort,
-      },
-      { $skip: skipNo },
-      { $limit: params.limits },
-      {
         $lookup: {
           from: "states",
           localField: "stateId",
@@ -835,7 +827,7 @@ const getAll2 = async (req, res, next) => {
           as: "stateDetail",
         },
       },
-      { $unwind: "$stateDetail" },
+      { $unwind: { path: "$stateDetail", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: "referrals",
@@ -844,7 +836,17 @@ const getAll2 = async (req, res, next) => {
           as: "referralDetails",
         },
       },
-      { $unwind: "$referralDetails" },
+      {
+        $unwind: { path: "$referralDetails", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $match: match,
+      },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
     ];
 
     let userListData = await db.Account.aggregate(aggregateRules);
