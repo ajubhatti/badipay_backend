@@ -6,8 +6,10 @@ const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 
 let DB_RETRIES = 0; // global variable that counts retry attempts
 const connectWithRetry = () => {
+  // let connectionString = process.env.DB_URL || config.connectionString1;
+  let connectionString = config.connectionString1;
   return mongoose
-    .connect(process.env.DB_URL || config.connectionString1, connectionOptions)
+    .connect(connectionString, connectionOptions)
     .then((m) => {
       console.log("Mongo DB Connected");
     })
