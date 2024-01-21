@@ -6,8 +6,8 @@ const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 
 let DB_RETRIES = 0; // global variable that counts retry attempts
 const connectWithRetry = () => {
-  // let connectionString = process.env.DB_URL || config.connectionString1;
-  let connectionString = config.connectionString1;
+  let connectionString = process.env.DB_URL || config.connectionString1;
+  // let connectionString = config.connectionString1;
   return mongoose
     .connect(connectionString, connectionOptions)
     .then((m) => {
@@ -47,7 +47,6 @@ module.exports = {
   Account: require("../models/accounts"),
   RefreshToken: require("../models/refresh-token"),
   Services: require("../models/services"),
-  AmbikaSlab: require("../models/ambikaSlab"),
   Wallet: require("../models/wallet"),
   WalletTransaction: require("../models/walletTransaction"),
   Banks: require("../models/banks"),
@@ -82,5 +81,6 @@ module.exports = {
   ApiResponse: require("../models/apiresponses"),
   ServiceCategory: require("../models/serviceCategory"),
   ApiConfig: require("../models/apiConfig"),
+  PlanApis: require("../models/planApis"),
   isValidId,
 };

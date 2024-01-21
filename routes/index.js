@@ -14,7 +14,6 @@ const contactUsRouter = require("./contactUs.route");
 const supportsRouter = require("./support.route");
 const subSupportRouter = require("./subSupport.route");
 const stateRouter = require("./states.route");
-const ambikaSlabRouter = require("./ambikaSlab.route");
 const mlanRouter = require("./mplan.route");
 const apisRouter = require("./apis.route");
 const rechargeRouter = require("./recharge.route");
@@ -35,11 +34,11 @@ const utilityRouter = require("./utility.route");
 const apiResponseRouter = require("./apiResponses.route");
 const serviceCategoryRouter = require("./serviceCategory.route");
 const apiConfigRouter = require("./apiConfig.route");
+const planApiRouter = require("./planApi.route");
 
 router.use("/users", usersRouter);
 router.use("/auth", accountRouter);
 router.use("/service", servicesRouter);
-router.use("/ambikaSlab", ambikaSlabRouter);
 router.use("/wallet", walletRouter);
 router.use("/walletTransaction", walletTransactionRouter);
 router.use("/transaction", transactionRouter);
@@ -71,6 +70,7 @@ router.use("/utility", utilityRouter);
 router.use("/apiResponse", apiResponseRouter);
 router.use("/serviceCategory", serviceCategoryRouter);
 router.use("/apiConfig", apiConfigRouter);
+router.use("/planApi", planApiRouter);
 
 // =================================================================
 

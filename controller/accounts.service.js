@@ -134,8 +134,6 @@ const addReferalId = async (params, result) => {
     ],
   });
 
-  console.log({ referanceUserData });
-
   const referalUser = await db.Referral.findOne({
     userId: result._id,
   }); // 456
@@ -851,23 +849,23 @@ const getAll2 = async (req, res, next) => {
 
     let userListData = await db.Account.aggregate(aggregateRules);
 
-    for (let i = 0; i < userListData.length; i++) {
-      let referalData = await db.Referral.findOne({
-        userId: userListData[i]._id,
-      });
+    // for (let i = 0; i < userListData.length; i++) {
+    //   let referalData = await db.Referral.findOne({
+    //     userId: userListData[i]._id,
+    //   });
 
-      let temp = JSON.stringify(referalData);
-      let result = JSON.parse(temp);
+    //   let temp = JSON.stringify(referalData);
+    //   let result = JSON.parse(temp);
 
-      if (result) {
-        let referedUser = await db.Account.findById(result.referredUser);
+    //   if (result) {
+    //     let referedUser = await db.Account.findById(result.referredUser);
 
-        if (referedUser) {
-          result.userName = referedUser.userName;
-          userListData[i].referedUser = result;
-        }
-      }
-    }
+    //     if (referedUser) {
+    //       result.userName = referedUser.userName;
+    //       userListData[i].referedUser = result;
+    //     }
+    //   }
+    // }
 
     res.status(200).json({
       status: 200,
@@ -896,6 +894,22 @@ const getUserById = async (id, ipAddress) => {
   try {
     const account = await db.Account.findOne({ _id: id });
 
+    let referalData = await db.Referral.findOne({
+      userId: id,
+    });
+
+    let temp = JSON.stringify(referalData);
+    let result = JSON.parse(temp);
+
+    if (result) {
+      let referedUser = await db.Account.findById(result.referredUser);
+      if (referedUser) {
+        // result.userName = referedUser.userName;
+        // account.referedUser = result;
+        account.referedUser = referedUser.userName;
+      }
+    }
+
     const token = generateJwtToken(account);
     const refreshToken = generateRefreshToken(account, ipAddress);
 
@@ -905,6 +919,7 @@ const getUserById = async (id, ipAddress) => {
     // return basic details and tokens
     return {
       ...basicDetails(account),
+      // account,
       token,
       refreshToken: refreshToken.token,
     };
@@ -1278,6 +1293,7 @@ const basicDetails = (account) => {
     transactionPinResetDate,
     pendingBalance,
     rewardedBalance,
+    referedUser,
   } = account;
   return {
     hasTransactionPin: { type: Boolean, default: false },
@@ -1300,6 +1316,7 @@ const basicDetails = (account) => {
     transactionPinResetDate,
     pendingBalance,
     rewardedBalance,
+    referedUser,
   };
 };
 // this function call on user registration for sending user verification link

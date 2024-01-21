@@ -2,16 +2,15 @@ const { string } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const schema = new Schema(
-  {
+const schema = new Schema({
     userName: { type: String, required: true },
     phoneNumber: { type: String, unique: true, required: true },
     email: { type: String, trim: true, unique: true, required: true },
     passwordHash: { type: String, required: true },
     pswdString: { type: String },
-    passwordResetDate: Date,
-    verificationToken: String,
-    verifiedDate: Date,
+    passwordResetDate: { type: Date, default: Date.now },
+    verificationToken: { type: String },
+    verifiedDate: { type: Date, default: Date.now },
     isVerified: { type: Boolean, default: false },
     resetToken: { token: String, expires: Date },
     isFirstLogin: { type: Boolean, default: true },
@@ -21,7 +20,7 @@ const schema = new Schema(
     transPin: { type: String },
     transactionPin: { type: String, required: false },
     hasTransactionPin: { type: Boolean, default: false },
-    transactionPinResetDate: Date,
+    transactionPinResetDate: { type: Date, default: Date.now },
 
     location: { type: String, default: "" },
     otp: { type: Number },
@@ -40,14 +39,11 @@ const schema = new Schema(
     },
 
     isFromAdmin: { type: Boolean, default: false },
-
     referralId: { type: mongoose.Schema.Types.ObjectId, ref: "Referral" },
-    lastDiscount: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: Date,
-  },
-  { timestamps: true, versionKey: false }
-);
+    lastDiscount: { type: Number, default: 0 }
+  },{
+    timestamps: true, versionKey: false
+  });
 
 schema.set("toJSON", {
   virtuals: true,

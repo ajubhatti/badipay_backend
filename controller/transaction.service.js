@@ -630,15 +630,15 @@ const transactionListWithPagination = async (params) => {
     const pages = Math.ceil(total / pageSize);
 
     const aggregateRules = [
-      // {
-      //   $lookup: {
-      //     from: "accounts",
-      //     localField: "userId",
-      //     foreignField: "_id",
-      //     as: "userDetail",
-      //   },
-      // },
-      // { $unwind: "$userDetail" },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetail",
+        },
+      },
+      { $unwind: { path: "$userDetail", preserveNullAndEmptyArrays: true } },
       // {
       //   $lookup: {
       //     from: "paymentmodes",
@@ -713,12 +713,16 @@ const scanAndUpdate = async () => {
 
       if (Object.values(transaction[i].rechargeData).length) {
         if (transaction[i].apiId)
-          transaction[i].apiId = transaction[i].rechargeData.apiId
+          transaction[i].apiId = transaction[i].apiProvider
+            ? transaction[i].apiProvider
+            : transaction[i].rechargeData.apiId
             ? transaction[i].rechargeData.apiId
             : transaction[i].rechargeData.operatorConfig.apiId;
 
-        if (transaction[i].apiId)
-          transaction[i].serviceId = transaction[i].rechargeData.serviceId
+        if (transaction[i].serviceId)
+          transaction[i].serviceId = transaction[i].serviceType
+            ? transaction[i].serviceType
+            : transaction[i].rechargeData.serviceId
             ? transaction[i].rechargeData.serviceId
             : transaction[i].rechargeData.operatorConfig.serviceId;
 
