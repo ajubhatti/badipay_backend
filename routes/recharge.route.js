@@ -74,7 +74,7 @@ const updateComplaintsStatus = (req, res, next) => {
 
 const checkTransactionRecursion = (req, res, next) => {
   rechargeController
-    .checkTransactionRecursion(req)
+    .checkTransactionStatusRecursive(req)
     .then((rechargeData) =>
       res.json({ status: 200, data: rechargeData, message: "success" })
     )

@@ -776,6 +776,26 @@ const getAll2 = async (req, res, next) => {
       sort[orderByColumn] = orderByDirection == "DESC" ? -1 : 1;
     }
 
+    const checkUserCount = await db.Account.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdOn" } },
+          total: { $sum: 1 },
+          active_count: {
+            $sum: {
+              $cond: [{ $eq: ["$isActive", true] }, 1, 0],
+            },
+          },
+          inactive_count: {
+            $sum: {
+              $cond: [{ $eq: ["$isActive", false] }, 1, 0],
+            },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
     // if (params.status) {
     //   match.statusOfWalletRequest = params.status;
     // }
@@ -879,9 +899,11 @@ const getAll2 = async (req, res, next) => {
         data: userListData,
         total,
         totalBalance,
+        checkUserCount,
       },
     });
   } catch (error) {
+    console.error({ error });
     res.status(500).json({
       status: 500,
       message: "Server Error",
@@ -1383,6 +1405,16 @@ const strToObj = (str) => {
   return obj;
 };
 
+const updateAllUserStatus = async (params) => {
+  try {
+    const { value } = params;
+    console.log({ value });
+    return await db.Account.updateMany({ $set: { isActive: value } });
+  } catch (err) {
+    throw err;
+  }
+};
+
 module.exports = {
   register,
   userRegister, //updated - registre2
@@ -1419,4 +1451,5 @@ module.exports = {
   authenticateAdmin,
   passwordUpdate2, // updated
   changeStatus,
+  updateAllUserStatus,
 };

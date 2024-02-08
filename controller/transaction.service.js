@@ -36,11 +36,11 @@ const getAll = async (params) => {
     }
 
     if (params.services) {
-      match.serviceId = { $regex: params.services, $options: "i" };
+      match.serviceId = mongoose.Types.ObjectId(params.services);
     }
 
     if (params.api) {
-      match.apiId = { $regex: params.api, $options: "i" };
+      match.apiId = mongoose.Types.ObjectId(params.api);
     }
 
     const orderByColumn = params.sortBy || "updatedAt";
@@ -137,21 +137,7 @@ const getAll = async (params) => {
       aggregateRules.push({ $limit: params.limits });
     }
 
-    let walletResult = await db.Transactions.aggregate(aggregateRules).then(
-      async (result) => {
-        result = JSON.parse(JSON.stringify(result));
-        for (let i = 0; i < result.length; i++) {
-          if (
-            (result[i] && result[i].apiId) ||
-            (result[i] && result[i].serviceId)
-          ) {
-            let serviceData = await db.Services.findById(result[i].serviceId);
-            result[i].serviceTypeName = serviceData.serviceName || "";
-          }
-        }
-        return result;
-      }
-    );
+    let walletResult = await db.Transactions.aggregate(aggregateRules);
 
     return {
       sort,
@@ -212,19 +198,21 @@ const updateTransactionById = async (id, params) => {
           params.status != "success"
         ) {
           if (usrTrscn.isPendingOrFail != true) {
-            let blnc = accountData.walletBalance;
-            let dscnt = accountData.rewardedBalance;
+            let blnc = roundOfNumber(accountData.walletBalance);
+            let dscnt = roundOfNumber(accountData.rewardedBalance);
 
             blnc = usrTrscn.requestAmount
-              ? blnc + usrTrscn.requestAmount
-              : blnc;
+              ? roundOfNumber(blnc) + roundOfNumber(usrTrscn.requestAmount)
+              : roundOfNumber(blnc);
 
             blnc = usrTrscn.cashBackAmount
-              ? blnc - usrTrscn.cashBackAmount
-              : blnc;
+              ? roundOfNumber(blnc) - roundOfNumber(usrTrscn.cashBackAmount)
+              : roundOfNumber(blnc);
 
             let userDisAmount =
-              dscnt != 0 ? dscnt - usrTrscn.cashBackAmount : 0;
+              dscnt != 0
+                ? roundOfNumber(dscnt) - roundOfNumber(usrTrscn.cashBackAmount)
+                : 0;
 
             let transactionPayload = {
               userBalance: roundOfNumber(accountData.walletBalance || 0),
@@ -254,7 +242,7 @@ const updateTransactionById = async (id, params) => {
             let userPayload = {
               discount: userDisAmount,
               rewardedBalance: userDisAmount,
-              walletBalance: blnc,
+              walletBalance: roundOfNumber(blnc),
             };
 
             Object.assign(accountData, userPayload);

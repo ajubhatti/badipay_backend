@@ -284,13 +284,13 @@ const updateExistingBalance = async (params) => {
         requestAmount: roundOfNumber(params.amount) || 0,
         cashBackAmount: 0,
         rechargeAmount: 0,
-        userFinalBalance: calBalance,
+        userFinalBalance: roundOfNumber(calBalance),
       };
 
       const transactionData = new db.Transactions(payload);
       await transactionData.save();
 
-      accountDetail.walletBalance = calBalance;
+      accountDetail.walletBalance = roundOfNumber(calBalance);
       delete accountDetail._id;
 
       let userData = await accountsService.update(params.userId, accountDetail);
@@ -890,11 +890,6 @@ const getwalletListData = async (req, res, next) => {
 
     const aggregateRules = [
       {
-        $sort: sort,
-      },
-      { $skip: skipNo },
-      { $limit: params.limits },
-      {
         $lookup: {
           from: "accounts",
           localField: "userId",
@@ -902,7 +897,7 @@ const getwalletListData = async (req, res, next) => {
           as: "userDetail",
         },
       },
-      { $unwind: "$userDetail" },
+      { $unwind: { path: "$userDetail", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: "paymentmodes",
@@ -911,26 +906,40 @@ const getwalletListData = async (req, res, next) => {
           as: "paymentMode",
         },
       },
-      { $unwind: "$paymentMode" },
+      { $unwind: { path: "$paymentMode", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "bankaccounts",
+          localField: "creditAccount",
+          foreignField: "_id",
+          as: "bankAccountData",
+        },
+      },
+      {
+        $unwind: { path: "$bankAccountData", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "banks",
+          localField: "bankAccountData.bankId",
+          foreignField: "_id",
+          as: "bankData",
+        },
+      },
+      {
+        $unwind: { path: "$bankData", preserveNullAndEmptyArrays: true },
+      },
       {
         $match: match,
       },
-      // {
-      //   $lookup: {
-      //     from: "bankaccounts",
-      //     localField: "creditAccount",
-      //     foreignField: "_id",
-      //     as: "bankData",
-      //   },
-      // },
+      {
+        $sort: sort,
+      },
+      { $skip: skipNo },
+      { $limit: params.limits },
     ];
 
     let walletData = await db.WalletTransaction.aggregate(aggregateRules);
-
-    for (let i = 0; i < walletData.length; i++) {
-      let bankData = await getBankAccountById(walletData[i].creditAccount);
-      walletData[i].bankData = bankData || {};
-    }
 
     res.status(200).json({
       status: 200,
@@ -1146,73 +1155,77 @@ const paymentGatewayCallback = async (params) => {
     let txnData = await db.paymentGatewayTxn.findOne({ orderId: params.id });
 
     let accountDetail = await db.Account.findOne({ _id: txnData.userId });
-
-    let payload = {
-      userId: txnData.userId,
-      amount: roundOfNumber(params.amount) || null,
-      slipNo: params.client_txn_id || "",
-      remark: params.remark || "",
-      type: "credit",
-      status:
-        params.status === "success"
-          ? CONSTANT_STATUS.SUCCESS
-          : CONSTANT_STATUS.FAILED,
-      description: params.description || {},
-      transactionId: (await db.Transactions.countDocuments()) + 1,
-      totalAmount: null,
-      customerNo: "",
-      operatorName: "",
-      userBalance: roundOfNumber(accountDetail.walletBalance) || null,
-      requestAmount: roundOfNumber(params.amount) || null,
-      cashBackAmount: null,
-      rechargeAmount: null,
-      userFinalBalance:
-        params.status === "success"
-          ? roundOfNumber(accountDetail.walletBalance) +
-            roundOfNumber(params.amount)
-          : roundOfNumber(accountDetail.walletBalance),
-    };
-
-    const transactionData = new db.Transactions(payload);
-    let transactionSave = await transactionData.save();
-
-    if (params.status === "success") {
-      let pyld = {
-        walletBalance:
-          roundOfNumber(accountDetail.walletBalance || 0) +
-          roundOfNumber(params.amount || 0),
-      };
-
-      Object.assign(accountDetail, pyld);
-      await accountDetail.save();
-    }
-
-    if (transactionSave) {
-      let lastCount = await db.WalletTransaction.countDocuments();
-
-      let temp = JSON.stringify(params);
-
-      let wltPyld = {
+    const wltTxn = await db.WalletTransaction.findOne({
+      slipNo: txnData.clientTxnId,
+    });
+    if (!wltTxn) {
+      let payload = {
         userId: txnData.userId,
-        requestAmount: roundOfNumber(params.amount) || null,
+        amount: roundOfNumber(params.amount) || null,
         slipNo: params.client_txn_id || "",
         remark: params.remark || "",
-        creditAccount: "64d9255163cb1e6b344bc075",
-        walletTransactionId: lastCount + 1,
-        transactionId: transactionSave._id,
-        amountType: "credit",
-        finalWalletAmount: roundOfNumber(transactionSave.userFinalBalance),
-        approveAmount:
-          params.status === "success" ? roundOfNumber(params.amount) : 0,
-        approveDate: new Date(),
-        statusChangeDate: new Date(),
-        statusOfWalletRequest:
-          params.status === "success" ? "approved" : "rejected",
-        paymentType: "6365039cf2c7df71df2579fa",
+        type: "credit",
+        status:
+          params.status === "success"
+            ? CONSTANT_STATUS.SUCCESS
+            : CONSTANT_STATUS.FAILED,
+        description: params.description || {},
+        transactionId: (await db.Transactions.countDocuments()) + 1,
+        totalAmount: null,
+        customerNo: "",
+        operatorName: "",
+        userBalance: roundOfNumber(accountDetail.walletBalance) || null,
+        requestAmount: roundOfNumber(params.amount) || null,
+        cashBackAmount: null,
+        rechargeAmount: null,
+        userFinalBalance:
+          params.status === "success"
+            ? roundOfNumber(accountDetail.walletBalance) +
+              roundOfNumber(params.amount)
+            : roundOfNumber(accountDetail.walletBalance),
       };
 
-      const walletTransactionData = new db.WalletTransaction(wltPyld);
-      await walletTransactionData.save();
+      const transactionData = new db.Transactions(payload);
+      let transactionSave = await transactionData.save();
+
+      if (params.status === "success") {
+        let pyld = {
+          walletBalance:
+            roundOfNumber(accountDetail.walletBalance || 0) +
+            roundOfNumber(params.amount || 0),
+        };
+
+        Object.assign(accountDetail, pyld);
+        await accountDetail.save();
+      }
+
+      if (transactionSave) {
+        let lastCount = await db.WalletTransaction.countDocuments();
+
+        let temp = JSON.stringify(params);
+
+        let wltPyld = {
+          userId: txnData.userId,
+          requestAmount: roundOfNumber(params.amount) || null,
+          slipNo: params.client_txn_id || "",
+          remark: params.remark || "",
+          creditAccount: "64d9255163cb1e6b344bc075",
+          walletTransactionId: lastCount + 1,
+          transactionId: transactionSave._id,
+          amountType: "credit",
+          finalWalletAmount: roundOfNumber(transactionSave.userFinalBalance),
+          approveAmount:
+            params.status === "success" ? roundOfNumber(params.amount) : 0,
+          approveDate: new Date(),
+          statusChangeDate: new Date(),
+          statusOfWalletRequest:
+            params.status === "success" ? "approved" : "rejected",
+          paymentType: "6365039cf2c7df71df2579fa",
+        };
+
+        const walletTransactionData = new db.WalletTransaction(wltPyld);
+        await walletTransactionData.save();
+      }
     }
   } catch (err) {
     console.error({ err });

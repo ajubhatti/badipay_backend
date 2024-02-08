@@ -15,7 +15,7 @@ const update = async (id, params) => {
   return await data.save();
 };
 
-const updateByRechargeId = async (id, params) => {
+const updateComplaintByRechargeId = async (id, params) => {
   try {
     console.log({ id, params });
     const data = await db.RechargeComplaints.findOne({ rechargeId: id });
@@ -143,5 +143,5 @@ module.exports = {
   getAll,
   delete: _delete,
   createRechargeComplaints,
-  updateByRechargeId,
+  updateComplaintByRechargeId,
 };

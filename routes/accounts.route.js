@@ -234,7 +234,7 @@ const getUserById = (req, res, next) => {
   const ipAddress = req.ip;
   const { id } = req.body;
   accountService
-  .getUserById(id, ipAddress)
+    .getUserById(id, ipAddress)
     .then((account) =>
       res.json({ status: 200, data: account, message: "success" })
     )
@@ -368,6 +368,15 @@ const changeStatus = (req, res, next) => {
     .catch(next);
 };
 
+const updateAllUserStatus = (req, res, next) => {
+  accountService
+    .updateAllUserStatus(req.body)
+    .then((account) =>
+      res.json({ status: 200, data: account, message: "success" })
+    )
+    .catch(next);
+};
+
 const me = (req, res, next) => {
   if (req.headers && req.headers.authorization) {
     var authorization = req.headers.authorization.split(" ")[1],
@@ -435,5 +444,6 @@ router.post("/changeTransactionPin", accountService.transactionPinUpdate2);
 router.post("/adminLogin", adminLogin);
 router.get("/me", me);
 router.post("/changeStatus/:id", changeStatus);
+router.post("/updateAllUserStatus", updateAllUserStatus);
 
 module.exports = router;
