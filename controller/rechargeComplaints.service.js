@@ -88,7 +88,7 @@ const getComplaints = async (id) => {
 
 const createRechargeComplaints = async (params) => {
   try {
-    let apiData = await db.Apis.findById(params.rechargeByApi._id);
+    let apiData = await db.Apis.findById(params.apiId);
     let serviceUrl = apiData.disputeRequestURL;
 
     serviceUrl = serviceUrl.replace("_apikey", apiData.token);

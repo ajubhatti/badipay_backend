@@ -178,13 +178,17 @@ const referalcodeGenerator = async () => {
   return await shortid.generate();
 };
 
+const getTransactionByRechargeId = async (params) => {
+  await db.Transactions.find({
+    rechargeId: params.rechargeId,
+  });
+};
+
 const updateTransactionById = async (id, params) => {
   try {
     // const transaction = await getTransaction(id);
 
-    const transactionData = await db.Transactions.find({
-      rechargeId: params.rechargeId,
-    });
+    const transactionData = await getTransactionByRechargeId(params);
 
     //  get user and referal user transaction data
     if (transactionData) {
@@ -261,19 +265,25 @@ const updateTransactionById = async (id, params) => {
                 referralCashBack: 0,
                 netCashBack: 0,
                 finalAmount: 0,
-                requestAmountBckup: cashBackData.requestAmount || 0,
-                rechargeAmountBckup: cashBackData.rechargeAmount || 0,
-                cashBackReceiveBckup: cashBackData.cashBackReceive || 0,
-                userCashBackBckup: cashBackData.userCashBack || 0,
-                referralCashBackBckup: cashBackData.referralCashBack || 0,
-                netCashBackBckup: cashBackData.netCashBack || 0,
-                finalAmountBackup: cashBackData.finalAmount,
+                requestAmountBckup:
+                  roundOfNumber(cashBackData.requestAmount) || 0,
+                rechargeAmountBckup:
+                  roundOfNumber(cashBackData.rechargeAmount) || 0,
+                cashBackReceiveBckup:
+                  roundOfNumber(cashBackData.cashBackReceive) || 0,
+                userCashBackBckup:
+                  roundOfNumber(cashBackData.userCashBack) || 0,
+                referralCashBackBckup:
+                  roundOfNumber(cashBackData.referralCashBack) || 0,
+                netCashBackBckup: roundOfNumber(cashBackData.netCashBack) || 0,
+                finalAmountBackup: roundOfNumber(cashBackData.finalAmount),
+                status: params.status,
               };
-              if (params.status == CONSTANT_STATUS.PENDING) {
-                pyld.status = params.status;
-              } else {
-                pyld.status = params.status;
-              }
+              // if (params.status == CONSTANT_STATUS.PENDING) {
+              //   pyld.status = params.status;
+              // } else {
+              //   pyld.status = params.status;
+              // }
 
               Object.assign(cashBackData, pyld);
               cashBackData.updated = Date.now();
@@ -356,23 +366,23 @@ const updateTransactionById = async (id, params) => {
 
           // ---------------------------------------------------------------------------------
 
-          let blnc = accountData.walletBalance;
-          let dscnt = accountData.rewardedBalance;
+          let blnc = roundOfNumber(accountData.walletBalance);
+          let dscnt = roundOfNumber(accountData.rewardedBalance);
 
           blnc =
             usrTrscn.requestAmount != 0
-              ? blnc - usrTrscn.requestAmount
-              : blnc - usrTrscn.amount;
+              ? roundOfNumber(blnc) - roundOfNumber(usrTrscn.requestAmount)
+              : roundOfNumber(blnc) - roundOfNumber(usrTrscn.amount);
 
           blnc =
             usrTrscn.cashBackAmount != 0
-              ? blnc + usrTrscn.cashBackAmount
-              : blnc + disAmount;
+              ? roundOfNumber(blnc) + roundOfNumber(usrTrscn.cashBackAmount)
+              : roundOfNumber(blnc) + roundOfNumber(disAmount);
 
           let userDisAmount =
             usrTrscn.cashBackAmount != 0
-              ? usrTrscn.cashBackAmount + dscnt
-              : disAmount + dscnt;
+              ? roundOfNumber(usrTrscn.cashBackAmount) + roundOfNumber(dscnt)
+              : roundOfNumber(disAmount) + roundOfNumber(dscnt);
 
           let userPayload = {
             discount: roundOfNumber(userDisAmount || 0),
@@ -389,20 +399,17 @@ const updateTransactionById = async (id, params) => {
                 : usrTrscn.requestAmount
             ),
 
-            rechargeAmount: roundOfNumber(
-              usrTrscn.rechargeAmountBack
-                ? usrTrscn.rechargeAmountBack
-                : usrTrscn.rechargeAmount
-                ? usrTrscn.rechargeAmount
-                : usrTrscn.amount - disAmount
-            ),
-            cashBackAmount: roundOfNumber(
-              usrTrscn.cashBackAmountBack
-                ? usrTrscn.cashBackAmountBack
-                : usrTrscn.cashBackAmount
-                ? usrTrscn.cashBackAmount
-                : disAmount
-            ),
+            rechargeAmount: usrTrscn.rechargeAmountBack
+              ? roundOfNumber(usrTrscn.rechargeAmountBack)
+              : roundOfNumber(usrTrscn.rechargeAmount)
+              ? roundOfNumber(usrTrscn.rechargeAmount)
+              : roundOfNumber(usrTrscn.amount) - roundOfNumber(disAmount),
+
+            cashBackAmount: usrTrscn.cashBackAmountBack
+              ? roundOfNumber(usrTrscn.cashBackAmountBack)
+              : roundOfNumber(usrTrscn.cashBackAmount)
+              ? roundOfNumber(usrTrscn.cashBackAmount)
+              : roundOfNumber(disAmount),
             userFinalBalance: roundOfNumber(blnc || 0),
 
             // userBalance: roundOfNumber(usrTrscn.userBalance) || null,
@@ -433,24 +440,24 @@ const updateTransactionById = async (id, params) => {
           if (cashBackData) {
             let pyld = {
               requestAmount:
-                (cashBackData.requestAmount || 0) +
-                (cashBackData.requestAmountBckup || 0),
+                roundOfNumber(cashBackData.requestAmount || 0) +
+                roundOfNumber(cashBackData.requestAmountBckup || 0),
               rechargeAmount:
-                (cashBackData.rechargeAmount || 0) +
-                (cashBackData.rechargeAmountBckup || 0),
+                roundOfNumber(cashBackData.rechargeAmount || 0) +
+                roundOfNumber(cashBackData.rechargeAmountBckup || 0),
               cashBackReceive:
-                (cashBackData.cashBackReceive || 0) +
-                (cashBackData.cashBackReceiveBckup || 0),
+                roundOfNumber(cashBackData.cashBackReceive || 0) +
+                roundOfNumber(cashBackData.cashBackReceiveBckup || 0),
               userCashBack:
-                (cashBackData.userCashBack || 0) +
-                (cashBackData.userCashBackBckup || 0),
+                roundOfNumber(cashBackData.userCashBack || 0) +
+                roundOfNumber(cashBackData.userCashBackBckup || 0),
               referralCashBack:
-                (cashBackData.referralCashBack || 0) +
-                (cashBackData.referralCashBackBckup || 0),
+                roundOfNumber(cashBackData.referralCashBack || 0) +
+                roundOfNumber(cashBackData.referralCashBackBckup || 0),
               netCashBack:
-                (cashBackData.netCashBack || 0) +
-                (cashBackData.netCashBackBckup || 0),
-              finalAmount: cashBackData.finalAmountBackup || 0,
+                roundOfNumber(cashBackData.netCashBack || 0) +
+                roundOfNumber(cashBackData.netCashBackBckup || 0),
+              finalAmount: roundOfNumber(cashBackData.finalAmountBackup) || 0,
 
               // ===========================================
               requestAmountBckup: 0,
@@ -468,7 +475,7 @@ const updateTransactionById = async (id, params) => {
             await cashBackData.save();
           } else {
             let cashBackPayload = {
-              requestAmount: usrTrscn.requestAmount,
+              requestAmount: roundOfNumber(usrTrscn.requestAmount),
               rechargeId: usrTrscn.rechargeId,
               userId: usrTrscn.userId,
               transactionId: usrTrscn._id,
@@ -478,7 +485,7 @@ const updateTransactionById = async (id, params) => {
                     ? usrTrscn.rechargeAmountBack
                     : usrTrscn.rechargeAmount
                     ? usrTrscn.rechargeAmount
-                    : usrTrscn.amount - disAmount
+                    : roundOfNumber(usrTrscn.amount) - roundOfNumber(disAmount)
                 ) || 0,
               cashBackReceive: roundOfNumber(
                 usrTrscn.cashBackAmountBack
@@ -496,7 +503,7 @@ const updateTransactionById = async (id, params) => {
               operatorId: usrTrscn.operatorId,
             };
 
-            const cashBackData = await new db.Cashback(cashBackPayload);
+            await new db.Cashback(cashBackPayload);
           }
         }
       }

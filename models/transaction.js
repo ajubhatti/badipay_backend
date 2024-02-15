@@ -27,19 +27,19 @@ const transactionSchema = new Schema(
       enum: ["debit", "credit"],
       default: "credit",
     },
-    totalAmount: { type: Number, default: null },
+    totalAmount: { type: Number, default: 0 },
     // ===========================================
 
     operatorName: { type: String, default: "" },
-    userBalance: { type: Number, default: null },
-    requestAmount: { type: Number, default: null },
-    cashBackAmount: { type: Number, default: null },
-    rechargeAmount: { type: Number, default: null },
-    userFinalBalance: { type: Number, default: null },
+    userBalance: { type: Number, default: 0 },
+    requestAmount: { type: Number, default: 0 },
+    cashBackAmount: { type: Number, default: 0 },
+    rechargeAmount: { type: Number, default: 0 },
+    userFinalBalance: { type: Number, default: 0 },
 
-    requestAmountBack: { type: Number, default: null },
-    cashBackAmountBack: { type: Number, default: null },
-    rechargeAmountBack: { type: Number, default: null },
+    requestAmountBack: { type: Number, default: 0 },
+    cashBackAmountBack: { type: Number, default: 0 },
+    rechargeAmountBack: { type: Number, default: 0 },
     // ===========================================
 
     isPendingOrFail: { type: Boolean, default: false },
